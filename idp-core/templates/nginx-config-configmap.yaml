@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: idp-nginx-config
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+data:
+  nginx.conf: |
+    #events { worker_connections 1024; }
+    #upstream servers
+    upstream cognaioanalyzes {
+        server {{ .Values.cognaioapp.service.name }};
+    }
+
+    upstream serviceproviderimages {
+        server {{ .Values.imageprovider.service.name }};
+    }
+
+    upstream serviceprovideremails {
+        server {{ .Values.emailservice.service.name }};
+    }
+
+    upstream serviceproviderflexsearches {
+        server {{ .Values.cognaioflexsearchservice.service.name }};
+    }
+    
+    upstream serviceproviderextractions {
+        server {{ .Values.cognaioservice.service.name }};
+    }
+
+    upstream serviceproviderobjectdetection {
+        server {{ .Values.objectdetectionprovider.service.name }};
+    }
+   
+    map "$remote_addr-$request_uri" $block_this_request {
+    default 0;
+    ~^127\.0\.0\.1-/ 1;
+    }
+
+    server {
+        listen 80;
+        listen [::]:80;
+
+        proxy_connect_timeout       600;
+        proxy_send_timeout          600;
+        proxy_read_timeout          600;
+        send_timeout                600;
+
+        server_name {{ .Values.cognaio.url }};
+        server_tokens off;
+
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+
+        # # Proxying the connections
+        # location /imageprovider/ {
+        #     if ($block_this_request) { return 403; }
+        #     client_max_body_size 150M;
+        #     client_body_buffer_size 150M; 
+        #     proxy_buffering off;
+        #     proxy_pass http://serviceproviderimages/;
+        # }
+
+        location /extraction/ {
+            client_max_body_size 150M;
+            client_body_buffer_size 150M; 
+            proxy_buffering off;
+            proxy_pass http://serviceproviderextractions;
+        }
+        
+        # Proxying the connections
+        location /cognaioanalyze/ {
+            client_max_body_size 150M;
+            client_body_buffer_size 150M; 
+            proxy_buffering off;
+            proxy_pass http://cognaioanalyzes/;
+        }
+
+        # Proxying the connections
+        location /objectdetectionprovider/ {
+            if ($block_this_request) { return 403; }
+            client_max_body_size 150M;
+            client_body_buffer_size 150M; 
+            proxy_buffering off;
+            proxy_pass http://serviceproviderobjectdetection/;
+        }
+
+        location / {
+            return 301 https://{{ .Values.cognaio.url }}$request_uri;
+        }
+    }

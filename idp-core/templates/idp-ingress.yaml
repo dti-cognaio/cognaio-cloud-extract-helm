@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: idp-ingress
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/backend-protocol: "HTTP"
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    appgw.ingress.kubernetes.io/proxy-connect-timeout: '600'
+    appgw.ingress.kubernetes.io/proxy-send-timeout: '600'
+    appgw.ingress.kubernetes.io/proxy-read-timeout: '600'
+    appgw.ingress.kubernetes.io/send-timeout: '600'
+    appgw.ingress.kubernetes.io/request-timeout: '120'
+spec:
+  tls:
+  - hosts:
+    - {{ .Values.cognaio.wildcardUrl }}
+    - {{ .Values.cognaio.url }} 
+    secretName: {{ .Values.cognaio.cert.secret.name }}
+  rules:
+  - host: {{ .Values.cognaio.url }} 
+    http:
+      paths:  
+      - path: /
+        backend:
+          service:
+            name: nginx
+            port:
+              number: 80
+        pathType: Exact            

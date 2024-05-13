@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.imageprovider.service.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    app: cognaio-idp
+    name: {{ .Values.imageprovider.service.name }}
+spec:
+  ports:
+  - name: http
+    port: {{ .Values.imageprovider.service.port }}
+    protocol: TCP
+    targetPort: {{ .Values.imageprovider.env.port }}
+  selector:
+    {{- include "cognaio.selectorLabels" . | nindent 4 }}
+    name: {{ .Values.imageprovider.name }}
+  type: {{ .Values.imageprovider.service.type }}

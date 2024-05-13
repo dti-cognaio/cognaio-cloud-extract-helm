@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: init-postgresql-scripts
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+data:
+{{ (tpl (.Files.Glob "db/scripts/*").AsConfig .) | indent 2 }}

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.emailservice.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      name: {{ .Values.emailservice.name }}
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+  replicas: {{ .Values.emailservice.replicaCount }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Values.emailservice.name }}
+        appgroup: cognaio-idp
+        {{- include "cognaio.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Values.emailservice.name }}
+        image: {{ .Values.image.containerRegistry }}/{{ .Values.emailservice.image.name }}:{{ .Values.emailservice.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+           {{- toYaml .Values.securityContext | nindent 10 }}
+        ports:
+        - containerPort: {{ .Values.emailservice.env.port }}
+        env:
+        - name: PORT
+          value: {{ .Values.emailservice.env.port | quote }} 
+        - name: NODE_ENV
+          value: {{ .Values.emailservice.env.node_env }} 
+        - name: LogSeverity
+          value: {{ .Values.emailservice.env.logSeverity }}
+        - name: PassPhrase_Crypto_Symetric_AppKey
+          valueFrom:
+            secretKeyRef:
+              name: emailservice-env-secrets
+              key: passPhraseCryptoSymetricAppKey
+#        readinessProbe:
+#          httpGet:
+#            path: /manage/health/readiness
+#            port: 8080
+#          initialDelaySeconds: 10
+#          timeoutSeconds: 5
+#          periodSeconds: 60
+#          failureThreshold: 2
+#        livenessProbe:
+#          httpGet:
+#            path: /manage/health/liveness
+#            port: 8080
+#          initialDelaySeconds: 20
+#          timeoutSeconds: 5
+#          periodSeconds: 60
+#          failureThreshold: 1

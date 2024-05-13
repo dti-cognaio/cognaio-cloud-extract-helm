@@ -1,0 +1,241 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.cognaioservice.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      name: {{ .Values.cognaioservice.name }}
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+  replicas: {{ .Values.cognaioservice.replicaCount }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Values.cognaioservice.name }}
+        appgroup: cognaio-idp
+        {{- include "cognaio.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+      - name: init-postgres-container
+        image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioservice.init.image.name }}:{{ .Values.cognaioservice.init.image.tag }}
+        command:
+        - sh
+        - /scripts/initdb.sh
+        env:
+        - name: PGDBNAME
+          value: {{ .Values.cognaioservice.env.db.postgreSqlDbName | quote }} 
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name}}
+              key: postgreSqlPwd
+        - name: PGUSER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: postgreSqlUser
+        - name: PGHOST
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: postgreSqlDbServer
+        volumeMounts:
+          - name: script-volume
+            mountPath: /scripts
+            readOnly: true
+      volumes:
+        - name: script-volume
+          configMap:
+            name: init-postgresql-scripts
+      containers:
+      - name: {{ .Values.cognaioservice.name }}
+        image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioservice.image.name }}:{{ .Values.cognaioservice.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+           {{- toYaml .Values.securityContext | nindent 10 }}
+        ports:
+        - containerPort: {{ .Values.cognaioservice.env.port }}
+        env:
+        - name: PORT
+          value: {{ .Values.cognaioservice.env.port | quote }}
+        - name: NODE_ENV
+          value: {{ .Values.cognaioservice.env.node_env }} 
+        - name: BaseWebAppLink
+          value: http://{{ .Values.cognaio.url }}{{ .Values.cognaioapp.service.urlpath }}
+        - name: BaseCognaioServiceUrl
+          value: http://{{ .Values.cognaio.url }}{{ .Values.cognaioservice.service.urlpath }}
+# DB
+        - name: PostgreSql_User
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: postgreSqlUser
+        - name: PostgreSql_Pwd
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: postgreSqlPwd
+        - name: PostgreSql_Db_Server
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: postgreSqlDbServer
+        - name: PostgreSql_Ssl_Required
+          value: {{ .Values.cognaioservice.env.db.postgreSqlSslRequired | quote }} 
+        - name: PostgreSql_Db_Name
+          value: {{ .Values.cognaioservice.env.db.postgreSqlDbName | quote }} 
+        - name: PostgreSql_Schemas
+          value: {{ .Values.cognaioservice.env.db.schemas }}
+# Tokens
+        - name: PassPhrase_AuditArtifacts
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseAuditArtifacts
+        - name: PassPhrase_Definitions
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseDefinitions
+        - name: PassPhrase_Templates
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseTemplates
+#
+        - name: PassPhrase_Crypto_Asymetric
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseCryptoAsymetric
+        - name: PassPhrase_Crypto_Symetric
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseCryptoSymetric
+        - name: Token_EncryptionToken_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: tokenEncryptionTokenJwtKey
+        - name: PassPhrase_AccessToken_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseAccessTokenJwtKey
+        - name: PassPhrase_RefreshToken_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseRefreshTokenJwtKey
+        - name: PassPhrase_UnsubscribeToken_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseUnsubscribeTokenJwtKey
+        - name: PassPhrase_ExportToken_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseExportTokenJwtKey
+        - name: PassPhrase_MailboxesToken_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseMailboxesTokenJwtKey
+        - name: PassPhrase_EnvelopesToken_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseEnvelopesTokenJwtKey
+#
+        - name: PassPhrase_RegisterToken_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseRegisterTokenJwtKey
+        - name: PassPhrase_OtpToken_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseOtpTokenJwtKey
+#
+        - name: PassPhrase_AppKey_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseAppKeyJwtKey
+        - name: PassPhrase_Crypto_Symetric_AppKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseCryptoSymetricAppKey
+#
+        - name: PassPhrase_AnalyzeFromContent_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseAnalyzeFromContentJwtKey
+        - name: PassPhrase_AnalyzeResponse_Download_JwtKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseAnalyzeResponseDownloadJwtKey
+# Mailbox Account
+        - name: MailAccount_Host
+          value: {{ .Values.cognaioservice.env.mailAccount.host | quote }} 
+        - name: MailAccount_Port
+          value: {{ .Values.cognaioservice.env.mailAccount.port | quote }}
+        - name: MailAccount_User
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: mailAccountUser
+        - name: MailAccount_Pwd
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: mailAccountPassword
+# Cognitive Services
+        - name: AzureCognitiveServicesComputerVision_MaxRequestTimeoutInSec
+          value: {{ .Values.cognaioservice.env.cognitiveServices.computervision.maxRequestTimeoutInSec | quote }} 
+        - name: AzureCognitiveServicesComputerVision_MaxRetries
+          value: {{ .Values.cognaioservice.env.cognitiveServices.computervision.maxRetries | quote }}
+        - name: AzureCognitiveServicesComputerVision_MaxRetriesWaitTimeoutInSec
+          value: {{ .Values.cognaioservice.env.cognitiveServices.computervision.maxRetriesWaitTimeoutInSec | quote }}
+        - name: AzureCognitiveServicesComputerVision_MaxWaitTimeoutForFinishedInSec
+          value: {{ .Values.cognaioservice.env.cognitiveServices.computervision.maxWaitTimeoutForFinishedInSec | quote }}
+        - name: AzureAiDocumentIntelligence_MaxRequestTimeoutInSec
+          value: {{ .Values.cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRequestTimeoutInSec | quote }}
+        - name: AzureAiDocumentIntelligence_MaxRetries
+          value: {{ .Values.cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetries | quote }}
+        - name: AzureAiDocumentIntelligence_MaxRetriesWaitTimeoutInSec
+          value: {{ .Values.cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetriesWaitTimeoutInSec | quote }}
+        - name: LogSeverity
+          value: {{ .Values.cognaioservice.env.logSeverity }}
+# Essentials
+        - name: Essential_Warning_Notification_TimeoutInHours
+          value: {{ .Values.cognaioservice.env.essentials.warningNotificationTimeoutInHours | quote }}
+        - name: Essential_FeatureExceedsLimits_Notification_TimeoutInDays
+          value: {{ .Values.cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays | quote }}
+
+#        readinessProbe:
+#          httpGet:
+#            path: /manage/health/readiness
+#            port: 8080
+#          initialDelaySeconds: 10
+#          timeoutSeconds: 5
+#          periodSeconds: 60
+#          failureThreshold: 2
+#        livenessProbe:
+#          httpGet:
+#            path: /manage/health/liveness
+#            port: 8080
+#          initialDelaySeconds: 20
+#          timeoutSeconds: 5
+#          periodSeconds: 60
+#          failureThreshold: 1

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cognaioapp-configs
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+data:
+  configs.json: |
+    {
+        "general": {
+            "site": { "key": "BE8A9403-2079-3512-A46E-74253ED7F60F" },
+            "defaultPreferences": {
+                "language": "de",
+                "theme": "standard-theme"
+            },
+            "copyRight": "Copyright 2024 DTI",
+            "version": "2.2.0.0"
+        },
+        "endpoints": {
+            "extraction": "https://{{ .Values.cognaio.url }}/extraction/api"
+        }
+    }

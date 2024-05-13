@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.emailservice.service.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    app: cognaio-idp
+    name: {{ .Values.emailservice.service.name }}
+spec:
+  ports:
+  - name: http
+    port: {{ .Values.emailservice.service.port }}
+    protocol: TCP
+    targetPort: {{ .Values.emailservice.env.port }}
+  selector:
+    {{- include "cognaio.selectorLabels" . | nindent 4 }}
+    name: {{ .Values.emailservice.name }}
+  type: {{ .Values.emailservice.service.type }}

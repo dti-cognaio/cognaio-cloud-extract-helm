@@ -1,0 +1,237 @@
+annotations: {}
+labels: {}
+
+image:
+  pullPolicy: IfNotPresent
+  containerRegistry: "dtideregistry.azurecr.io"
+
+cognaio:
+  namespace: cognaio-idp
+  url: ""
+  wildcardUrl: ""
+  labels:
+  cert:
+    certificate: ""
+    key: "" 
+    secret:
+      name: cognaio-com-tls-secret
+      init: true
+
+nginx:
+  name: nginx
+  replicaCount: 1
+  image:
+    name: nginx/nginx
+    tag: 1.25.4
+  service:
+    name: nginx
+    port: 80
+    type: ClusterIP
+
+cognaioapp:
+  name: cognaioapp
+  replicaCount: 1
+  image:
+    name: dti/idp/cognaioapp
+    tag: 2.2.0
+  service:
+    name: cognaioapp
+    port: 80
+    type: ClusterIP
+    urlpath: /cognaioanalyze
+  env:
+    node_env: production
+
+cognaioservice:
+  name: cognaioservice
+  replicaCount: 1
+  init:
+    image:
+      name: dti/idp/postgresql-helper
+      tag: 1.0.0
+  image:
+    name: dti/idp/cognaioservice
+    tag: 2.2.0
+  service:
+    name: cognaioservice
+    port: 80
+    type: ClusterIP
+    urlpath: /extraction/api
+  env:
+    port: 3000
+    node_env: production
+    secret:
+      name: cognaioservice-env-secrets
+      init: true
+    db:
+      postgreSqlUser: ""
+      postgreSqlPwd: ""
+      postgreSqlDbServer: ""
+      postgreSqlSslRequired: false
+      postgreSqlDbName: "postgres"
+      schemas: 'cognaio_extensions; cognaio_design; cognaio_audits'
+    tokens:
+      passPhraseAuditArtifacts: ""
+      passPhraseDefinitions: ""
+      passPhraseTemplates: ""
+      passPhraseCryptoAsymetric: ""
+      passPhraseCryptoSymetric: ""
+      tokenEncryptionTokenJwtKey: ""
+      passPhraseAccessTokenJwtKey: ""
+      passPhraseRefreshTokenJwtKey: ""
+      passPhraseUnsubscribeTokenJwtKey: ""
+      passPhraseExportTokenJwtKey: ""
+      passPhraseMailboxesTokenJwtKey: ""
+      passPhraseEnvelopesTokenJwtKey: ""
+      passPhraseRegisterTokenJwtKey: ""
+      passPhraseOtpTokenJwtKey: ""
+      passPhraseAppKeyJwtKey: ""
+      passPhraseCryptoSymetricAppKey: ""
+      passPhraseAnalyzeFromContentJwtKey: ""
+      passPhraseAnalyzeResponseDownloadJwtKey: ""
+    ai:
+      apikeyAzureOpenAi: ""
+      apikeyNativeOpenAi: ""
+      apikeyAzureAiDocumentIntelligence: ""
+      apikeyAzureCognitiveServicesComputervision: ""
+      endpointAzureOpenAi: ""
+      endpointNativeOpenAi: "https://api.openai.com/v1"
+      endpointAzureAiDocumentIntelligence: ""
+      endpointAzureCognitiveServicesComputerVision: ""
+    mailAccount:
+      user: ""
+      password: ""
+      host: "smtp.office365.com"
+      port: 587
+    organization:
+      users:
+        - "'email_1@example.com',"
+        - "'email_2@example.com'"
+    cognitiveServices:
+      computervision:
+        maxRequestTimeoutInSec: 6
+        maxRetries: 30
+        maxRetriesWaitTimeoutInSec: 1
+        maxWaitTimeoutForFinishedInSec: 1
+      aiDocumentIntelligence:
+        maxRequestTimeoutInSec: 10
+        maxRetries: 30
+        maxRetriesWaitTimeoutInSec: 1
+    essentials:
+      warningNotificationTimeoutInHours: 48
+      featureExceedsLimitsNotificationTimeoutInDays: 2
+    logSeverity: "info"
+
+emailservice:
+  name: emailservice
+  replicaCount: 1
+  image:
+    name: dti/idp/emailservice
+    tag: 2.2.0
+  service:
+    name: emailservice
+    port: 80
+    type: ClusterIP
+  env:
+    port: 7171
+    node_env: production
+    logSeverity: "error"
+    secret:
+      name: emailservice-env-secrets
+      init: true
+    passPhraseCryptoSymetricAppKey: ""
+
+cognaioflexsearchservice:
+  name: cognaioflexsearchservice
+  replicaCount: 1
+  image:
+    name: dti/idp/cognaioflexsearchservice
+    tag: 2.2.0
+  service:
+    name: cognaioflexsearchservice
+    port: 80
+    type: ClusterIP
+  env:
+    port: 8688
+    node_env: production
+    db:
+      postgreSqlUser: ""
+      postgreSqlPwd: ""
+      postgreSqlDbServer: ""
+      postgreSqlDbName: "postgres"
+      postgreSqlSslRequired: false
+      schemas: 'cognaio_extensions; cognaio_repositories'
+    secret:
+      name: cognaioflexsearchservice-env-secrets
+      init: true
+    logSeverity: "error"
+    passPhrase_Repositories: ""
+
+imageprovider:
+  name: imageprovider
+  replicaCount: 3
+  image:
+    name: dti/idp/image
+    tag: 2.2.0
+  service:
+    name: imageprovider
+    port: 80
+    type: ClusterIP
+  env:
+    port: 3333
+
+objectdetectionprovider:
+  name: objectdetectionprovider
+  replicaCount: 1
+  image:
+    name: dti/idp/objectdetectionprovider
+    tag: 2.2.0
+  service:
+    name: objectdetectionprovider
+    port: 80
+    type: ClusterIP
+  env:
+    port: 7337
+
+# Default values for HelmCharts.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+imagePullSecrets: []
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
