@@ -7,6 +7,7 @@
 - Adjust SQL-Scripts to use environment variables. Fixed hardcoded secrets in values file.
 - Change some default values for database (name, ssl required)
 - Change structure to provide organization.users e-mail address
+- Make PostgreSQL port configurable, remove sqlserver from secrets
 
 ## Version 2.2.0
 ### Changes

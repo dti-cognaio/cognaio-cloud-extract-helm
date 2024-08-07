@@ -43,10 +43,9 @@ spec:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: postgreSqlUser
         - name: PGHOST
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.cognaioservice.env.secret.name }}
-              key: postgreSqlDbServer
+          value: {{ .Values.cognaioservice.env.db.postgreSqlDbServer | quote }}
+        - name: PGPORT
+          value: {{ .Values.cognaioservice.env.db.postgreSqlDbPort | quote }}
         - name: PassPhrase_Templates
           valueFrom:
             secretKeyRef:
@@ -117,10 +116,7 @@ spec:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: postgreSqlPwd
         - name: PostgreSql_Db_Server
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.cognaioservice.env.secret.name }}
-              key: postgreSqlDbServer
+          value: {{ .Values.cognaioservice.env.db.postgreSqlDbServer }}:{{ .Values.cognaioservice.env.db.postgreSqlDbPort }}
         - name: PostgreSql_Ssl_Required
           value: {{ .Values.cognaioservice.env.db.postgreSqlSslRequired | quote }} 
         - name: PostgreSql_Db_Name

@@ -79,6 +79,7 @@ cognaioservice:
       postgreSqlUser: ""
       postgreSqlPwd: ""
       postgreSqlDbServer: ""
+      postgreSqlDbPort: 5432
       postgreSqlSslRequired: true
       postgreSqlDbName: "cognaio_idp"
       schemas: 'cognaio_extensions; cognaio_design; cognaio_audits'
@@ -178,6 +179,7 @@ cognaioflexsearchservice:
       postgreSqlUser: ""
       postgreSqlPwd: ""
       postgreSqlDbServer: ""
+      postgreSqlDbPort: 5432
       postgreSqlDbName: "cognaio_idp"
       postgreSqlSslRequired: true
       schemas: 'cognaio_extensions; cognaio_repositories'
