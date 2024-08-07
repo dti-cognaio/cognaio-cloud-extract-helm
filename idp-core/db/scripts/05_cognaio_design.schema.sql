@@ -26,7 +26,7 @@ SET row_security = off;
 CREATE SCHEMA cognaio_design;
 
 
-ALTER SCHEMA cognaio_design OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER SCHEMA cognaio_design OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 1049 (class 1247 OID 27687)
@@ -44,7 +44,7 @@ CREATE TYPE cognaio_design.plan_limitation_scope AS ENUM (
 );
 
 
-ALTER TYPE cognaio_design.plan_limitation_scope OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TYPE cognaio_design.plan_limitation_scope OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 1052 (class 1247 OID 27702)
@@ -57,7 +57,7 @@ CREATE TYPE cognaio_design.plan_limitation_type AS ENUM (
 );
 
 
-ALTER TYPE cognaio_design.plan_limitation_type OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TYPE cognaio_design.plan_limitation_type OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 1055 (class 1247 OID 27708)
@@ -70,7 +70,7 @@ CREATE TYPE cognaio_design.plan_type AS ENUM (
 );
 
 
-ALTER TYPE cognaio_design.plan_type OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TYPE cognaio_design.plan_type OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 411 (class 1255 OID 27713)
@@ -95,7 +95,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_design.crypto(IN kind text, IN input_text text, IN secret text, IN encryption_key text, OUT content_out text) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_design.crypto(IN kind text, IN input_text text, IN secret text, IN encryption_key text, OUT content_out text) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 412 (class 1255 OID 27714)
@@ -153,7 +153,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_design.lock_unlock_mailbox_by_key(IN boxkey uuid, IN performlook boolean, IN parameters json, OUT boxkey_out uuid) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_design.lock_unlock_mailbox_by_key(IN boxkey uuid, IN performlook boolean, IN parameters json, OUT boxkey_out uuid) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 413 (class 1255 OID 27715)
@@ -202,7 +202,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_design.organization_createorupdate(IN organization_options json, IN userkey uuid, OUT key_out uuid) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_design.organization_createorupdate(IN organization_options json, IN userkey uuid, OUT key_out uuid) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 414 (class 1255 OID 27716)
@@ -319,7 +319,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_design.organization_delete(IN organizationkeys json, IN userkey uuid) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_design.organization_delete(IN organizationkeys json, IN userkey uuid) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 415 (class 1255 OID 27717)
@@ -444,7 +444,7 @@ END
 $_$;
 
 
-ALTER PROCEDURE cognaio_design.plan_createorupdate(IN plan_options json, IN userkey uuid, IN encryptionkey_template_endpoint text, IN encryptionkey_endpoint text, OUT key_out uuid) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_design.plan_createorupdate(IN plan_options json, IN userkey uuid, IN encryptionkey_template_endpoint text, IN encryptionkey_endpoint text, OUT key_out uuid) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 416 (class 1255 OID 27718)
@@ -503,7 +503,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_design.plan_delete(IN plankey uuid, IN userkey uuid, OUT key_out uuid) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_design.plan_delete(IN plankey uuid, IN userkey uuid, OUT key_out uuid) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 417 (class 1255 OID 27719)
@@ -552,7 +552,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_design.scope_createorupdate(IN scope_options json, IN userkey uuid, OUT key_out uuid) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_design.scope_createorupdate(IN scope_options json, IN userkey uuid, OUT key_out uuid) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 418 (class 1255 OID 27720)
@@ -647,7 +647,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_design.scope_delete(IN scopekey uuid, IN userkey uuid, OUT key_out uuid) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_design.scope_delete(IN scopekey uuid, IN userkey uuid, OUT key_out uuid) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 419 (class 1255 OID 27721)
@@ -680,7 +680,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_design.unlock_mailboxes_expired(IN plankey uuid, OUT affectedboxes integer) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_design.unlock_mailboxes_expired(IN plankey uuid, OUT affectedboxes integer) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 SET default_tablespace = '';
 
@@ -699,7 +699,7 @@ CREATE TABLE cognaio_design.app_content_filter_triggers (
 );
 
 
-ALTER TABLE cognaio_design.app_content_filter_triggers OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_content_filter_triggers OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 272 (class 1259 OID 64087)
@@ -719,7 +719,7 @@ CREATE TABLE cognaio_design.app_essentials (
 );
 
 
-ALTER TABLE cognaio_design.app_essentials OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_essentials OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 227 (class 1259 OID 27729)
@@ -741,7 +741,7 @@ CREATE TABLE cognaio_design.app_keys (
 );
 
 
-ALTER TABLE cognaio_design.app_keys OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_keys OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 228 (class 1259 OID 27734)
@@ -757,7 +757,7 @@ CREATE TABLE cognaio_design.app_notification_templates (
 );
 
 
-ALTER TABLE cognaio_design.app_notification_templates OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_notification_templates OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 229 (class 1259 OID 27740)
@@ -771,7 +771,7 @@ CREATE TABLE cognaio_design.app_notifications (
 );
 
 
-ALTER TABLE cognaio_design.app_notifications OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_notifications OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 230 (class 1259 OID 27747)
@@ -791,7 +791,7 @@ CREATE TABLE cognaio_design.app_organization_scopes (
 );
 
 
-ALTER TABLE cognaio_design.app_organization_scopes OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_organization_scopes OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 231 (class 1259 OID 27752)
@@ -812,7 +812,7 @@ CREATE TABLE cognaio_design.app_organization_users (
 );
 
 
-ALTER TABLE cognaio_design.app_organization_users OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_organization_users OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 232 (class 1259 OID 27760)
@@ -839,7 +839,7 @@ CREATE TABLE cognaio_design.app_organizations (
 );
 
 
-ALTER TABLE cognaio_design.app_organizations OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_organizations OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 233 (class 1259 OID 27768)
@@ -870,7 +870,7 @@ CREATE TABLE cognaio_design.app_plans (
 );
 
 
-ALTER TABLE cognaio_design.app_plans OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_plans OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 234 (class 1259 OID 27782)
@@ -889,7 +889,7 @@ CREATE TABLE cognaio_design.app_registered_users (
 );
 
 
-ALTER TABLE cognaio_design.app_registered_users OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_registered_users OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 235 (class 1259 OID 27788)
@@ -910,7 +910,7 @@ CREATE TABLE cognaio_design.app_registration_requests (
 );
 
 
-ALTER TABLE cognaio_design.app_registration_requests OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_registration_requests OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 236 (class 1259 OID 27794)
@@ -933,7 +933,7 @@ CREATE TABLE cognaio_design.app_scopes (
 );
 
 
-ALTER TABLE cognaio_design.app_scopes OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_scopes OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 237 (class 1259 OID 27802)
@@ -948,7 +948,7 @@ CREATE TABLE cognaio_design.app_templates_endpoint (
 );
 
 
-ALTER TABLE cognaio_design.app_templates_endpoint OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_templates_endpoint OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 238 (class 1259 OID 27809)
@@ -963,7 +963,7 @@ CREATE TABLE cognaio_design.app_templates_outbound (
 );
 
 
-ALTER TABLE cognaio_design.app_templates_outbound OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_templates_outbound OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 239 (class 1259 OID 27816)
@@ -983,7 +983,7 @@ CREATE TABLE cognaio_design.app_users (
 );
 
 
-ALTER TABLE cognaio_design.app_users OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.app_users OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 240 (class 1259 OID 27823)
@@ -1004,7 +1004,7 @@ CREATE TABLE cognaio_design.def_process_endpoints (
 );
 
 
-ALTER TABLE cognaio_design.def_process_endpoints OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.def_process_endpoints OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 241 (class 1259 OID 27830)
@@ -1020,7 +1020,7 @@ CREATE TABLE cognaio_design.def_process_mailbox_mappings (
 );
 
 
-ALTER TABLE cognaio_design.def_process_mailbox_mappings OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.def_process_mailbox_mappings OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 242 (class 1259 OID 27835)
@@ -1042,7 +1042,7 @@ CREATE TABLE cognaio_design.def_process_mailboxes (
 );
 
 
-ALTER TABLE cognaio_design.def_process_mailboxes OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.def_process_mailboxes OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 243 (class 1259 OID 27842)
@@ -1067,7 +1067,7 @@ CREATE TABLE cognaio_design.def_process_mappings (
 );
 
 
-ALTER TABLE cognaio_design.def_process_mappings OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.def_process_mappings OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 244 (class 1259 OID 27847)
@@ -1088,7 +1088,7 @@ CREATE TABLE cognaio_design.def_process_outbounds (
 );
 
 
-ALTER TABLE cognaio_design.def_process_outbounds OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.def_process_outbounds OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 245 (class 1259 OID 27854)
@@ -1112,7 +1112,7 @@ CREATE TABLE cognaio_design.def_process_projects (
 );
 
 
-ALTER TABLE cognaio_design.def_process_projects OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.def_process_projects OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 246 (class 1259 OID 27863)
@@ -1129,7 +1129,7 @@ CREATE TABLE cognaio_design.def_process_response_transformations (
 );
 
 
-ALTER TABLE cognaio_design.def_process_response_transformations OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.def_process_response_transformations OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 247 (class 1259 OID 27871)
@@ -1142,7 +1142,7 @@ CREATE TABLE cognaio_design.loc_languages (
 );
 
 
-ALTER TABLE cognaio_design.loc_languages OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.loc_languages OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 248 (class 1259 OID 27874)
@@ -1156,7 +1156,7 @@ CREATE TABLE cognaio_design.loc_translations (
 );
 
 
-ALTER TABLE cognaio_design.loc_translations OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.loc_translations OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 249 (class 1259 OID 27877)
@@ -1171,7 +1171,7 @@ CREATE TABLE cognaio_design.schema_versions (
 );
 
 
-ALTER TABLE cognaio_design.schema_versions OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_design.schema_versions OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 3903 (class 0 OID 27722)
@@ -17482,8 +17482,8 @@ INSERT INTO cognaio_design.app_organizations VALUES ('64269559-46f8-4f1f-86b6-15
 
 DO $$ 
 DECLARE
-    administration_layer_organization_users text[] := array[{{- range .Values.cognaioservice.env.organization.users }}
-        {{.}}{{- end }}
+    administration_layer_organization_users text[] := array[
+      __COGNAIO_ENV_ORGANIZATION_USERS__
     ];
 	administration_layer_organization_user text;
 	user_key uuid;
@@ -17543,42 +17543,42 @@ END $$;
 
 DO $$ 
 DECLARE
-  passphrase_templates text := '{{ .Values.cognaioservice.env.tokens.passPhraseTemplates }}';
+  passphrase_templates text := '__COGNAIO_ENV_PASSPHRASE_TEMPLATES__';
 	endpoints_template_json jsonb := json_build_object(
 		'email', json_build_object(
-		  'status', 'http://emailservice.{{ .Values.cognaio.namespace }}/api/email/box/status',
-		  'inbound', 'http://emailservice.{{ .Values.cognaio.namespace }}/api/email/box/observe',
-		  'mailboxDefinitions', 'http://cognaioservice.{{ .Values.cognaio.namespace }}'
+		  'status', 'http://emailservice.__COGNAIO_ENV_NAMESPACE__/api/email/box/status',
+		  'inbound', 'http://emailservice.__COGNAIO_ENV_NAMESPACE__/api/email/box/observe',
+		  'mailboxDefinitions', 'http://cognaioservice.__COGNAIO_ENV_NAMESPACE__'
 		),
 		'cognaio', json_build_object(
-		  'service', 'http://cognaioservice.{{ .Values.cognaio.namespace }}'
+		  'service', 'http://cognaioservice.__COGNAIO_ENV_NAMESPACE__'
 		),
 		'imageProvider', json_build_object(
-		  'convertService', 'http://imageprovider.{{ .Values.cognaio.namespace }}'
+		  'convertService', 'http://imageprovider.__COGNAIO_ENV_NAMESPACE__'
 		),
 		'objectsProvider', json_build_object(
-		  'detectionService', 'http://objectdetectionprovider.{{ .Values.cognaio.namespace }}'
+		  'detectionService', 'http://objectdetectionprovider.__COGNAIO_ENV_NAMESPACE__'
 		),
 		'repositories', json_build_object(
-		  'endpoint', 'http://cognaioflexsearchservice.{{ .Values.cognaio.namespace }}/api/flexsearch'
+		  'endpoint', 'http://cognaioflexsearchservice.__COGNAIO_ENV_NAMESPACE__/api/flexsearch'
 		),
 		'azureOpenAi', json_build_object(
-		  'apiKey', '{{ .Values.cognaioservice.env.ai.apikeyAzureOpenAi }}',
-		  'endpoint', '{{ .Values.cognaioservice.env.ai.endpointAzureOpenAi }}'
+		  'apiKey', '__COGNAIO_ENV_APIKEY_AZUREOPENAI__',
+		  'endpoint', '__COGNAIO_ENV_ENDPOINT_AZUREOPENAI__'
 		),
 		'nativeOpenAi', json_build_object(
-		  'apiKey', '{{ .Values.cognaioservice.env.ai.apikeyNativeOpenAi }}',
-		  'endpoint', '{{ .Values.cognaioservice.env.ai.endpointNativeOpenAi }}'
+		  'apiKey', '__COGNAIO_ENV_APIKEY_NATIVEOPENAI__',
+		  'endpoint', '__COGNAIO_ENV_ENDPOINT_NATIVEOPENAI__'
 		),
 		'azureAiDocumentIntelligence', json_build_object(
 		  'model', 'prebuilt-layout',
 		  'apiVersion', '2023-07-31',
-		  'apiKey', '{{ .Values.cognaioservice.env.ai.apikeyAzureAiDocumentIntelligence }}',
-		  'endpoint', '{{ .Values.cognaioservice.env.ai.endpointAzureAiDocumentIntelligence }}'
+		  'apiKey', '__COGNAIO_ENV_APIKEY_AZUREAIDOCUMENTINTELLIGENCE__',
+		  'endpoint', '__COGNAIO_ENV_ENDPOINT_AZUREAIDOCUMENTINTELLIGENCE__'
 		),
 		'azureCognitiveServicesComputerVision', json_build_object(
-		  'apiKey', '{{ .Values.cognaioservice.env.ai.apikeyAzureCognitiveServicesComputervision }}',
-		  'endpoint', '{{ .Values.cognaioservice.env.ai.endpointAzureCognitiveServicesComputerVision }}'
+		  'apiKey', '__COGNAIO_ENV_APIKEY_AZURECOGNITIVESERVICESCOMPUTERVISION__',
+		  'endpoint', '__COGNAIO_ENV_ENDPOINT_AZURECOGNITIVESERVICESCOMPUTERVISION__'
 		)
 	);
 BEGIN			

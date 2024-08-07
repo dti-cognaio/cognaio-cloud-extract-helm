@@ -86,15 +86,14 @@ In order for the application to send email notifications for licensing, project 
 | `cognaioservice.env.mailAccount.port`                                                    | Mail account port                                      | `587`                                                |
 | `cognaioservice.env.organization.users`                                                  | Array of users to manage COGNAiO Cloud Extract         | `""`                                                 |
 The emails are sent to so-called organization users which emails can be configured in the following array property.
-Please note the exact spelling with **“‘name’,”**
+Please note the exact spelling with **“'name1','name2'”**
 ```yaml
 cognaioservice:
   env:
     organization:
-      users:
-        - "'email_1@example.com',"
-        - "'email_2@example.com'"
+      users: "'email_1@example.com','email_2@example.com'"
 ```
+> Change from version 2.2.0 to 2.2.1 | new provide string instead of array
 ### Database
 Some microservices require a postgres database to persist certain data. the following parameters are described for this purpose.
 | Name                                                                                  | Description                                               | Default                                              |
@@ -102,13 +101,15 @@ Some microservices require a postgres database to persist certain data. the foll
 | `cognaioservice.env.db.postgreSqlUser`                                                | postgreSQL username                                       | `<SQL-USER>`                                         |
 | `cognaioservice.env.db.postgreSqlPwd`                                                 | postgreSQL password                                       | `<SQL-PASSWORD>`                                     |
 | `cognaioservice.env.db.postgreSqlDbServer`                                            | postgreSQL server                                         | `<SQL-SERVER>`                                       |
-| `cognaioservice.env.db.postgreSqlSslRequired`                                         | postgreSQL ssl required flag                              | `false`                                              |
+| `cognaioservice.env.db.postgreSqlDbPort`                                              | postgreSQL port                                           | `5432`                                               |
+| `cognaioservice.env.db.postgreSqlSslRequired`                                         | postgreSQL ssl required flag                              | `true`                                               |
 | `cognaioservice.env.db.postgreSqlDbName`                                              | postgreSQL database name                                  | `postgres`                                           |
 | `cognaioservice.env.db.schemas`                                                       | postgreSQL schemas                                        | `cognaio_extensions; cognaio_design; cognaio_audits` |
 | `cognaioflexsearchservice.env.db.postgreSqlUser`                                      | postgreSQL username                                       | `<SQL-USER>`                                         |
 | `cognaioflexsearchservice.env.db.postgreSqlPwd`                                       | postgreSQL password                                       | `<SQL-PASSWORD>`                                     |
-| `cognaioflexsearchservice.env.db.postgreSqlDbServer`                                  | postgreSQL server                                         | `<SQL-SERVER>`                                       |
-| `cognaioflexsearchservice.env.db.postgreSqlSslRequired`                               | postgreSQL ssl required flag                              | `false`                                              |
+| `cognaioflexsearchservice.env.db.postgreSqlDbServer`                                  | postgreSQL server                                         | `<SQL-SERVER>:<PORT>`                                |
+| `cognaioflexsearchservice.env.db.postgreSqlDbPort`                                    | postgreSQL port                                           | `5432`                                               |
+| `cognaioflexsearchservice.env.db.postgreSqlSslRequired`                               | postgreSQL ssl required flag                              | `true`                                               |
 | `cognaioflexsearchservice.env.db.postgreSqlDbName`                                    | postgreSQL database name                                  | `postgres`                                           |
 | `cognaioflexsearchservice.env.db.schemas`                                             | postgreSQL schemas                                        | `cognaio_extensions; cognaio_repositories`           |
 
@@ -124,7 +125,9 @@ The following table lists the important configurable parameters of the COGNAiO c
 | `cognaio.cert.key`                                                                       | Certificate Key for TLS termination in pem format                  | `""`                                                 |
 | `cognaio.cert.secret.name`                                                               | Secret name, details in `cognaio-tls-secret.yaml`                  | `cognaio-com-tls-secret`                             |
 | `cognaio.cert.secret.init`                                                               | Whether or not to create a secret                                  | `true`                                               |
+| `cognaio.ingress.enabled`                                                                | Enable deployment of ingress                                       | `true`                                               |
 | `cognaioapp.service.urlpath`                                                             | Url path for the service                                           | `/cognaioalnalyze`                                   |
+| `cognaioapp.resources`                                                                   | Provide limit and request resource information                     | none                                                 |
 | `cognaioservice.service.urlpath`                                                         | Url path for the service                                           | `/extraction`                                        |
 | `cognaioservice.env.port`                                                                | Port                                                               | `3000`                                               |
 | `cognaioservice.env.secret.name`                                                         | Secret name, details in `cognaioservice-env-secrets.yaml`          | `cognaioservice-env-secrets`                         |
@@ -139,16 +142,21 @@ The following table lists the important configurable parameters of the COGNAiO c
 | `cognaioservice.env.essentials.warningNotificationTimeoutInHours`                        | Warning notification timeouts in hours                             | `48`                                                 |
 | `cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays`            | Feature exeeds limits notification timout in days                  | `2`                                                  |
 | `cognaioservice.env.logSeverity`                                                         | Log severity                                                       | `info`                                               |
+| `cognaioservice.resources`                                                               | Provide limit and request resource information                     | none                                                 |
 | `emailservice.env.port`                                                                  | Port                                                               | `7171`                                               |
 | `emailservice.env.logSeverity`                                                           | Log severity                                                       | `info`                                               |
 | `emailservice.env.secret.name`                                                           | Secret name, details in `emailservice-env-secrets.yaml`            | `emailservice-env-secrets`                           |
 | `emailservice.env.secret.init`                                                           | Whether or not to create a secret                                  | `true`                                               |
+| `emailservice.resources`                                                                 | Provide limit and request resource information                     | none                                                 |
 | `cognaioflexsearchservice.env.port`                                                      | Port                                                               | `8688`                                               |
 | `cognaioflexsearchservice.env.logSeverity`                                               | Log severity                                                       | `error`                                              |
 | `cognaioflexsearchservice.env.secret.name`                                               | Secret name, details in `cognaioflexsearchservice-env-secrets.yaml`| `cognaioflexsearchservice-env-secrets`               |
 | `cognaioflexsearchservice.env.secret.init`                                               | Whether or not to create a secret                                  | `true`                                               |
+| `cognaioflexsearchservice.resources`                                                     | Provide limit and request resource information                     | none                                                 |
 | `imageprovider.env.port`                                                                 | Port                                                               | `3333`                                               |
+| `imageprovider.resources`                                                                | Provide limit and request resource information                     | `memory: 5120Mi/512Mi`                               |
 | `objectdetectionprovider.env.port`                                                       | Port                                                               | `7337`                                               |
+| `objectdetectionprovider.resources`                                                      | Provide limit and request resource information                     | `memory: 5120Mi/512Mi`                               |
 
 ## Installing the Chart
 Adjust Values in values.yaml according environment or pass a dedicated values.yaml.  

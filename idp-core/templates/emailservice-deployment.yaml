@@ -39,19 +39,6 @@ spec:
             secretKeyRef:
               name: emailservice-env-secrets
               key: passPhraseCryptoSymetricAppKey
-#        readinessProbe:
-#          httpGet:
-#            path: /manage/health/readiness
-#            port: 8080
-#          initialDelaySeconds: 10
-#          timeoutSeconds: 5
-#          periodSeconds: 60
-#          failureThreshold: 2
-#        livenessProbe:
-#          httpGet:
-#            path: /manage/health/liveness
-#            port: 8080
-#          initialDelaySeconds: 20
-#          timeoutSeconds: 5
-#          periodSeconds: 60
-#          failureThreshold: 1
+        {{- if .Values.emailservice.resources }}
+        resources: {{- toYaml .Values.emailservice.resources | nindent 12 }}
+        {{- end }}

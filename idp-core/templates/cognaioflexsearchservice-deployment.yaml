@@ -43,10 +43,7 @@ spec:
               name: {{ .Values.cognaioflexsearchservice.env.secret.name }}
               key: postgreSqlPwd
         - name: PostgreSql_Db_Server
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.cognaioflexsearchservice.env.secret.name }}
-              key: postgreSqlDbServer
+          value: {{ .Values.cognaioflexsearchservice.env.db.postgreSqlDbServer }}:{{ .Values.cognaioflexsearchservice.env.db.postgreSqlDbPort }}
         - name: PostgreSql_Schemas
           value: {{ .Values.cognaioflexsearchservice.env.db.schemas }}
         - name: PostgreSql_Db_Name
@@ -60,3 +57,6 @@ spec:
             secretKeyRef:
               name: {{ .Values.cognaioflexsearchservice.env.secret.name }}
               key: passPhrase
+        {{- if .Values.cognaioflexsearchservice.resources }}
+        resources: {{- toYaml .Values.cognaioflexsearchservice.resources | nindent 12 }}
+        {{- end }}

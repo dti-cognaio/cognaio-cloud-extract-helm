@@ -16,6 +16,8 @@ cognaio:
     secret:
       name: cognaio-com-tls-secret
       init: true
+  ingress:
+    enabled: true
 
 nginx:
   name: nginx
@@ -26,7 +28,12 @@ nginx:
   service:
     name: nginx
     port: 80
-    type: ClusterIP
+    type: LoadBalancer
+  # resources:
+  #   limits:
+  #     memory: "256Mi"
+  #   requests:
+  #     memory: "128Mi"
 
 cognaioapp:
   name: cognaioapp
@@ -41,6 +48,11 @@ cognaioapp:
     urlpath: /cognaioanalyze
   env:
     node_env: production
+  # resources:
+  #   limits:
+  #     memory: "256Mi"
+  #   requests:
+  #     memory: "64Mi"
 
 cognaioservice:
   name: cognaioservice
@@ -67,8 +79,9 @@ cognaioservice:
       postgreSqlUser: ""
       postgreSqlPwd: ""
       postgreSqlDbServer: ""
-      postgreSqlSslRequired: false
-      postgreSqlDbName: "postgres"
+      postgreSqlDbPort: 5432
+      postgreSqlSslRequired: true
+      postgreSqlDbName: "cognaio_idp"
       schemas: 'cognaio_extensions; cognaio_design; cognaio_audits'
     tokens:
       passPhraseAuditArtifacts: ""
@@ -95,7 +108,7 @@ cognaioservice:
       apikeyAzureAiDocumentIntelligence: ""
       apikeyAzureCognitiveServicesComputervision: ""
       endpointAzureOpenAi: ""
-      endpointNativeOpenAi: "https://api.openai.com/v1"
+      endpointNativeOpenAi: ""
       endpointAzureAiDocumentIntelligence: ""
       endpointAzureCognitiveServicesComputerVision: ""
     mailAccount:
@@ -104,9 +117,7 @@ cognaioservice:
       host: "smtp.office365.com"
       port: 587
     organization:
-      users:
-        - "'email_1@example.com',"
-        - "'email_2@example.com'"
+      users: "'email_1@example.com','email_2@example.com'"
     cognitiveServices:
       computervision:
         maxRequestTimeoutInSec: 6
@@ -121,6 +132,11 @@ cognaioservice:
       warningNotificationTimeoutInHours: 48
       featureExceedsLimitsNotificationTimeoutInDays: 2
     logSeverity: "info"
+  # resources:
+  #   limits:
+  #     memory: "1024Mi"
+  #   requests:
+  #     memory: "512Mi"
 
 emailservice:
   name: emailservice
@@ -140,6 +156,11 @@ emailservice:
       name: emailservice-env-secrets
       init: true
     passPhraseCryptoSymetricAppKey: ""
+  # resources:
+  #   limits:
+  #     memory: "512Mi"
+  #   requests:
+  #     memory: "128Mi"
 
 cognaioflexsearchservice:
   name: cognaioflexsearchservice
@@ -158,14 +179,20 @@ cognaioflexsearchservice:
       postgreSqlUser: ""
       postgreSqlPwd: ""
       postgreSqlDbServer: ""
-      postgreSqlDbName: "postgres"
-      postgreSqlSslRequired: false
+      postgreSqlDbPort: 5432
+      postgreSqlDbName: "cognaio_idp"
+      postgreSqlSslRequired: true
       schemas: 'cognaio_extensions; cognaio_repositories'
     secret:
       name: cognaioflexsearchservice-env-secrets
       init: true
     logSeverity: "error"
     passPhrase_Repositories: ""
+  # resources:
+  #   limits:
+  #     memory: "2048Mi"
+  #   requests:
+  #     memory: "1024Mi"
 
 imageprovider:
   name: imageprovider
@@ -179,6 +206,11 @@ imageprovider:
     type: ClusterIP
   env:
     port: 3333
+  resources:
+    limits:
+      memory: "5120Mi"
+    requests:
+      memory: "512Mi"
 
 objectdetectionprovider:
   name: objectdetectionprovider
@@ -192,6 +224,11 @@ objectdetectionprovider:
     type: ClusterIP
   env:
     port: 7337
+  resources:
+    limits:
+      memory: "5120Mi"
+    requests:
+      memory: "512Mi"
 
 # Default values for HelmCharts.
 # This is a YAML-formatted file.
@@ -217,18 +254,6 @@ securityContext: {}
 service:
   type: ClusterIP
   port: 80
-
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
 
 nodeSelector: {}
 

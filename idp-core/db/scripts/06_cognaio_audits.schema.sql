@@ -26,7 +26,7 @@ SET row_security = off;
 CREATE SCHEMA cognaio_audits;
 
 
-ALTER SCHEMA cognaio_audits OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER SCHEMA cognaio_audits OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 1133 (class 1247 OID 30822)
@@ -41,7 +41,7 @@ CREATE TYPE cognaio_audits.audit_status AS ENUM (
 );
 
 
-ALTER TYPE cognaio_audits.audit_status OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TYPE cognaio_audits.audit_status OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 1103 (class 1247 OID 28169)
@@ -57,7 +57,7 @@ CREATE TYPE cognaio_audits.envelope_artifact_status AS ENUM (
 );
 
 
-ALTER TYPE cognaio_audits.envelope_artifact_status OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TYPE cognaio_audits.envelope_artifact_status OWNER TO __COGNAIO_ENV_PGUSER__;
 
 SET default_tablespace = '';
 
@@ -83,7 +83,7 @@ CREATE TABLE cognaio_audits.appkey_audit_artifacts_static_image (
 );
 
 
-ALTER TABLE cognaio_audits.appkey_audit_artifacts_static_image OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_audits.appkey_audit_artifacts_static_image OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 421 (class 1255 OID 30832)
@@ -125,7 +125,7 @@ CREATE FUNCTION cognaio_audits.auditartifacts_static_images(auditkey uuid, skip_
     $$;
 
 
-ALTER FUNCTION cognaio_audits.auditartifacts_static_images(auditkey uuid, skip_download_binaries boolean, encryptionkey text) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER FUNCTION cognaio_audits.auditartifacts_static_images(auditkey uuid, skip_download_binaries boolean, encryptionkey text) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 410 (class 1255 OID 28187)
@@ -323,7 +323,7 @@ CREATE PROCEDURE cognaio_audits.create_appkey_report(IN appkey uuid, IN auditsen
 $$;
 
 
-ALTER PROCEDURE cognaio_audits.create_appkey_report(IN appkey uuid, IN auditsenabled boolean, IN externals_in json, IN timstamptoconsider timestamp without time zone, IN timestamprange text, IN language text, OUT auditjson json) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.create_appkey_report(IN appkey uuid, IN auditsenabled boolean, IN externals_in json, IN timstamptoconsider timestamp without time zone, IN timestamprange text, IN language text, OUT auditjson json) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 406 (class 1255 OID 28189)
@@ -360,7 +360,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_audits.create_envelope(IN envelope_in json, IN encryptionkey text, OUT envelope_key_out uuid) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.create_envelope(IN envelope_in json, IN encryptionkey text, OUT envelope_key_out uuid) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 407 (class 1255 OID 28190)
@@ -388,7 +388,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_audits.create_envelope_artifact(IN envelopekey uuid, IN auditkey uuid, IN artifactname text, IN artifactcontenttype text, IN artifactbinaries bytea, IN artifactstatus text, IN encryptionkey text, OUT artifact_key_out uuid) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.create_envelope_artifact(IN envelopekey uuid, IN auditkey uuid, IN artifactname text, IN artifactcontenttype text, IN artifactbinaries bytea, IN artifactstatus text, IN encryptionkey text, OUT artifact_key_out uuid) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 408 (class 1255 OID 28191)
@@ -455,7 +455,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_audits.createorupdate_auditartifacts_extraction(IN auditkey uuid, IN artifacts_in json, IN encryptionkey text) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.createorupdate_auditartifacts_extraction(IN auditkey uuid, IN artifacts_in json, IN encryptionkey text) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 423 (class 1255 OID 30834)
@@ -507,7 +507,7 @@ CREATE PROCEDURE cognaio_audits.createorupdate_auditartifacts_static(IN auditkey
     $$;
 
 
-ALTER PROCEDURE cognaio_audits.createorupdate_auditartifacts_static(IN auditkey uuid, IN imagekey uuid, IN imagename text, IN imagecontenttype text, IN startsatindexinmain integer, IN image_index_in_chain integer, IN image_pages integer, IN imagebinaries bytea, IN artifacts_in json, IN encryptionkey text) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.createorupdate_auditartifacts_static(IN auditkey uuid, IN imagekey uuid, IN imagename text, IN imagecontenttype text, IN startsatindexinmain integer, IN image_index_in_chain integer, IN image_pages integer, IN imagebinaries bytea, IN artifacts_in json, IN encryptionkey text) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 422 (class 1255 OID 30833)
@@ -639,7 +639,7 @@ CREATE PROCEDURE cognaio_audits.get_audit_information(IN audit_key uuid, IN plan
     $$;
 
 
-ALTER PROCEDURE cognaio_audits.get_audit_information(IN audit_key uuid, IN plan_key uuid, OUT auditjson json) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.get_audit_information(IN audit_key uuid, IN plan_key uuid, OUT auditjson json) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 409 (class 1255 OID 28193)
@@ -678,7 +678,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_audits.get_auditartifacts_extraction(IN auditkey uuid, IN artifacts_type text, IN encryptionkey text, OUT artifact text) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.get_auditartifacts_extraction(IN auditkey uuid, IN artifacts_type text, IN encryptionkey text, OUT artifact text) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 420 (class 1255 OID 28194)
@@ -708,7 +708,7 @@ CREATE PROCEDURE cognaio_audits.get_auditartifacts_static_ocr(IN auditkey uuid, 
     $$;
 
 
-ALTER PROCEDURE cognaio_audits.get_auditartifacts_static_ocr(IN auditkey uuid, IN encryptionkey text, OUT ocr_out json) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.get_auditartifacts_static_ocr(IN auditkey uuid, IN encryptionkey text, OUT ocr_out json) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 400 (class 1255 OID 28195)
@@ -728,7 +728,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_audits.get_envelope_artifact_binaries(IN artifactkey uuid, IN encryptionkey text, OUT artifact_binaries_out bytea) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.get_envelope_artifact_binaries(IN artifactkey uuid, IN encryptionkey text, OUT artifact_binaries_out bytea) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 401 (class 1255 OID 28196)
@@ -760,7 +760,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_audits.get_envelope_header(IN envelope_key uuid, IN encryptionkey text, OUT envelope_header_out json) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.get_envelope_header(IN envelope_key uuid, IN encryptionkey text, OUT envelope_header_out json) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 402 (class 1255 OID 28197)
@@ -810,7 +810,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_audits.lock_unlock_envelope_artifact_by_key(IN artifactkey uuid, IN performlook boolean, IN parameters json, OUT artifactkey_out uuid) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.lock_unlock_envelope_artifact_by_key(IN artifactkey uuid, IN performlook boolean, IN parameters json, OUT artifactkey_out uuid) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 425 (class 1255 OID 38047)
@@ -868,7 +868,7 @@ CREATE PROCEDURE cognaio_audits.query_audits(IN plan_key uuid, IN query_paramete
   $_$;
 
 
-ALTER PROCEDURE cognaio_audits.query_audits(IN plan_key uuid, IN query_parameters json, IN encryptionkey text, OUT audit_keys_out uuid[]) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.query_audits(IN plan_key uuid, IN query_parameters json, IN encryptionkey text, OUT audit_keys_out uuid[]) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 424 (class 1255 OID 30835)
@@ -1338,7 +1338,7 @@ END
 $$;
 
 
-ALTER PROCEDURE cognaio_audits.unlock_envelope_artifacts_expired(IN mailboxkey uuid, OUT affecteditems integer) OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER PROCEDURE cognaio_audits.unlock_envelope_artifacts_expired(IN mailboxkey uuid, OUT affecteditems integer) OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 251 (class 1259 OID 28201)
@@ -1354,7 +1354,7 @@ CREATE TABLE cognaio_audits.appkey_audit_artifacts_embeddings (
 );
 
 
-ALTER TABLE cognaio_audits.appkey_audit_artifacts_embeddings OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_audits.appkey_audit_artifacts_embeddings OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 252 (class 1259 OID 28208)
@@ -1372,7 +1372,7 @@ CREATE TABLE cognaio_audits.appkey_audit_artifacts_extraction (
 );
 
 
-ALTER TABLE cognaio_audits.appkey_audit_artifacts_extraction OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_audits.appkey_audit_artifacts_extraction OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 253 (class 1259 OID 28214)
@@ -1388,7 +1388,7 @@ CREATE TABLE cognaio_audits.appkey_audit_artifacts_static_ocr (
 );
 
 
-ALTER TABLE cognaio_audits.appkey_audit_artifacts_static_ocr OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_audits.appkey_audit_artifacts_static_ocr OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 254 (class 1259 OID 28220)
@@ -1419,7 +1419,7 @@ CREATE TABLE cognaio_audits.appkey_audits (
 );
 
 
-ALTER TABLE cognaio_audits.appkey_audits OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_audits.appkey_audits OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 255 (class 1259 OID 28233)
@@ -1444,7 +1444,7 @@ CREATE TABLE cognaio_audits.appkey_audits_history (
 );
 
 
-ALTER TABLE cognaio_audits.appkey_audits_history OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_audits.appkey_audits_history OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 256 (class 1259 OID 28246)
@@ -1470,7 +1470,7 @@ CREATE TABLE cognaio_audits.envelope_artifact_audits (
 );
 
 
-ALTER TABLE cognaio_audits.envelope_artifact_audits OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_audits.envelope_artifact_audits OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 257 (class 1259 OID 28255)
@@ -1495,7 +1495,7 @@ CREATE TABLE cognaio_audits.envelope_audits (
 );
 
 
-ALTER TABLE cognaio_audits.envelope_audits OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_audits.envelope_audits OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 258 (class 1259 OID 28261)
@@ -1510,7 +1510,7 @@ CREATE TABLE cognaio_audits.schema_versions (
 );
 
 
-ALTER TABLE cognaio_audits.schema_versions OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_audits.schema_versions OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 3638 (class 2606 OID 28269)

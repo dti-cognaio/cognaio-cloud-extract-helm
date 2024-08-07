@@ -26,7 +26,7 @@ SET row_security = off;
 CREATE SCHEMA cognaio_extensions;
 
 
-ALTER SCHEMA cognaio_extensions OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER SCHEMA cognaio_extensions OWNER TO __COGNAIO_ENV_PGUSER__;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA cognaio_extensions;
 CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA cognaio_extensions;
@@ -49,7 +49,7 @@ CREATE TABLE cognaio_extensions.schema_versions (
 );
 
 
-ALTER TABLE cognaio_extensions.schema_versions OWNER TO {{ .Values.cognaioservice.env.db.postgreSqlUser }};
+ALTER TABLE cognaio_extensions.schema_versions OWNER TO __COGNAIO_ENV_PGUSER__;
 
 --
 -- TOC entry 3545 (class 2606 OID 24765)

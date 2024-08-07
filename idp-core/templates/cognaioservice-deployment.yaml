@@ -26,6 +26,10 @@ spec:
         - sh
         - /scripts/initdb.sh
         env:
+        - name: NAMESPACE
+          value: {{ .Values.cognaio.namespace | quote }}
+        - name: ORGANIZATION_USERS
+          value: {{ .Values.cognaioservice.env.organization.users | quote }}
         - name: PGDBNAME
           value: {{ .Values.cognaioservice.env.db.postgreSqlDbName | quote }} 
         - name: PGPASSWORD
@@ -39,10 +43,42 @@ spec:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: postgreSqlUser
         - name: PGHOST
+          value: {{ .Values.cognaioservice.env.db.postgreSqlDbServer | quote }}
+        - name: PGPORT
+          value: {{ .Values.cognaioservice.env.db.postgreSqlDbPort | quote }}
+        - name: PassPhrase_Templates
           valueFrom:
             secretKeyRef:
               name: {{ .Values.cognaioservice.env.secret.name }}
-              key: postgreSqlDbServer
+              key: passPhraseTemplates
+        - name: ApiKey_AzureOpenAi
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: apikeyAzureOpenAi
+        - name: ApiKey_NativeOpenAi
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: apikeyNativeOpenAi
+        - name: ApiKey_AzureAiDocumentIntelligence
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: apikeyAzureAiDocumentIntelligence
+        - name: ApiKey_AzureCognitiveServicesComputervision
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: apikeyAzureCognitiveServicesComputervision
+        - name: Endpoint_AzureOpenAi
+          value: {{ .Values.cognaioservice.env.ai.endpointAzureOpenAi | quote }}
+        - name: Endpoint_NativeOpenAi
+          value: {{ .Values.cognaioservice.env.ai.endpointNativeOpenAi | quote }}
+        - name: Endpoint_AzureAiDocumentIntelligence
+          value: {{ .Values.cognaioservice.env.ai.endpointAzureAiDocumentIntelligence | quote }}
+        - name: Endpoint_AzureCognitiveServicesComputervision
+          value: {{ .Values.cognaioservice.env.ai.endpointAzureCognitiveServicesComputerVision | quote }}
         volumeMounts:
           - name: script-volume
             mountPath: /scripts
@@ -80,10 +116,7 @@ spec:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: postgreSqlPwd
         - name: PostgreSql_Db_Server
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.cognaioservice.env.secret.name }}
-              key: postgreSqlDbServer
+          value: {{ .Values.cognaioservice.env.db.postgreSqlDbServer }}:{{ .Values.cognaioservice.env.db.postgreSqlDbPort }}
         - name: PostgreSql_Ssl_Required
           value: {{ .Values.cognaioservice.env.db.postgreSqlSslRequired | quote }} 
         - name: PostgreSql_Db_Name
@@ -222,20 +255,6 @@ spec:
           value: {{ .Values.cognaioservice.env.essentials.warningNotificationTimeoutInHours | quote }}
         - name: Essential_FeatureExceedsLimits_Notification_TimeoutInDays
           value: {{ .Values.cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays | quote }}
-
-#        readinessProbe:
-#          httpGet:
-#            path: /manage/health/readiness
-#            port: 8080
-#          initialDelaySeconds: 10
-#          timeoutSeconds: 5
-#          periodSeconds: 60
-#          failureThreshold: 2
-#        livenessProbe:
-#          httpGet:
-#            path: /manage/health/liveness
-#            port: 8080
-#          initialDelaySeconds: 20
-#          timeoutSeconds: 5
-#          periodSeconds: 60
-#          failureThreshold: 1
+        {{- if .Values.cognaioservice.resources }}
+        resources: {{- toYaml .Values.cognaioservice.resources | nindent 12 }}
+        {{- end }}
