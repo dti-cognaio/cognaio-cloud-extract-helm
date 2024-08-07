@@ -100,13 +100,15 @@ Some microservices require a postgres database to persist certain data. the foll
 |:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
 | `cognaioservice.env.db.postgreSqlUser`                                                | postgreSQL username                                       | `<SQL-USER>`                                         |
 | `cognaioservice.env.db.postgreSqlPwd`                                                 | postgreSQL password                                       | `<SQL-PASSWORD>`                                     |
-| `cognaioservice.env.db.postgreSqlDbServer`                                            | postgreSQL server                                         | `<SQL-SERVER>:<PORT>`                                |
+| `cognaioservice.env.db.postgreSqlDbServer`                                            | postgreSQL server                                         | `<SQL-SERVER>`                                       |
+| `cognaioservice.env.db.postgreSqlDbPort`                                              | postgreSQL port                                           | `5432`                                               |
 | `cognaioservice.env.db.postgreSqlSslRequired`                                         | postgreSQL ssl required flag                              | `true`                                               |
 | `cognaioservice.env.db.postgreSqlDbName`                                              | postgreSQL database name                                  | `postgres`                                           |
 | `cognaioservice.env.db.schemas`                                                       | postgreSQL schemas                                        | `cognaio_extensions; cognaio_design; cognaio_audits` |
 | `cognaioflexsearchservice.env.db.postgreSqlUser`                                      | postgreSQL username                                       | `<SQL-USER>`                                         |
 | `cognaioflexsearchservice.env.db.postgreSqlPwd`                                       | postgreSQL password                                       | `<SQL-PASSWORD>`                                     |
 | `cognaioflexsearchservice.env.db.postgreSqlDbServer`                                  | postgreSQL server                                         | `<SQL-SERVER>:<PORT>`                                |
+| `cognaioflexsearchservice.env.db.postgreSqlDbPort`                                    | postgreSQL port                                           | `5432`                                               |
 | `cognaioflexsearchservice.env.db.postgreSqlSslRequired`                               | postgreSQL ssl required flag                              | `true`                                               |
 | `cognaioflexsearchservice.env.db.postgreSqlDbName`                                    | postgreSQL database name                                  | `postgres`                                           |
 | `cognaioflexsearchservice.env.db.schemas`                                             | postgreSQL schemas                                        | `cognaio_extensions; cognaio_repositories`           |
