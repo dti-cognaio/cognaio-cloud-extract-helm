@@ -60,3 +60,6 @@ spec:
             secretKeyRef:
               name: {{ .Values.cognaioflexsearchservice.env.secret.name }}
               key: passPhrase
+        {{- if .Values.cognaioflexsearchservice.resources }}
+        resources: {{- toYaml .Values.cognaioflexsearchservice.resources | nindent 12 }}
+        {{- end }}

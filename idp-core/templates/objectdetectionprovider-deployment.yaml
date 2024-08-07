@@ -30,11 +30,9 @@ spec:
         env:
         - name: NODE_ENV
           value: production 
-        resources:
-          request:
-            memory: "512Mi"
-          limits:
-            memory: "5120Mi"
+        {{- if .Values.objectdetectionprovider.resources }}
+        resources: {{- toYaml .Values.objectdetectionprovider.resources | nindent 12 }}
+        {{- end }}
 
 
 #        readinessProbe:

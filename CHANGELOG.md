@@ -1,5 +1,13 @@
 # Change Log
 
+## Version 2.2.1
+### Changes
+- Possibility to disable deployment of ingress
+- All deployments have now the possibility to add resource definitions
+- Adjust SQL-Scripts to use environment variables. Fixed hardcoded secrets in values file.
+- Change some default values for database (name, ssl required)
+- Change structure to provide organization.users e-mail address
+
 ## Version 2.2.0
 ### Changes
 - Enhanced designer options

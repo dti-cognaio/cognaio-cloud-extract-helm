@@ -29,27 +29,7 @@ spec:
         - containerPort: {{ .Values.imageprovider.env.port }}
         env:
         - name: NODE_ENV
-          value: production 
-        resources:
-          request:
-            memory: "512Mi"
-          limits:
-            memory: "5120Mi"
-
-
-#        readinessProbe:
-#          httpGet:
-#            path: /manage/health/readiness
-#            port: 8080
-#          initialDelaySeconds: 10
-#          timeoutSeconds: 5
-#          periodSeconds: 60
-#          failureThreshold: 2
-#        livenessProbe:
-#          httpGet:
-#            path: /manage/health/liveness
-#            port: 8080
-#          initialDelaySeconds: 20
-#          timeoutSeconds: 5
-#          periodSeconds: 60
-#          failureThreshold: 1
+          value: production
+        {{- if .Values.imageprovider.resources }}
+        resources: {{- toYaml .Values.imageprovider.resources | nindent 12 }}
+        {{- end }}
