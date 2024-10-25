@@ -19,74 +19,73 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 6 }}
+      {{- end }}
       initContainers:
-      - name: init-postgres-container
+      - name: init-cognaio-schema-manager
         image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioservice.init.image.name }}:{{ .Values.cognaioservice.init.image.tag }}
-        command:
-        - sh
-        - /scripts/initdb.sh
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
-        - name: NAMESPACE
+        - name: COGNAIOENVIRONMENTVARIABLES__ENVIRONMENTNAMESPACE
           value: {{ .Values.cognaio.namespace | quote }}
-        - name: ORGANIZATION_USERS
+        - name: COGNAIOENVIRONMENTVARIABLES__ORGANIZATIONUSERS
           value: {{ .Values.cognaioservice.env.organization.users | quote }}
-        - name: PGDBNAME
+        - name: COGNAIOENVIRONMENTVARIABLES__DBNAME
           value: {{ .Values.cognaioservice.env.db.postgreSqlDbName | quote }} 
-        - name: PGPASSWORD
+        - name: COGNAIOENVIRONMENTVARIABLES__DBPASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ .Values.cognaioservice.env.secret.name}}
               key: postgreSqlPwd
-        - name: PGUSER
+        - name: COGNAIOENVIRONMENTVARIABLES__DBUSER
           valueFrom:
             secretKeyRef:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: postgreSqlUser
-        - name: PGHOST
+        - name: COGNAIOENVIRONMENTVARIABLES__DBSERVER
           value: {{ .Values.cognaioservice.env.db.postgreSqlDbServer | quote }}
-        - name: PGPORT
+        - name: COGNAIOENVIRONMENTVARIABLES__DBPORT
           value: {{ .Values.cognaioservice.env.db.postgreSqlDbPort | quote }}
-        - name: PassPhrase_Templates
+        - name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASETEMPLATES
           valueFrom:
             secretKeyRef:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: passPhraseTemplates
-        - name: ApiKey_AzureOpenAi
+        - name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEDEFINITIONS
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: passPhraseDefinitions
+        - name: COGNAIOENVIRONMENTVARIABLES__APIKEYAZUREOPENAI
           valueFrom:
             secretKeyRef:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: apikeyAzureOpenAi
-        - name: ApiKey_NativeOpenAi
+        - name: COGNAIOENVIRONMENTVARIABLES__APIKEYNATIVEOPENAI
           valueFrom:
             secretKeyRef:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: apikeyNativeOpenAi
-        - name: ApiKey_AzureAiDocumentIntelligence
+        - name: COGNAIOENVIRONMENTVARIABLES__APIKEYAZUREAIDOCUMENTINTELLIGENCE
           valueFrom:
             secretKeyRef:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: apikeyAzureAiDocumentIntelligence
-        - name: ApiKey_AzureCognitiveServicesComputervision
+        - name: COGNAIOENVIRONMENTVARIABLES__APIKEYAZURECOGNITIVESERVICESCOMPUTERVISION
           valueFrom:
             secretKeyRef:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: apikeyAzureCognitiveServicesComputervision
-        - name: Endpoint_AzureOpenAi
+        - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAZUREOPENAI
           value: {{ .Values.cognaioservice.env.ai.endpointAzureOpenAi | quote }}
-        - name: Endpoint_NativeOpenAi
+        - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTNATIVEOPENAI
           value: {{ .Values.cognaioservice.env.ai.endpointNativeOpenAi | quote }}
-        - name: Endpoint_AzureAiDocumentIntelligence
+        - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAZUREAIDOCUMENTINTELLIGENCE
           value: {{ .Values.cognaioservice.env.ai.endpointAzureAiDocumentIntelligence | quote }}
-        - name: Endpoint_AzureCognitiveServicesComputervision
+        - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAZURECOGNITIVESERVICESCOMPUTERVISION
           value: {{ .Values.cognaioservice.env.ai.endpointAzureCognitiveServicesComputerVision | quote }}
-        volumeMounts:
-          - name: script-volume
-            mountPath: /scripts
-            readOnly: true
-      volumes:
-        - name: script-volume
-          configMap:
-            name: init-postgresql-scripts
       containers:
       - name: {{ .Values.cognaioservice.name }}
         image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioservice.image.name }}:{{ .Values.cognaioservice.image.tag }}
@@ -101,9 +100,9 @@ spec:
         - name: NODE_ENV
           value: {{ .Values.cognaioservice.env.node_env }} 
         - name: BaseWebAppLink
-          value: http://{{ .Values.cognaio.url }}{{ .Values.cognaioapp.service.urlpath }}
+          value: {{ .Values.cognaio.protocol }}://{{ .Values.cognaio.url }}{{ .Values.cognaiostudio.service.urlpath }}
         - name: BaseCognaioServiceUrl
-          value: http://{{ .Values.cognaio.url }}{{ .Values.cognaioservice.service.urlpath }}
+          value: {{ .Values.cognaio.protocol }}://{{ .Values.cognaio.url }}{{ .Values.cognaioservice.service.urlpath }}
 # DB
         - name: PostgreSql_User
           valueFrom:
@@ -248,6 +247,8 @@ spec:
           value: {{ .Values.cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetries | quote }}
         - name: AzureAiDocumentIntelligence_MaxRetriesWaitTimeoutInSec
           value: {{ .Values.cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetriesWaitTimeoutInSec | quote }}
+        - name: EnvironmentNameForNotifications
+          value: {{ .Values.cognaioservice.env.environmentNameForNotifications }}
         - name: LogSeverity
           value: {{ .Values.cognaioservice.env.logSeverity }}
 # Essentials

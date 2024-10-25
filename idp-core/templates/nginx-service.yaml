@@ -6,6 +6,9 @@ metadata:
     {{- include "cognaio.labels" . | nindent 4 }}
     app: cognaio-idp
     name: {{ .Values.nginx.service.name }}
+  {{- if .Values.nginx.service.additionalAnnotations  }}
+  annotations: {{- toYaml .Values.nginx.service.additionalAnnotations  | nindent 4 }}
+  {{- end }}
 spec:
   ports:
   - name: http

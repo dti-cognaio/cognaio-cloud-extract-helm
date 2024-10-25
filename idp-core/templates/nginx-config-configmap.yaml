@@ -8,8 +8,8 @@ data:
   nginx.conf: |
     #events { worker_connections 1024; }
     #upstream servers
-    upstream cognaioanalyzes {
-        server {{ .Values.cognaioapp.service.name }};
+    upstream cognaiostudios {
+        server {{ .Values.cognaiostudio.service.name }};
     }
 
     upstream serviceproviderimages {
@@ -74,7 +74,7 @@ data:
             client_max_body_size 150M;
             client_body_buffer_size 150M; 
             proxy_buffering off;
-            proxy_pass http://cognaioanalyzes/;
+            proxy_pass http://cognaiostudio/;
         }
 
         # Proxying the connections
@@ -87,6 +87,6 @@ data:
         }
 
         location / {
-            return 301 https://{{ .Values.cognaio.url }}$request_uri;
+            return 301 {{ .Values.cognaio.protocol }}://{{ .Values.cognaio.url }}$request_uri;
         }
     }

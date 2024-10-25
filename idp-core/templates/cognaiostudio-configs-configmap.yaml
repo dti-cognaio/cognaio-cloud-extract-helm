@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: cognaioapp-configs
+  name: cognaiostudio-configs
   labels:
     {{- include "cognaio.labels" . | nindent 4 }}
 data:
@@ -14,9 +14,9 @@ data:
                 "theme": "standard-theme"
             },
             "copyRight": "Copyright 2024 DTI",
-            "version": "2.2.0.0"
+            "version": "2.3.0.0"
         },
         "endpoints": {
-            "extraction": "https://{{ .Values.cognaio.url }}/extraction/api"
+            "analysis": "{{ .Values.cognaio.protocol }}://{{ .Values.cognaio.url }}/extraction/api"
         }
     }

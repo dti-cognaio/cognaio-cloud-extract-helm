@@ -1,5 +1,27 @@
 # Change Log
 
+## Version 2.3.0
+### Changes
+- UI enhancements
+- Ability of analyzing multiple documents
+- Ability to separate documents inside a batch
+- Support of new AI models like gpt-4o and gpt-4o-mini
+- Add italian and spanish to ui
+- New initialization of database
+- Replaced cognaioapp with cognaiostudio
+- Upgrade nginx
+
+|Repository|Version|
+|---|---|
+|dtideregistry.azurecr.io/dti/idp/cognaiostudio              |2.3.0 *|
+|dtideregistry.azurecr.io/dti/idp/cognaioservice             |2.3.0|
+|dtideregistry.azurecr.io/dti/idp/image                      |2.3.0|
+|dtideregistry.azurecr.io/dti/idp/emailservice               |2.3.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioflexsearchservice   |2.3.0|
+|dtideregistry.azurecr.io/dti/idp/objectdetectionprovider    |2.3.0|
+|dtideregistry.azurecr.io/nginx/nginx                        |1.27.1|
+>\* = Replaced/Renamed of cognaioapp
+
 ## Version 2.2.1
 ### Changes
 - Possibility to disable deployment of ingress

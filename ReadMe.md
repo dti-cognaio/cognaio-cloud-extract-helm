@@ -1,8 +1,28 @@
-# Helm Repository for COGNAiO® cloud extract
-This repository deploys the application components for the [COGNAiO®](https://dti.group/en/) cloud extract.
-
-## Introduction
+# Helm Repository for COGNAiO® Cloud Extract
 This chart bootstraps a [COGNAiO®](https://dti.group/en/) cloud extract deployment on a [Kubernetes](https://kubernetes.io/) cluster using the [Helm](https://helm.sh/) package manager.
+
+## Deployment Instructions
+This repository provides a microservices architecture deployment setup, managed via [Helm](https://helm.sh/). The microservices are containerized, and images are hosted on our private image registry. Customers have the following options for obtaining these images:
+
+### Pull Images from Our Registry (default)
+Customers can pull images directly from our private registry. To do this, please **contact us to obtain the required credentials**. Once you receive the credentials, update your Helm configuration with the authentication details to access our registry.
+
+### Receive Images Directly (alternative)
+If you prefer not to connect directly to our registry, we can provide you with the images. Please **get in touch with us** to arrange image delivery. After receiving the images, import them into your local registry, and update the Helm configuration to reference your local repository.
+
+### Ongoing Updates
+Our team actively maintains this repository, providing updates to Helm charts and container images to ensure that bug fixes, security patches, and new feature versions are available. These updates are publicly accessible through this GitHub repository. Please check regularly or subscribe to notifications to stay informed about the latest releases.
+
+### Migration and Backup
+
+Our application images are fully stateless, with all persistent data stored exclusively in the database. This design ensures that ongoing updates and new deployments are seamless, as no data is stored within the application containers themselves. Because of this stateless architecture, customers can confidently update to new versions without disrupting application functionality or data integrity.
+
+The data stored in the database is limited to statistical data, license information, and application configuration; no customer data is stored. For customers updating to a new version, our setup includes a migration init pod that handles all necessary database migrations. This process ensures a smooth transition to the latest version without manual intervention.
+
+The database is the only component requiring a backup, as no other data storage is used in this setup. We strongly recommend backing up the database before any update to safeguard against data loss during the migration process.
+
+To ensure all updates work as expected, we recommend testing deployments in a **staging environment** prior to deploying to production. This allows you to verify the functionality and compatibility of the new version in a controlled setting.
+
 
 ## Prerequisites
 ### Tools & Skills
@@ -31,7 +51,7 @@ az aks get-credentials --resource-group <RessourceGroup> --name <AKS-Name>
 All secrets can be individually controlled via the property `secret.init`, whether they should be created automatically by the deployment or not. If they are to be created, the required parameters must be filled in - see further descriptions below. If not, the already created secret can be used via `secret.name`.
 
 ### Cognitive Service Endpoints
-The application uses several azure resources. These can be viewed in detail in the [infrastructure](https://github.com/dti-cognaio/cognaio-cloud-extract-iac) github repository. However, some information from the Azure portal is required for the configuration of COGNAiO® cloud extract deployment. Navigate to each individual resource end find their the proper information.
+The application uses several azure resources. These can be viewed in detail in the [infrastructure](https://github.com/dti-cognaio/cognaio-cloud-extract-iac) github repository. However, some information from the Azure portal is required for the configuration of COGNAiO® Cloud Extract deployment. Navigate to each individual resource end find their the proper information.
 
 ### Azure
 |Name                                                                 | Resource                                              | Example / Description                                                            |
@@ -126,8 +146,8 @@ The following table lists the important configurable parameters of the COGNAiO c
 | `cognaio.cert.secret.name`                                                               | Secret name, details in `cognaio-tls-secret.yaml`                  | `cognaio-com-tls-secret`                             |
 | `cognaio.cert.secret.init`                                                               | Whether or not to create a secret                                  | `true`                                               |
 | `cognaio.ingress.enabled`                                                                | Enable deployment of ingress                                       | `true`                                               |
-| `cognaioapp.service.urlpath`                                                             | Url path for the service                                           | `/cognaioalnalyze`                                   |
-| `cognaioapp.resources`                                                                   | Provide limit and request resource information                     | none                                                 |
+| `cognaiostudio.service.urlpath`                                                          | Url path for the service                                           | `/cognaioalnalyze`                                   |
+| `cognaiostudio.resources`                                                                | Provide limit and request resource information                     | none                                                 |
 | `cognaioservice.service.urlpath`                                                         | Url path for the service                                           | `/extraction`                                        |
 | `cognaioservice.env.port`                                                                | Port                                                               | `3000`                                               |
 | `cognaioservice.env.secret.name`                                                         | Secret name, details in `cognaioservice-env-secrets.yaml`          | `cognaioservice-env-secrets`                         |
@@ -141,6 +161,7 @@ The following table lists the important configurable parameters of the COGNAiO c
 | `cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetriesWaitTimeoutInSec` | Max request timeouts in seconds                                    | `1`                                                  |
 | `cognaioservice.env.essentials.warningNotificationTimeoutInHours`                        | Warning notification timeouts in hours                             | `48`                                                 |
 | `cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays`            | Feature exeeds limits notification timout in days                  | `2`                                                  |
+| `cognaioservice.env.environmentNameForNotifications`                                     | Displayname of the notification service                            | `Cognaio IDP`                                        |
 | `cognaioservice.env.logSeverity`                                                         | Log severity                                                       | `info`                                               |
 | `cognaioservice.resources`                                                               | Provide limit and request resource information                     | none                                                 |
 | `emailservice.env.port`                                                                  | Port                                                               | `7171`                                               |
@@ -171,7 +192,7 @@ kubectl get pods -n cognaio-idp -w
 ```
 |NAME|READY|STATUS|
 |:----|:---|:---|
-|cognaioapp-xxx                 |1/1|     Running|
+|cognaiostudio-xxx              |1/1|     Running|
 |cognaioflexsearchservice-xxx   |1/1|     Running|
 |cognaioservice-xxx             |1/1|     Running|
 |emailservice-xxx               |1/1|     Running|

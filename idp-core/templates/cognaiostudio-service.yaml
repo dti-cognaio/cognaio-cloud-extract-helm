@@ -1,18 +1,18 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.cognaioapp.service.name }}
+  name: {{ .Values.cognaiostudio.service.name }}
   labels:
     {{- include "cognaio.labels" . | nindent 4 }}
     app: cognaio-idp
-    name: {{ .Values.cognaioapp.service.name }}
+    name: {{ .Values.cognaiostudio.service.name }}
 spec:
   ports:
   - name: http
-    port: {{ .Values.cognaioapp.service.port }}
+    port: {{ .Values.cognaiostudio.service.port }}
     protocol: TCP
     targetPort: 80
   selector:
     {{- include "cognaio.selectorLabels" . | nindent 4 }}
-    name: {{ .Values.cognaioapp.name }}
-  type: {{ .Values.cognaioapp.service.type }}
+    name: {{ .Values.cognaiostudio.name }}
+  type: {{ .Values.cognaiostudio.service.type }}

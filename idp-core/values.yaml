@@ -8,6 +8,7 @@ image:
 cognaio:
   namespace: cognaio-idp
   url: ""
+  protocol: "https"
   wildcardUrl: ""
   labels:
   cert:
@@ -24,25 +25,25 @@ nginx:
   replicaCount: 1
   image:
     name: nginx/nginx
-    tag: 1.25.4
+    tag: 1.27.1
   service:
     name: nginx
     port: 80
-    type: LoadBalancer
+    type: ClusterIP
   # resources:
   #   limits:
   #     memory: "256Mi"
   #   requests:
   #     memory: "128Mi"
 
-cognaioapp:
-  name: cognaioapp
+cognaiostudio:
+  name: cognaiostudio
   replicaCount: 1
   image:
-    name: dti/idp/cognaioapp
-    tag: 2.2.0
+    name: dti/idp/cognaiostudio
+    tag: 2.3.0
   service:
-    name: cognaioapp
+    name: cognaiostudio
     port: 80
     type: ClusterIP
     urlpath: /cognaioanalyze
@@ -59,11 +60,11 @@ cognaioservice:
   replicaCount: 1
   init:
     image:
-      name: dti/idp/postgresql-helper
+      name: dti/idp/cognaioschemamanager
       tag: 1.0.0
   image:
     name: dti/idp/cognaioservice
-    tag: 2.2.0
+    tag: 2.3.0
   service:
     name: cognaioservice
     port: 80
@@ -131,6 +132,7 @@ cognaioservice:
     essentials:
       warningNotificationTimeoutInHours: 48
       featureExceedsLimitsNotificationTimeoutInDays: 2
+    environmentNameForNotifications: "Cognaio IDP"
     logSeverity: "info"
   # resources:
   #   limits:
@@ -143,7 +145,7 @@ emailservice:
   replicaCount: 1
   image:
     name: dti/idp/emailservice
-    tag: 2.2.0
+    tag: 2.3.0
   service:
     name: emailservice
     port: 80
@@ -167,7 +169,7 @@ cognaioflexsearchservice:
   replicaCount: 1
   image:
     name: dti/idp/cognaioflexsearchservice
-    tag: 2.2.0
+    tag: 2.3.0
   service:
     name: cognaioflexsearchservice
     port: 80
@@ -199,7 +201,7 @@ imageprovider:
   replicaCount: 3
   image:
     name: dti/idp/image
-    tag: 2.2.0
+    tag: 2.3.0
   service:
     name: imageprovider
     port: 80
@@ -217,7 +219,7 @@ objectdetectionprovider:
   replicaCount: 1
   image:
     name: dti/idp/objectdetectionprovider
-    tag: 2.2.0
+    tag: 2.3.0
   service:
     name: objectdetectionprovider
     port: 80
