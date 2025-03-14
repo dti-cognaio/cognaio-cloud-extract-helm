@@ -25,7 +25,7 @@ nginx:
   replicaCount: 1
   image:
     name: nginx/nginx
-    tag: 1.27.1
+    tag: 1.27.4
   service:
     name: nginx
     port: 80
@@ -35,6 +35,35 @@ nginx:
   #     memory: "256Mi"
   #   requests:
   #     memory: "128Mi"
+
+usermanual:
+  name: cce-user-manual
+  replicaCount: 1
+  image:
+    name: dti/idp/cce-user-manual
+    tag: 2.4.0
+  service:
+    name: cce-user-manual
+    port: 80
+    type: ClusterIP
+  env:
+    node_env: production
+
+redis:
+  name: redis
+  replicaCount: 1
+  image:
+    name: bitnami/redis
+    tag: 7.4.2
+  service:
+    name: redis
+    port: 6379
+    type: ClusterIP
+  secret:
+    name: redis-secrets
+    init: true
+    password: "changeme"
+    providerUrl: redis://:changeme@redis:6379
 
 cognaiostudio:
   name: cognaiostudio
@@ -61,10 +90,10 @@ cognaioservice:
   init:
     image:
       name: dti/idp/cognaioschemamanager
-      tag: 1.0.0
+      tag: 2.4.0
   image:
     name: dti/idp/cognaioservice
-    tag: 2.3.0
+    tag: 2.4.0
   service:
     name: cognaioservice
     port: 80
@@ -112,11 +141,27 @@ cognaioservice:
       endpointNativeOpenAi: ""
       endpointAzureAiDocumentIntelligence: ""
       endpointAzureCognitiveServicesComputerVision: ""
+      apikeyNativeGemini: ""
+      apikeyNativeAnthropic: ""
+      apikeyNativeCerebral: ""
+      endpointNativeCerebral: ""
+    aws:
+      accesskeyIdAwsTextract: ""
+      secretAccessKeyAwsTextract: ""
+      regionAwsTextract: ""
+      accesskeyIdAwsBedrock: ""
+      secretAccessKeyAwsBedrock: ""
+      regionAwsBedrock: ""
     mailAccount:
       user: ""
       password: ""
       host: "smtp.office365.com"
       port: 587
+      fromAddressFriendlyName: "Cognaio"
+      useAdvancedAuth: false
+      advancedAuthJson: '{"auth":{"user":"yourEmailAddress","pass":"yourPassword"}}'
+      useCustomSettings: false
+      customSettingsJson: '{"secure":false,"maxConnections":150,"tls":{"ciphers":"SSLv3","rejectUnauthorized":false}}'
     organization:
       users: "'email_1@example.com','email_2@example.com'"
     cognitiveServices:
@@ -128,10 +173,18 @@ cognaioservice:
       aiDocumentIntelligence:
         maxRequestTimeoutInSec: 10
         maxRetries: 30
-        maxRetriesWaitTimeoutInSec: 1
+        maxRetriesWaitTimeoutInSec: 3
+      awsTextract:
+        maxRequestTimeoutInSec: 10
+        maxRetries: 30
+        maxRetriesWaitTimeoutInSec: 3
     essentials:
       warningNotificationTimeoutInHours: 48
       featureExceedsLimitsNotificationTimeoutInDays: 2
+    featurePreview:
+      uiAiChainCrafterDisabled: true
+      cerebralEdgeDisabled: true
+      awsServicesDisabled: true
     environmentNameForNotifications: "Cognaio IDP"
     logSeverity: "info"
   # resources:
@@ -145,7 +198,7 @@ emailservice:
   replicaCount: 1
   image:
     name: dti/idp/emailservice
-    tag: 2.3.0
+    tag: 2.4.0
   service:
     name: emailservice
     port: 80
@@ -169,7 +222,7 @@ cognaioflexsearchservice:
   replicaCount: 1
   image:
     name: dti/idp/cognaioflexsearchservice
-    tag: 2.3.0
+    tag: 2.4.0
   service:
     name: cognaioflexsearchservice
     port: 80
@@ -201,7 +254,7 @@ imageprovider:
   replicaCount: 3
   image:
     name: dti/idp/image
-    tag: 2.3.0
+    tag: 2.4.0
   service:
     name: imageprovider
     port: 80
@@ -219,7 +272,7 @@ objectdetectionprovider:
   replicaCount: 1
   image:
     name: dti/idp/objectdetectionprovider
-    tag: 2.3.0
+    tag: 2.4.0
   service:
     name: objectdetectionprovider
     port: 80
