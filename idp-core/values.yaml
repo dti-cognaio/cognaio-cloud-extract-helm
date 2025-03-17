@@ -70,7 +70,7 @@ cognaiostudio:
   replicaCount: 1
   image:
     name: dti/idp/cognaiostudio
-    tag: 2.3.0
+    tag: 2.4.0
   service:
     name: cognaiostudio
     port: 80
