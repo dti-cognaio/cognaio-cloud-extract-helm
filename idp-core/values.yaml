@@ -2,7 +2,7 @@ annotations: {}
 labels: {}
 
 image:
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   containerRegistry: "dtideregistry.azurecr.io"
 
 cognaio:
