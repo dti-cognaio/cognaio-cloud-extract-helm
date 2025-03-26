@@ -38,6 +38,9 @@ spec:
         - mountPath: /usr/share/nginx/html/assets/configs.json
           subPath: configs.json
           name: config
+        - mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+          name: config
         {{- if .Values.cognaiostudio.resources }}
         resources: {{- toYaml .Values.cognaiostudio.resources | nindent 12 }}
         {{- end }}

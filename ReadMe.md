@@ -51,7 +51,9 @@ az aks get-credentials --resource-group <RessourceGroup> --name <AKS-Name>
 All secrets can be individually controlled via the property `secret.init`, whether they should be created automatically by the deployment or not. If they are to be created, the required parameters must be filled in - see further descriptions below. If not, the already created secret can be used via `secret.name`.
 
 ### Cognitive Service Endpoints
-The application uses several azure resources. These can be viewed in detail in the [infrastructure](https://github.com/dti-cognaio/cognaio-cloud-extract-iac) github repository. However, some information from the Azure portal is required for the configuration of COGNAiO® Cloud Extract deployment. Navigate to each individual resource end find their the proper information.
+Our application integrates with multiple Azure resources, which are detailed in our [infrastructure](https://github.com/dti-cognaio/cognaio-cloud-extract-iac) GitHub repository. However, certain configuration details for deploying COGNAiO® Cloud Extract must be retrieved directly from the Azure portal. Please navigate to each relevant resource and locate the required endpoint information.
+
+While Azure is our preferred platform for AI services, our solution also supports a variety of alternatives, including AWS, ChatGPT, DeepSeek, Gemini, and more.
 
 ### Azure
 |Name                                                                 | Resource                                              | Example / Description                                                            |
@@ -63,12 +65,26 @@ The application uses several azure resources. These can be viewed in detail in t
 |`cognaioservice.env.ai.apikeyAzureCognitiveServicesComputervision`   | Microsoft.CognitiveServices - Kind: CognitiveServices | See Azure Portal on the Resource --> Resource Management --> `Keys and Endpoint` |
 |`cognaioservice.env.ai.endpointAzureCognitiveServicesComputerVision` | Microsoft.CognitiveServices - Kind: CognitiveServices | `https://<LOCATION>.api.cognitive.microsoft.com/`                                |
 
-### Optional ChatGPT
-If you want to use ChatGPT from openAi.io you can provide following information otherwise it can be empty.
-|Name                                         | Resource            | Example / Description                                 |
-|:--------------------------------------------|:--------------------|:------------------------------------------------------|
-|`cognaioservice.env.ai.apikeyNativeOpenAi`   | openai.io           | Create individual ApiKey in your openAi account       | 
-|`cognaioservice.env.ai.endpointNativeOpenAi` | openai.io           |`"https://api.openai.com/v1"`                          |
+### AWS
+|Name                                                                 | Resource                                              | Example / Description                                                                                  |
+|:--------------------------------------------------------------------|:------------------------------------------------------|:-------------------------------------------------------------------------------------------------------|
+|`cognaioservice.env.aws.accesskeyIdAwsTextract`                      | Amazon Textract resource                              | Create a service user in AWS with resource access and generate the corresponding access and secret key.|
+|`cognaioservice.env.aws.secretAccessKeyAwsTextract`                  | Amazon Textract resource                              | Create a service user in AWS with resource access and generate the corresponding access and secret key.|
+|`cognaioservice.env.aws.regionAwsTextract`                           | Amazon Textract resource region                       | `eu-central-1`                                                                                         |
+|`cognaioservice.env.aws.accesskeyIdAwsBedrock`                       | Amazon Textract resource                              | Create a service user in AWS with resource access and generate the corresponding access and secret key.|
+|`cognaioservice.env.aws.secretAccessKeyAwsBedrock`                   | Amazon Textract resource                              | Create a service user in AWS with resource access and generate the corresponding access and secret key.|
+|`cognaioservice.env.aws.regionAwsBedrock`                            | Amazon Textract resource region                       | `eu-central-1`                                                                                         |
+
+### Other Ai Services
+If you want to use other Ai services you can provide following information otherwise it can be empty.
+|Name                                           | Resource            | Example / Description                                 |
+|:----------------------------------------------|:--------------------|:------------------------------------------------------|
+|`cognaioservice.env.ai.apikeyNativeOpenAi`     | openai.io           | Create individual ApiKey in your openAi account       | 
+|`cognaioservice.env.ai.endpointNativeOpenAi`   | openai.io           |`"https://api.openai.com/v1"`                          |
+|`cognaioservice.env.ai.apikeyNativeGemini`     | google Gemini       |`"https://gemini.google.com/app"`                      |
+|`cognaioservice.env.ai.apikeyNativeAnthropic`  | Amazon Anthropic    |`"https://api.openai.com/v1"`                          |
+|`cognaioservice.env.ai.apikeyNativeCerebral`   | Cerebral            |`"https://cerebralai.com.au/"`                         |
+|`cognaioservice.env.ai.endpointNativeCerebral` | Cerebral            |`"https://cerebralai.com.au/"`                         |
 
 ### PassPhrases and Tokens
 The PassPhrases and tokens are needed to encrypt the database tables and the jwt tokens used in the application. These are mostly independent of each other except `emailservice.env.passPhraseCryptoSymetricAppKey` and `cognaioservice.env.tokens.passPhraseCryptoSymetricAppKey` these must have the same value. The value can be any string of at least 8 characters.
@@ -98,13 +114,18 @@ The PassPhrases and tokens are needed to encrypt the database tables and the jwt
 
 ### Mail Account
 In order for the application to send email notifications for licensing, project management and generation of one-time passwords, an email inbox is required. 
-| Name                                                                                     | Description                                            | Default                                              |
-|:-----------------------------------------------------------------------------------------|:-------------------------------------------------------|:-----------------------------------------------------|
-| `cognaioservice.env.mailAccount.user`                                                    | Mail account user                                      | `""`                                                 |
-| `cognaioservice.env.mailAccount.password`                                                | Mail account password                                  | `""`                                                 |
-| `cognaioservice.env.mailAccount.host`                                                    | Mail account host                                      | `smtp.office365.com`                                 |
-| `cognaioservice.env.mailAccount.port`                                                    | Mail account port                                      | `587`                                                |
-| `cognaioservice.env.organization.users`                                                  | Array of users to manage COGNAiO Cloud Extract         | `""`                                                 |
+| Name                                                                                     | Description                                            | Default                                                                                      |
+|:-----------------------------------------------------------------------------------------|:-------------------------------------------------------|:---------------------------------------------------------------------------------------------|
+| `cognaioservice.env.mailAccount.user`                                                    | Mail account user                                      | `""`                                                                                         |
+| `cognaioservice.env.mailAccount.password`                                                | Mail account password                                  | `""`                                                                                         |
+| `cognaioservice.env.mailAccount.host`                                                    | Mail account host                                      | `smtp.office365.com`                                                                         |
+| `cognaioservice.env.mailAccount.port`                                                    | Mail account port                                      | `587`                                                                                        |
+| `cognaioservice.env.organization.users`                                                  | Array of users to manage COGNAiO Cloud Extract         | `""`                                                                                         |
+| `cognaioservice.env.organization.fromAddressFriendlyName`                                | From address friendly name                             | `Cognaio`                                                                                    |
+| `cognaioservice.env.organization.useAdvancedAuth`                                        | Use advanced authentication methods as json            | `{"auth":{"user":"yourEmailAddress","pass":"yourPassword"}}                                  |
+| `cognaioservice.env.organization.advancedAuthJson`                                       | Array of users to manage COGNAiO Cloud Extract         | `""`                                                                                         |
+| `cognaioservice.env.organization.useCustomSettings`                                      | Boolean to use custom settings                         | `false`                                                                                      |
+| `cognaioservice.env.organization.customSettingsJson`                                     | Apply custom settings as json                          | `{"secure":false,"maxConnections":150,"tls":{"ciphers":"SSLv3","rejectUnauthorized":false}}  |
 The emails are sent to so-called organization users which emails can be configured in the following array property.
 Please note the exact spelling with **“'name1','name2'”**
 ```yaml
@@ -133,6 +154,15 @@ Some microservices require a postgres database to persist certain data. the foll
 | `cognaioflexsearchservice.env.db.postgreSqlDbName`                                    | postgreSQL database name                                  | `postgres`                                           |
 | `cognaioflexsearchservice.env.db.schemas`                                             | postgreSQL schemas                                        | `cognaio_extensions; cognaio_repositories`           |
 
+### Redis
+Some microservices require a Redis cache for caching certain data. Persistence is not needed.
+| Name                                                                                  | Description                                               | Default                                              |
+|:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
+| `redis.secret.name`                                                                   | Secret name                                               | `redis-secrets`                                      |
+| `redis.secret.init`                                                                   | Whether or not to create a secret                         | `true`                                               |
+| `redis.secret.password`                                                               | Whether or not to create a secret                         | `changeme`                                           |
+| `redis.secret.providerUrl`                                                            | Whether or not to create a secret                         | `redis://:changeme@redis:6379`                       |
+
 ### Additional Parameter
 The following table lists the important configurable parameters of the COGNAiO cloud extract chart and their default values. All other parameters can be taken from values.yaml
 | Name                                                                                     | Description                                                        | Default                                              |
@@ -158,7 +188,10 @@ The following table lists the important configurable parameters of the COGNAiO c
 | `cognaioservice.env.cognitiveServices.computervision.maxWaitTimeoutForFinishedInSec`     | Max wait timeouts for finished in seconds                          | `1`                                                  |
 | `cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRequestTimeoutInSec`     | Max request timeouts in seconds                                    | `10`                                                 |
 | `cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetries`                 | Max retries                                                        | `30`                                                 |
-| `cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetriesWaitTimeoutInSec` | Max request timeouts in seconds                                    | `1`                                                  |
+| `cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetriesWaitTimeoutInSec` | Max retries wait timeouts in seconds                               | `1`                                                  |
+| `cognaioservice.env.cognitiveServices.awsTextract.maxRequestTimeoutInSec`                | Max request timeouts in seconds                                    | `10`                                                 |
+| `cognaioservice.env.cognitiveServices.awsTextract.maxRetries`                            | Max retries                                                        | `30`                                                 |
+| `cognaioservice.env.cognitiveServices.awsTextract.maxRetriesWaitTimeoutInSec`            | Max retries wait timeouts in seconds                               | `3`                                                  |
 | `cognaioservice.env.essentials.warningNotificationTimeoutInHours`                        | Warning notification timeouts in hours                             | `48`                                                 |
 | `cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays`            | Feature exeeds limits notification timout in days                  | `2`                                                  |
 | `cognaioservice.env.environmentNameForNotifications`                                     | Displayname of the notification service                            | `Cognaio IDP`                                        |
@@ -193,12 +226,14 @@ kubectl get pods -n cognaio-idp -w
 |NAME|READY|STATUS|
 |:----|:---|:---|
 |cognaiostudio-xxx              |1/1|     Running|
+|cce-user-manual-xxx            |1/1|     Running|
 |cognaioflexsearchservice-xxx   |1/1|     Running|
 |cognaioservice-xxx             |1/1|     Running|
 |emailservice-xxx               |1/1|     Running|
 |imageprovider-xxx              |1/1|     Running|
 |nginx-xxx                      |1/1|     Running|
 |objectdetectionprovider-xxx    |1/1|     Running|
+|redis-xxx                      |1/1|     Running|
 
 ## Usage & First Steps
 From the values.yaml take the base url:

@@ -23,6 +23,7 @@ spec:
       imagePullSecrets:
         {{- toYaml .Values.imagePullSecrets | nindent 6 }}
       {{- end }}
+# Database Schema Manager Init container
       initContainers:
       - name: init-cognaio-schema-manager
         image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioservice.init.image.name }}:{{ .Values.cognaioservice.init.image.tag }}
@@ -86,6 +87,52 @@ spec:
           value: {{ .Values.cognaioservice.env.ai.endpointAzureAiDocumentIntelligence | quote }}
         - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAZURECOGNITIVESERVICESCOMPUTERVISION
           value: {{ .Values.cognaioservice.env.ai.endpointAzureCognitiveServicesComputerVision | quote }}
+# Other LLMS
+        - name: COGNAIOENVIRONMENTVARIABLES__APIKEYNATIVEGEMINI
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: apikeyNativeGemini
+        - name: COGNAIOENVIRONMENTVARIABLES__APIKEYNATIVEANTHROPIC
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: apikeyNativeAnthropic
+        - name: COGNAIOENVIRONMENTVARIABLES__APIKEYNATIVECEREBRAL
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: apikeyNativeCerebral
+        - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTNATIVECEREBRAL
+          value: {{ .Values.cognaioservice.env.ai.endpointNativeCerebral | quote }}
+# AWS Settings
+    # AWS Textract
+        - name: COGNAIOENVIRONMENTVARIABLES__ACCESSKEYIDAWSTEXTRACT
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: accesskeyIdAwsTextract
+        - name: COGNAIOENVIRONMENTVARIABLES__SECRETACCESSKEYAWSTEXTRACT
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: secretAccessKeyAwsTextract
+        - name: COGNAIOENVIRONMENTVARIABLES__REGIONAWSTEXTRACT
+          value: {{ .Values.cognaioservice.env.aws.regionAwsTextract | quote }}
+    # AWS Bedrock
+        - name: COGNAIOENVIRONMENTVARIABLES__ACCESSKEYIDAWSBEDROCK
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: accesskeyIdAwsBedrock
+        - name: COGNAIOENVIRONMENTVARIABLES__SECRETACCESSKEYAWSBEDROCK
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: secretAccessKeyAwsBedrock
+        - name: COGNAIOENVIRONMENTVARIABLES__REGIONAWSBEDROCK
+          value: {{ .Values.cognaioservice.env.aws.regionAwsBedrock | quote }}
+# Main Container
       containers:
       - name: {{ .Values.cognaioservice.name }}
         image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioservice.image.name }}:{{ .Values.cognaioservice.image.tag }}
@@ -103,6 +150,21 @@ spec:
           value: {{ .Values.cognaio.protocol }}://{{ .Values.cognaio.url }}{{ .Values.cognaiostudio.service.urlpath }}
         - name: BaseCognaioServiceUrl
           value: {{ .Values.cognaio.protocol }}://{{ .Values.cognaio.url }}{{ .Values.cognaioservice.service.urlpath }}
+        - name: BaseUrl_FlexSearchProvider
+          value: http://{{ .Values.cognaioflexsearchservice.service.name }}
+        - name: BaseUrl_ImageProvider
+          value: http://{{ .Values.imageprovider.service.name }}
+        - name: BaseUrl_EmailProvider
+          value: http://{{ .Values.emailservice.service.name }}
+        - name: BaseUrl_ObjectDetectionProvider
+          value: http://{{ .Values.objectdetectionprovider.service.name }}
+        - name: BaseUrl_UserManual
+          value: http://{{ .Values.nginx.service.name }}/usermanual
+        - name: RedisProviderUrl
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.redis.secret.name }}
+              key: providerUrl
 # DB
         - name: PostgreSql_User
           valueFrom:
@@ -117,7 +179,7 @@ spec:
         - name: PostgreSql_Db_Server
           value: {{ .Values.cognaioservice.env.db.postgreSqlDbServer }}:{{ .Values.cognaioservice.env.db.postgreSqlDbPort }}
         - name: PostgreSql_Ssl_Required
-          value: {{ .Values.cognaioservice.env.db.postgreSqlSslRequired | quote }} 
+          value: {{ .Values.cognaioservice.env.db.postgreSqlSslRequired | quote }}
         - name: PostgreSql_Db_Name
           value: {{ .Values.cognaioservice.env.db.postgreSqlDbName | quote }} 
         - name: PostgreSql_Schemas
@@ -232,6 +294,16 @@ spec:
             secretKeyRef:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: mailAccountPassword
+        - name: MailAccount_FromAddressFriendlyName
+          value: {{ .Values.cognaioservice.env.mailAccount.fromAddressFriendlyName | quote }}
+        - name: MailAccount_UseAdvancedAuth
+          value: {{ .Values.cognaioservice.env.mailAccount.useAdvancedAuth | quote }}
+        - name: MailAccount_AdvancedAuthJson
+          value: {{ .Values.cognaioservice.env.mailAccount.advancedAuthJson | quote }}
+        - name: MailAccount_UseCustomSettings
+          value: {{ .Values.cognaioservice.env.mailAccount.useCustomSettings | quote }}
+        - name: MailAccount_CustomSettingsJson
+          value: {{ .Values.cognaioservice.env.mailAccount.customSettingsJson | quote }}
 # Cognitive Services
         - name: AzureCognitiveServicesComputerVision_MaxRequestTimeoutInSec
           value: {{ .Values.cognaioservice.env.cognitiveServices.computervision.maxRequestTimeoutInSec | quote }} 
@@ -241,21 +313,37 @@ spec:
           value: {{ .Values.cognaioservice.env.cognitiveServices.computervision.maxRetriesWaitTimeoutInSec | quote }}
         - name: AzureCognitiveServicesComputerVision_MaxWaitTimeoutForFinishedInSec
           value: {{ .Values.cognaioservice.env.cognitiveServices.computervision.maxWaitTimeoutForFinishedInSec | quote }}
+# Document Intelligence
         - name: AzureAiDocumentIntelligence_MaxRequestTimeoutInSec
           value: {{ .Values.cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRequestTimeoutInSec | quote }}
         - name: AzureAiDocumentIntelligence_MaxRetries
           value: {{ .Values.cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetries | quote }}
         - name: AzureAiDocumentIntelligence_MaxRetriesWaitTimeoutInSec
           value: {{ .Values.cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetriesWaitTimeoutInSec | quote }}
-        - name: EnvironmentNameForNotifications
-          value: {{ .Values.cognaioservice.env.environmentNameForNotifications }}
-        - name: LogSeverity
-          value: {{ .Values.cognaioservice.env.logSeverity }}
+# AWS Textract
+        - name: AwsTextract_MaxRequestTimeoutInSec
+          value: {{ .Values.cognaioservice.env.cognitiveServices.awsTextract.maxRequestTimeoutInSec | quote }}
+        - name: AwsTextract_MaxRetries
+          value: {{ .Values.cognaioservice.env.cognitiveServices.awsTextract.maxRetries | quote }}
+        - name: AwsTextract_MaxRetriesWaitTimeoutInSec
+          value: {{ .Values.cognaioservice.env.cognitiveServices.awsTextract.maxRetriesWaitTimeoutInSec | quote }}
 # Essentials
         - name: Essential_Warning_Notification_TimeoutInHours
           value: {{ .Values.cognaioservice.env.essentials.warningNotificationTimeoutInHours | quote }}
         - name: Essential_FeatureExceedsLimits_Notification_TimeoutInDays
           value: {{ .Values.cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays | quote }}
+# Other
+        - name: LogSeverity
+          value: {{ .Values.cognaioservice.env.logSeverity }}
+        - name: EnvironmentNameForNotifications
+          value: {{ .Values.cognaioservice.env.environmentNameForNotifications }}
+# Preview Features
+        - name: Feature_Preview_Ui_Ai_Chain_Crafter_Disabled
+          value: {{ .Values.cognaioservice.env.featurePreview.uiAiChainCrafterDisabled | quote }}
+        - name: Feature_Preview_Cerebral_Edge_Disabled
+          value: {{ .Values.cognaioservice.env.featurePreview.cerebralEdgeDisabled | quote }}
+        - name: Feature_Preview_Aws_Services_Disabled
+          value: {{ .Values.cognaioservice.env.featurePreview.awsServicesDisabled | quote }}
         {{- if .Values.cognaioservice.resources }}
         resources: {{- toYaml .Values.cognaioservice.resources | nindent 12 }}
         {{- end }}
