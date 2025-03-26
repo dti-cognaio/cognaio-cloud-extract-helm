@@ -1,5 +1,31 @@
 # Change Log
 
+## Version 2.4.0
+### Changes
+- Added settings allowing to use AWS services
+- Introduced new LLM settings to COGNAiO Service
+- Introduced User Manual service
+- Added required Redis service
+- Extended mailbox connectivity settings in case it's required
+- Added Base URLs for services to COGNAiO Service configuration
+- Added nginx config map to COGNAiO Studio
+
+### Versions
+|Repository|Version|
+|---|---|
+|dtideregistry.azurecr.io/dti/idp/cognaiostudio              |2.4.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioservice             |2.4.0|
+|dtideregistry.azurecr.io/dti/idp/image                      |2.4.0|
+|dtideregistry.azurecr.io/dti/idp/emailservice               |2.4.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioflexsearchservice   |2.4.0|
+|dtideregistry.azurecr.io/dti/idp/objectdetectionprovider    |2.4.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioschemamanager       |2.4.0|
+|dtideregistry.azurecr.io/dti/idp/cce-user-manual            |2.4.0 *|
+|dtideregistry.azurecr.io/nginx/nginx                        |1.27.4|
+|dtideregistry.azurecr.io/bitnami/redis                      |7.4.2 *|
+>\* = Added
+---
+
 ## Version 2.3.0
 ### Changes
 - UI enhancements
