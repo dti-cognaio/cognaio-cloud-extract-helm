@@ -71,9 +71,9 @@ While Azure is our preferred platform for AI services, our solution also support
 |`cognaioservice.env.aws.accesskeyIdAwsTextract`                      | Amazon Textract resource                              | Create a service user in AWS with resource access and generate the corresponding access and secret key.|
 |`cognaioservice.env.aws.secretAccessKeyAwsTextract`                  | Amazon Textract resource                              | Create a service user in AWS with resource access and generate the corresponding access and secret key.|
 |`cognaioservice.env.aws.regionAwsTextract`                           | Amazon Textract resource region                       | `eu-central-1`                                                                                         |
-|`cognaioservice.env.aws.accesskeyIdAwsBedrock`                       | Amazon Textract resource                              | Create a service user in AWS with resource access and generate the corresponding access and secret key.|
-|`cognaioservice.env.aws.secretAccessKeyAwsBedrock`                   | Amazon Textract resource                              | Create a service user in AWS with resource access and generate the corresponding access and secret key.|
-|`cognaioservice.env.aws.regionAwsBedrock`                            | Amazon Textract resource region                       | `eu-central-1`                                                                                         |
+|`cognaioservice.env.aws.accesskeyIdAwsBedrock`                       | Amazon Bedrock resource                               | Create a service user in AWS with resource access and generate the corresponding access and secret key.|
+|`cognaioservice.env.aws.secretAccessKeyAwsBedrock`                   | Amazon Bedrock resource                               | Create a service user in AWS with resource access and generate the corresponding access and secret key.|
+|`cognaioservice.env.aws.regionAwsBedrock`                            | Amazon Bedrock resource region                        | `eu-central-1`                                                                                         |
 
 ### Other Ai Services
 If you want to use other Ai services you can provide following information otherwise it can be empty.
@@ -158,10 +158,10 @@ Some microservices require a postgres database to persist certain data. the foll
 Some microservices require a Redis cache for caching certain data. Persistence is not needed.
 | Name                                                                                  | Description                                               | Default                                              |
 |:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
-| `redis.secret.name`                                                                   | Secret name                                               | `redis-secrets`                                      |
+| `redis.secret.name`                                                                   | Secret name, details in `redis-secrets.yaml`              | `redis-secrets`                                      |
 | `redis.secret.init`                                                                   | Whether or not to create a secret                         | `true`                                               |
-| `redis.secret.password`                                                               | Whether or not to create a secret                         | `changeme`                                           |
-| `redis.secret.providerUrl`                                                            | Whether or not to create a secret                         | `redis://:changeme@redis:6379`                       |
+| `redis.secret.password`                                                               | Password for redis                                        | `changeme`                                           |
+| `redis.secret.providerUrl`                                                            | Redis provider url                                        | `redis://:changeme@redis:6379`                       |
 
 ### Additional Parameter
 The following table lists the important configurable parameters of the COGNAiO cloud extract chart and their default values. All other parameters can be taken from values.yaml
