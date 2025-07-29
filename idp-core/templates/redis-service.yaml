@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.redis.service.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    app: cognaio-idp
+    name: {{ .Values.redis.service.name }}
+  {{- if .Values.redis.service.additionalAnnotations  }}
+  annotations: {{- toYaml .Values.redis.service.additionalAnnotations  | nindent 4 }}
+  {{- end }}
+spec:
+  ports:
+  - name: tcp-redis
+    port: {{ .Values.redis.service.port }}
+    protocol: TCP
+    targetPort: redis
+  selector:
+    {{- include "cognaio.selectorLabels" . | nindent 4 }}
+    name: {{ .Values.redis.name }}
+  type: {{ .Values.redis.service.type }}
