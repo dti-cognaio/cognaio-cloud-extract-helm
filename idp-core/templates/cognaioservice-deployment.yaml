@@ -86,6 +86,9 @@ spec:
           value: {{ .Values.cognaioservice.env.ai.endpointAzureAiDocumentIntelligence | quote }}
         - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAZURECOGNITIVESERVICESCOMPUTERVISION
           value: {{ .Values.cognaioservice.env.ai.endpointAzureCognitiveServicesComputerVision | quote }}
+        {{- if .Values.cognaioservice.init.resources }}
+        resources: {{- toYaml .Values.cognaioservice.init.resources | nindent 12 }}
+        {{- end }}
       containers:
       - name: {{ .Values.cognaioservice.name }}
         image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioservice.image.name }}:{{ .Values.cognaioservice.image.tag }}
