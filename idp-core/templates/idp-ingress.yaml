@@ -15,8 +15,8 @@ metadata:
 spec:
   tls:
   - hosts:
-    - {{ .Values.cognaio.wildcardUrl }}
-    - {{ .Values.cognaio.url }} 
+    - {{ .Values.cognaio.wildcardUrl | quote}}
+    - {{ .Values.cognaio.url | quote }} 
     secretName: {{ .Values.cognaio.cert.secret.name }}
   rules:
   - host: {{ .Values.cognaio.url }} 

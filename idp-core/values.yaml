@@ -91,6 +91,11 @@ cognaioservice:
     image:
       name: dti/idp/cognaioschemamanager
       tag: 2.4.0
+    # resources:
+    #   limits:
+    #     memory: "512Mi"
+    #   requests:
+    #     memory: "256Mi"
   image:
     name: dti/idp/cognaioservice
     tag: 2.4.0

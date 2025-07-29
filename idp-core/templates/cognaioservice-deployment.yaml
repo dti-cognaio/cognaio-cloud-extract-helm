@@ -133,6 +133,9 @@ spec:
         - name: COGNAIOENVIRONMENTVARIABLES__REGIONAWSBEDROCK
           value: {{ .Values.cognaioservice.env.aws.regionAwsBedrock | quote }}
 # Main Container
+        {{- if .Values.cognaioservice.init.resources }}
+        resources: {{- toYaml .Values.cognaioservice.init.resources | nindent 12 }}
+        {{- end }}
       containers:
       - name: {{ .Values.cognaioservice.name }}
         image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioservice.image.name }}:{{ .Values.cognaioservice.image.tag }}
