@@ -1,5 +1,32 @@
 # Change Log
 
+## Version 2.5.0
+### Changes
+- Added preview version of  Cognaio Insight UI
+- Added SSL Required flag to Cognaio Schema Manager
+- Added Azure AI Foundry resource settings
+- Introduced possibility of OpenID authentication
+- Added settings for Endpoints encryption, required for possibility to edit them
+- Added minor adjustments to NGINX config for better load balancing
+
+
+### Versions
+|Repository|Version|
+|---|---|
+|dtideregistry.azurecr.io/dti/idp/cognaiostudio              |2.5.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioinsight             |2.5.0-Insight-Preview *|
+|dtideregistry.azurecr.io/dti/idp/cognaioservice             |2.5.0|
+|dtideregistry.azurecr.io/dti/idp/image                      |2.5.0|
+|dtideregistry.azurecr.io/dti/idp/emailservice               |2.5.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioflexsearchservice   |2.5.0|
+|dtideregistry.azurecr.io/dti/idp/objectdetectionprovider    |2.5.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioschemamanager       |2.5.0|
+|dtideregistry.azurecr.io/dti/idp/cce-user-manual            |2.5.0|
+|dtideregistry.azurecr.io/nginx/nginx                        |1.29.0|
+|dtideregistry.azurecr.io/bitnami/redis                      |8.2.0|
+>\* = Added
+---
+
 ## Version 2.4.0
 ### Changes
 - Added settings allowing to use AWS services
