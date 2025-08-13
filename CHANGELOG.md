@@ -22,8 +22,8 @@
 |dtideregistry.azurecr.io/dti/idp/objectdetectionprovider    |2.5.0|
 |dtideregistry.azurecr.io/dti/idp/cognaioschemamanager       |2.5.0|
 |dtideregistry.azurecr.io/dti/idp/cce-user-manual            |2.5.0|
-|dtideregistry.azurecr.io/nginx/nginx                        |1.29.0|
-|dtideregistry.azurecr.io/bitnami/redis                      |8.2.0|
+|dtideregistry.azurecr.io/nginx/nginx                        |1.29.0-alpine-slim|
+|dtideregistry.azurecr.io/redis/redis                        |8.2.0-alpine|
 >\* = Added
 ---
 
