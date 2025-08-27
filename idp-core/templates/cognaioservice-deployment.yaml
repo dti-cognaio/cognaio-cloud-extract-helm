@@ -413,6 +413,8 @@ spec:
           value: {{ .Values.cognaioservice.env.featurePreview.cerebralEdgeDisabled | quote }}
         - name: Feature_Preview_Aws_Services_Disabled
           value: {{ .Values.cognaioservice.env.featurePreview.awsServicesDisabled | quote }}
+        - name: Endpoints_Manage_Disabled
+          value: {{ .Values.cognaioservice.env.endpointsManageDisabled | quote }}
         {{- if .Values.cognaioservice.resources }}
         resources: {{- toYaml .Values.cognaioservice.resources | nindent 12 }}
         {{- end }}

@@ -2,7 +2,7 @@
 
 ## Version 2.5.0
 ### Changes
-- Added preview version of  Cognaio Insight UI
+- Added preview version of Cognaio Insight UI
 - Added SSL Required flag to Cognaio Schema Manager
 - Added Azure AI Foundry resource settings
 - Introduced possibility of OpenID authentication

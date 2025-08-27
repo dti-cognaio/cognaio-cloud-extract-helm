@@ -232,6 +232,7 @@ cognaioservice:
       cerebralEdgeDisabled: true
       awsServicesDisabled: true
     environmentNameForNotifications: "Cognaio IDP"
+    endpointsManageDisabled: false
     logSeverity: "info"
   # resources:
   #   limits:
