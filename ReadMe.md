@@ -64,6 +64,8 @@ While Azure is our preferred platform for AI services, our solution also support
 |`cognaioservice.env.ai.endpointAzureAiDocumentIntelligence`          | Microsoft.CognitiveServices - Kind: FormRecognizer    | `https://<RESOURCE NAME>.cognitiveservices.azure.com/`                           |
 |`cognaioservice.env.ai.apikeyAzureCognitiveServicesComputervision`   | Microsoft.CognitiveServices - Kind: CognitiveServices | See Azure Portal on the Resource --> Resource Management --> `Keys and Endpoint` |
 |`cognaioservice.env.ai.endpointAzureCognitiveServicesComputerVision` | Microsoft.CognitiveServices - Kind: CognitiveServices | `https://<LOCATION>.api.cognitive.microsoft.com/`                                |
+|`cognaioservice.env.ai.apikeyAiFoundry`                              | Microsoft.CognitiveServices - Kind: AIServices        | See Azure Portal --> Azure Foundry portal                                        |
+|`cognaioservice.env.ai.endpointAiFoundry`                            | Microsoft.CognitiveServices - Kind: AIServices        | See Azure Portal --> Azure Foundry portal                                        |
 
 ### AWS
 |Name                                                                 | Resource                                              | Example / Description                                                                                  |
@@ -85,6 +87,32 @@ If you want to use other Ai services you can provide following information other
 |`cognaioservice.env.ai.apikeyNativeAnthropic`  | Amazon Anthropic    |`"https://api.openai.com/v1"`                          |
 |`cognaioservice.env.ai.apikeyNativeCerebral`   | Cerebral            |`"https://cerebralai.com.au/"`                         |
 |`cognaioservice.env.ai.endpointNativeCerebral` | Cerebral            |`"https://cerebralai.com.au/"`                         |
+
+
+### Edit AI Endpoints directly in UI
+> ⚠️ From version 2.5 onwards
+
+The endpoints for AI services can be configured directly in COGNAiO UI. Because the database is encrypted, it requires a private and public key, which must be included in the deployment.
+There are two ways to create these.
+1. Existing COGNAiO 2.5 installation
+```sh
+GET <BASE_URL>/extraction/api/crypto/generatekeypair
+```
+> ‼️ When this endpoint is used, the cognaioservice.env.tokens.passPhraseCryptoAsymetric that already exists in the deployment is automatically used. This means that these generated keys only work on systems that use the same key!
+2. Using the openssl tool
+```sh
+openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:4096 -aes-256-cbc
+```
+```sh
+openssl rsa -pubout -in private_key.pem -out public_key.pem
+```
+> ⚠️ The required passphrase is the one provided in: cognaioservice.env.tokens.passPhraseCryptoAsymetric
+
+The values must then be entered into the environment variables, whereby the private key is best kept in a secret/vault.
+| Name                                                                                     | Description                     | Default                                                                     |
+|:-----------------------------------------------------------------------------------------|:--------------------------------|:----------------------------------------------------------------------------|
+| `cognaioservice.env.essentials.endpointsPrivateKey`                                      | Private key                     | `""`                                                                        |
+| `cognaioservice.env.essentials.endpointsPublicKey`                                       | Public key                      | `""`                                                                        |
 
 ### PassPhrases and Tokens
 The PassPhrases and tokens are needed to encrypt the database tables and the jwt tokens used in the application. These are mostly independent of each other except `emailservice.env.passPhraseCryptoSymetricAppKey` and `cognaioservice.env.tokens.passPhraseCryptoSymetricAppKey` these must have the same value. The value can be any string of at least 8 characters.
@@ -135,6 +163,30 @@ cognaioservice:
       users: "'email_1@example.com','email_2@example.com'"
 ```
 > Change from version 2.2.0 to 2.2.1 | new provide string instead of array
+
+### OpenID
+Instead of retrieving an one time password (otp) via eMail you can connect an openID provider. Supported providers are Azure Entra ID, Google and Github.
+To set up the corresponding OpenID providers, please consult the relevant provider documentation.
+| Name                                                                                  | Description                                               | Default                                              |
+|:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
+| `cognaioservice.env.openID.passPhraseUserInfo`                                        | Encrypts user information retrieved form provider in db   | `""`                                                 |
+| `cognaioservice.env.openID.microsoftDisabled`                                         | Enables Microsoft open id connection                      | `true`                                               |
+| `cognaioservice.env.openID.microsoftClientId`                                         | Client ID from Microsoft App registration                 | `""`                                                 |
+| `cognaioservice.env.openID.microsoftClientSecret`                                     | Client secret from Microsoft App registration             | `""`                                                 |
+| `cognaioservice.env.openID.microsoftTenant`                                           | Tenant ID from Microsoft App registration                 | `""`                                                 |
+| `cognaioservice.env.openID.microsoftTenantsExpected`                                  | Internal filter to allow only certain domains             | `""`                                                 |
+| `cognaioservice.env.openID.microsoftLayoutOrder`                                      | Order if multiple provides are configured in UI           | `1`                                                  |
+| `cognaioservice.env.openID.googleDisabled`                                            | Enables Google open id connection                         | `true`                                               |
+| `cognaioservice.env.openID.googleClientId`                                            | Client ID from Google registration                        | `""`                                                 |
+| `cognaioservice.env.openID.googleClientSecret`                                        | Client secret from Google registration                    | `""`                                                 |
+| `cognaioservice.env.openID.googleTenantsExpected`                                     | Internal filter to allow only certain domains             | `""`                                                 |
+| `cognaioservice.env.openID.googleLayoutOrder`                                         | Order if multiple provides are configured in UI           | `2`                                                  |
+| `cognaioservice.env.openID.githubDisabled`                                            | Enables Github open id connection                         | `true`                                               |
+| `cognaioservice.env.openID.githubClientId`                                            | Client ID from Github registration                        | `""`                                                 |
+| `cognaioservice.env.openID.githubClientSecret`                                        | Client secret from Github registration                    | `""`                                                 |
+| `cognaioservice.env.openID.githubTenantsExpected`                                     | Internal filter to allow only certain domains             | `""`                                                 |
+| `cognaioservice.env.openID.githubLayoutOrder`                                         | Order if multiple provides are configured in UI           | `3`                                                  |
+
 ### Database
 Some microservices require a postgres database to persist certain data. the following parameters are described for this purpose.
 | Name                                                                                  | Description                                               | Default                                              |
@@ -178,6 +230,8 @@ The following table lists the important configurable parameters of the COGNAiO c
 | `cognaio.ingress.enabled`                                                                | Enable deployment of ingress                                       | `true`                                               |
 | `cognaiostudio.service.urlpath`                                                          | Url path for the service                                           | `/cognaioalnalyze`                                   |
 | `cognaiostudio.resources`                                                                | Provide limit and request resource information                     | none                                                 |
+| `cognaioinsight.service.urlpath`                                                         | Url path for the service                                           | `/cognaioinsight`                                    |
+| `cognaioinsight.resources`                                                               | Provide limit and request resource information                     | none                                                 |
 | `cognaioservice.service.urlpath`                                                         | Url path for the service                                           | `/extraction`                                        |
 | `cognaioservice.env.port`                                                                | Port                                                               | `3000`                                               |
 | `cognaioservice.env.secret.name`                                                         | Secret name, details in `cognaioservice-env-secrets.yaml`          | `cognaioservice-env-secrets`                         |
@@ -194,6 +248,7 @@ The following table lists the important configurable parameters of the COGNAiO c
 | `cognaioservice.env.cognitiveServices.awsTextract.maxRetriesWaitTimeoutInSec`            | Max retries wait timeouts in seconds                               | `3`                                                  |
 | `cognaioservice.env.essentials.warningNotificationTimeoutInHours`                        | Warning notification timeouts in hours                             | `48`                                                 |
 | `cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays`            | Feature exeeds limits notification timout in days                  | `2`                                                  |
+| `cognaioservice.env.endpointsManageDisabled`                                             | Disables endpoints management permissions                          | `false`                                              |
 | `cognaioservice.env.environmentNameForNotifications`                                     | Displayname of the notification service                            | `Cognaio IDP`                                        |
 | `cognaioservice.env.logSeverity`                                                         | Log severity                                                       | `info`                                               |
 | `cognaioservice.resources`                                                               | Provide limit and request resource information                     | none                                                 |

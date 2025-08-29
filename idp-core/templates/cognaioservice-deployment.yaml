@@ -49,6 +49,8 @@ spec:
           value: {{ .Values.cognaioservice.env.db.postgreSqlDbServer | quote }}
         - name: COGNAIOENVIRONMENTVARIABLES__DBPORT
           value: {{ .Values.cognaioservice.env.db.postgreSqlDbPort | quote }}
+        - name: COGNAIOENVIRONMENTVARIABLES__DBSSLREQUIRED
+          value: {{ .Values.cognaioservice.env.db.postgreSqlSslRequired | quote }}
         - name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASETEMPLATES
           valueFrom:
             secretKeyRef:
@@ -69,6 +71,11 @@ spec:
             secretKeyRef:
               name: {{ .Values.cognaioservice.env.secret.name }}
               key: apikeyNativeOpenAi
+        - name: COGNAIOENVIRONMENTVARIABLES__APIKEYAIFOUNDRY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: apikeyAiFoundry
         - name: COGNAIOENVIRONMENTVARIABLES__APIKEYAZUREAIDOCUMENTINTELLIGENCE
           valueFrom:
             secretKeyRef:
@@ -83,6 +90,8 @@ spec:
           value: {{ .Values.cognaioservice.env.ai.endpointAzureOpenAi | quote }}
         - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTNATIVEOPENAI
           value: {{ .Values.cognaioservice.env.ai.endpointNativeOpenAi | quote }}
+        - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAIFOUNDRY
+          value: {{ .Values.cognaioservice.env.ai.endpointAiFoundry | quote }}
         - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAZUREAIDOCUMENTINTELLIGENCE
           value: {{ .Values.cognaioservice.env.ai.endpointAzureAiDocumentIntelligence | quote }}
         - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAZURECOGNITIVESERVICESCOMPUTERVISION
@@ -335,11 +344,68 @@ spec:
           value: {{ .Values.cognaioservice.env.essentials.warningNotificationTimeoutInHours | quote }}
         - name: Essential_FeatureExceedsLimits_Notification_TimeoutInDays
           value: {{ .Values.cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays | quote }}
+# OpenID
+        - name: OpenID_PassPhrase_UserInfo
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: openIDPassPhraseUserInfo
+# OpenID Microsoft
+        - name: OpenID_Microsoft_Disabled
+          value: {{ .Values.cognaioservice.env.openID.microsoftDisabled | quote }}
+        - name: OpenID_Microsoft_Client_Id
+          value: {{ .Values.cognaioservice.env.openID.microsoftClientId | quote }}
+        - name: OpenID_Microsoft_Client_Secret
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: openIDMicrosoftClientSecret
+        - name: OpenID_Microsoft_Tenant
+          value: {{ .Values.cognaioservice.env.openID.microsoftTenant | quote }}
+        - name: OpenID_Microsoft_Tenants_Expected
+          value: {{ .Values.cognaioservice.env.openID.microsoftTenantsExpected | quote }}
+        - name: OpenID_Microsoft_Layout_Order
+          value: {{ .Values.cognaioservice.env.openID.microsoftLayoutOrder | quote }}
+# OpenID Google
+        - name: OpenID_Google_Disabled
+          value: {{ .Values.cognaioservice.env.openID.googleDisabled | quote }}
+        - name: OpenID_Google_Client_Id
+          value: {{ .Values.cognaioservice.env.openID.googleClientId | quote }}
+        - name: OpenID_Google_Client_Secret
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: openIDGoogleClientSecret
+        - name: OpenID_Google_Tenants_Expected
+          value: {{ .Values.cognaioservice.env.openID.googleTenantsExpected | quote }}
+        - name: OpenID_Google_Layout_Order
+          value: {{ .Values.cognaioservice.env.openID.googleLayoutOrder | quote }}
+# OpenID Github
+        - name: OpenID_Github_Disabled
+          value: {{ .Values.cognaioservice.env.openID.githubDisabled | quote }}
+        - name: OpenID_Github_Client_Id
+          value: {{ .Values.cognaioservice.env.openID.githubClientId | quote }}
+        - name: OpenID_Github_Client_Secret
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: openIDGithubClientSecret
+        - name: OpenID_Github_Tenants_Expected
+          value: {{ .Values.cognaioservice.env.openID.githubTenantsExpected | quote }}
+        - name: OpenID_Github_Layout_Order
+          value: {{ .Values.cognaioservice.env.openID.githubLayoutOrder | quote }}
 # Other
         - name: LogSeverity
           value: {{ .Values.cognaioservice.env.logSeverity }}
         - name: EnvironmentNameForNotifications
           value: {{ .Values.cognaioservice.env.environmentNameForNotifications }}
+        - name: Endpoints_PrivateKey
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.cognaioservice.env.secret.name }}
+              key: endpointsPrivateKey
+        - name: Endpoints_PublicKey
+          value: {{ .Values.cognaioservice.env.essentials.endpointsPublicKey | quote }}
 # Preview Features
         - name: Feature_Preview_Ui_Ai_Chain_Crafter_Disabled
           value: {{ .Values.cognaioservice.env.featurePreview.uiAiChainCrafterDisabled | quote }}
@@ -347,6 +413,8 @@ spec:
           value: {{ .Values.cognaioservice.env.featurePreview.cerebralEdgeDisabled | quote }}
         - name: Feature_Preview_Aws_Services_Disabled
           value: {{ .Values.cognaioservice.env.featurePreview.awsServicesDisabled | quote }}
+        - name: Endpoints_Manage_Disabled
+          value: {{ .Values.cognaioservice.env.endpointsManageDisabled | quote }}
         {{- if .Values.cognaioservice.resources }}
         resources: {{- toYaml .Values.cognaioservice.resources | nindent 12 }}
         {{- end }}

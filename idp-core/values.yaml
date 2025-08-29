@@ -25,7 +25,7 @@ nginx:
   replicaCount: 1
   image:
     name: nginx/nginx
-    tag: 1.27.4
+    tag: 1.29.0-alpine-slim
   service:
     name: nginx
     port: 80
@@ -41,7 +41,7 @@ usermanual:
   replicaCount: 1
   image:
     name: dti/idp/cce-user-manual
-    tag: 2.4.0
+    tag: 2.5.0
   service:
     name: cce-user-manual
     port: 80
@@ -53,8 +53,8 @@ redis:
   name: redis
   replicaCount: 1
   image:
-    name: bitnami/redis
-    tag: 7.4.2
+    name: redis/redis
+    tag: 8.2.0-alpine
   service:
     name: redis
     port: 6379
@@ -70,12 +70,31 @@ cognaiostudio:
   replicaCount: 1
   image:
     name: dti/idp/cognaiostudio
-    tag: 2.4.0
+    tag: 2.5.0
   service:
     name: cognaiostudio
     port: 80
     type: ClusterIP
     urlpath: /cognaioanalyze
+  env:
+    node_env: production
+  # resources:
+  #   limits:
+  #     memory: "256Mi"
+  #   requests:
+  #     memory: "64Mi"
+
+cognaioinsight:
+  name: cognaioinsight
+  replicaCount: 1
+  image:
+    name: dti/idp/cognaioinsight
+    tag: 2.5.0-Insight-Preview
+  service:
+    name: cognaioinsight
+    port: 80
+    type: ClusterIP
+    urlpath: /cognaioinsight
   env:
     node_env: production
   # resources:
@@ -90,7 +109,7 @@ cognaioservice:
   init:
     image:
       name: dti/idp/cognaioschemamanager
-      tag: 2.4.0
+      tag: 2.5.0
     # resources:
     #   limits:
     #     memory: "512Mi"
@@ -98,7 +117,7 @@ cognaioservice:
     #     memory: "256Mi"
   image:
     name: dti/idp/cognaioservice
-    tag: 2.4.0
+    tag: 2.5.0
   service:
     name: cognaioservice
     port: 80
@@ -140,10 +159,12 @@ cognaioservice:
     ai:
       apikeyAzureOpenAi: ""
       apikeyNativeOpenAi: ""
+      apikeyAiFoundry: ""
       apikeyAzureAiDocumentIntelligence: ""
       apikeyAzureCognitiveServicesComputervision: ""
       endpointAzureOpenAi: ""
       endpointNativeOpenAi: ""
+      endpointAiFoundry: ""
       endpointAzureAiDocumentIntelligence: ""
       endpointAzureCognitiveServicesComputerVision: ""
       apikeyNativeGemini: ""
@@ -176,21 +197,42 @@ cognaioservice:
         maxRetriesWaitTimeoutInSec: 1
         maxWaitTimeoutForFinishedInSec: 1
       aiDocumentIntelligence:
-        maxRequestTimeoutInSec: 10
+        maxRequestTimeoutInSec: 60
         maxRetries: 30
         maxRetriesWaitTimeoutInSec: 3
       awsTextract:
-        maxRequestTimeoutInSec: 10
+        maxRequestTimeoutInSec: 60
         maxRetries: 30
         maxRetriesWaitTimeoutInSec: 3
+    openID:
+      passPhraseUserInfo: ""
+      microsoftDisabled: true
+      microsoftClientId: ""
+      microsoftClientSecret: ""
+      microsoftTenant: "common"
+      microsoftTenantsExpected: ""
+      microsoftLayoutOrder: 1
+      googleDisabled: true
+      googleClientId: ""
+      googleClientSecret: ""
+      googleTenantsExpected: ""
+      googleLayoutOrder: 2
+      githubDisabled: true
+      githubClientId: ""
+      githubClientSecret: ""
+      githubTenantsExpected: ""
+      githubLayoutOrder: 3
     essentials:
       warningNotificationTimeoutInHours: 48
       featureExceedsLimitsNotificationTimeoutInDays: 2
+      endpointsPrivateKey: ""
+      endpointsPublicKey: ""
     featurePreview:
       uiAiChainCrafterDisabled: true
       cerebralEdgeDisabled: true
       awsServicesDisabled: true
     environmentNameForNotifications: "Cognaio IDP"
+    endpointsManageDisabled: false
     logSeverity: "info"
   # resources:
   #   limits:
@@ -203,7 +245,7 @@ emailservice:
   replicaCount: 1
   image:
     name: dti/idp/emailservice
-    tag: 2.4.0
+    tag: 2.5.0
   service:
     name: emailservice
     port: 80
@@ -227,7 +269,7 @@ cognaioflexsearchservice:
   replicaCount: 1
   image:
     name: dti/idp/cognaioflexsearchservice
-    tag: 2.4.0
+    tag: 2.5.0
   service:
     name: cognaioflexsearchservice
     port: 80
@@ -259,7 +301,7 @@ imageprovider:
   replicaCount: 3
   image:
     name: dti/idp/image
-    tag: 2.4.0
+    tag: 2.5.0
   service:
     name: imageprovider
     port: 80
@@ -268,7 +310,7 @@ imageprovider:
     port: 3333
   resources:
     limits:
-      memory: "5120Mi"
+      memory: "4096Mi"
     requests:
       memory: "512Mi"
 
@@ -277,7 +319,7 @@ objectdetectionprovider:
   replicaCount: 1
   image:
     name: dti/idp/objectdetectionprovider
-    tag: 2.4.0
+    tag: 2.5.0
   service:
     name: objectdetectionprovider
     port: 80
