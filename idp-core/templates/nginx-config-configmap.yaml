@@ -12,12 +12,18 @@ data:
         server {{ .Values.cognaiostudio.service.name }};
     }
 
+    upstream cognaioinsights {
+        server {{ .Values.cognaioinsight.service.name }};
+    }
+
     upstream cognaiodocumentation {
         server {{ .Values.usermanual.service.name }};
     }
 
     upstream serviceproviderimages {
+        least_conn;
         server {{ .Values.imageprovider.service.name }};
+        keepalive 32;
     }
 
     upstream serviceprovideremails {
@@ -29,7 +35,9 @@ data:
     }
     
     upstream serviceproviderextractions {
+        least_conn;
         server {{ .Values.cognaioservice.service.name }};
+        keepalive 32;
     }
 
     upstream serviceproviderobjectdetection {
@@ -66,15 +74,6 @@ data:
             proxy_pass http://cognaiodocumentation/cceUserManual/;
         }
 
-        # # Proxying the connections
-        # location /imageprovider/ {
-        #     if ($block_this_request) { return 403; }
-        #     client_max_body_size 150M;
-        #     client_body_buffer_size 150M; 
-        #     proxy_buffering off;
-        #     proxy_pass http://serviceproviderimages/;
-        # }
-
         # Proxying the connections
         location /extraction/ {
             proxy_set_header  Host $host;
@@ -97,6 +96,18 @@ data:
             client_body_buffer_size 150M; 
             proxy_buffering off;
             proxy_pass http://cognaiostudios/;
+        }
+
+        # Proxying the connections
+        location /cognaioinsight/ {
+            proxy_set_header  Host $host;
+            proxy_set_header  X-Real-IP $remote_addr;
+            proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header  X-Forwarded-Host $host;
+            client_max_body_size 150M;
+            client_body_buffer_size 150M; 
+            proxy_buffering off;
+            proxy_pass http://cognaioinsights/;
         }
 
         # Proxying the connections
