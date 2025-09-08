@@ -64,3 +64,11 @@ spec:
         {{- if .Values.cognaioflexsearchservice.resources }}
         resources: {{- toYaml .Values.cognaioflexsearchservice.resources | nindent 12 }}
         {{- end }}
+        {{- if .Values.cognaioflexsearchservice.volumeMounts }}
+        volumeMounts:
+          {{ tpl .Values.cognaioflexsearchservice.volumeMounts . | nindent 10 }}
+        {{- end}}
+      {{- if .Values.cognaioflexsearchservice.volumes }}
+      volumes:
+        {{ tpl .Values.cognaioflexsearchservice.volumes . | nindent 8 }}
+      {{- end}}

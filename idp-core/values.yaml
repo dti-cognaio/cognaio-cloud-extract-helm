@@ -115,6 +115,12 @@ cognaioservice:
     #     memory: "512Mi"
     #   requests:
     #     memory: "256Mi"
+    # volumes: |
+    #   - name: volume-1
+    #     emptyDir: {}
+    # volumeMounts: |
+    #   - mountPath: /usr/tmp
+    #     name: volume-1
   image:
     name: dti/idp/cognaioservice
     tag: 2.5.0
@@ -239,6 +245,12 @@ cognaioservice:
   #     memory: "1024Mi"
   #   requests:
   #     memory: "512Mi"
+  # volumes: |
+  #   - name: volume-1
+  #     emptyDir: {}
+  # volumeMounts: |
+  #   - mountPath: /usr/tmp
+  #     name: volume-1
 
 emailservice:
   name: emailservice
@@ -295,6 +307,12 @@ cognaioflexsearchservice:
   #     memory: "2048Mi"
   #   requests:
   #     memory: "1024Mi"
+  # volumes: |
+  #   - name: volume-1
+  #     emptyDir: {}
+  # volumeMounts: |
+  #   - mountPath: /usr/tmp
+  #     name: volume-1
 
 imageprovider:
   name: imageprovider

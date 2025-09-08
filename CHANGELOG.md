@@ -1,4 +1,7 @@
 # Change Log
+## Version 2.5.1
+### Changes
+- Added volumes and volumemounts to cognaioservice and cognaioflexsearchservice
 
 ## Version 2.5.0
 ### Changes
@@ -8,7 +11,6 @@
 - Introduced possibility of OpenID authentication
 - Added settings for Endpoints encryption, required for possibility to edit them
 - Added minor adjustments to NGINX config for better load balancing
-
 
 ### Versions
 |Repository|Version|

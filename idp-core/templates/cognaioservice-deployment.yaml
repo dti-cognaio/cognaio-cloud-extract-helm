@@ -141,10 +141,18 @@ spec:
               key: secretAccessKeyAwsBedrock
         - name: COGNAIOENVIRONMENTVARIABLES__REGIONAWSBEDROCK
           value: {{ .Values.cognaioservice.env.aws.regionAwsBedrock | quote }}
-# Main Container
         {{- if .Values.cognaioservice.init.resources }}
         resources: {{- toYaml .Values.cognaioservice.init.resources | nindent 12 }}
         {{- end }}
+        {{- if .Values.cognaioservice.init.volumeMounts }}
+        volumeMounts:
+          {{- tpl .Values.cognaioservice.init.volumeMounts . | nindent 10 }}
+        {{- end}}
+      {{- if .Values.cognaioservice.init.volumes }}
+      volumes:
+        {{- tpl .Values.cognaioservice.init.volumes . | nindent 8 }}
+      {{- end}}
+# Main Container
       containers:
       - name: {{ .Values.cognaioservice.name }}
         image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioservice.image.name }}:{{ .Values.cognaioservice.image.tag }}
@@ -418,3 +426,11 @@ spec:
         {{- if .Values.cognaioservice.resources }}
         resources: {{- toYaml .Values.cognaioservice.resources | nindent 12 }}
         {{- end }}
+        {{- if .Values.cognaioservice.volumeMounts }}
+        volumeMounts:
+          {{- tpl .Values.cognaioservice.volumeMounts . | nindent 10 }}
+        {{- end}}
+      {{- if .Values.cognaioservice.volumes }}
+      volumes:
+        {{- tpl .Values.cognaioservice.volumes . | nindent 8 }}
+      {{- end}}

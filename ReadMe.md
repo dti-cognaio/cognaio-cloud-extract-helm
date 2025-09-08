@@ -27,7 +27,7 @@ To ensure all updates work as expected, we recommend testing deployments in a **
 ## Prerequisites
 ### Tools & Skills
 - Basic knowledge of Helm and deployments in Kubernetes
-- [Install Az Cli](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
+- [Install Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Install Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/)
 - [Install Helm](https://helm.sh/docs/intro/install/)
 - Running [Infrastructure for COGNAiO®](https://github.com/dti-cognaio/cognaio-cloud-extract-iac) cloud extract
@@ -35,7 +35,7 @@ To ensure all updates work as expected, we recommend testing deployments in a **
   - Make sure the user or service principal who deploys this Helm Charts has the right permission in the AKS Azure resource (RBAC Cluster Admin Role)
 
 ### Connect to Cluster (Azure)
-Get the according information form Azure Portal
+Get the relevant information from the Azure portal
 ```sh
 az login
 ```
@@ -165,7 +165,7 @@ cognaioservice:
 > Change from version 2.2.0 to 2.2.1 | new provide string instead of array
 
 ### OpenID
-Instead of retrieving an one time password (otp) via eMail you can connect an openID provider. Supported providers are Azure Entra ID, Google and Github.
+Instead of retrieving an one time password (otp) via eMail you can connect an OpenID provider. Supported providers are Azure Entra ID, Google and GitHub.
 To set up the corresponding OpenID providers, please consult the relevant provider documentation.
 | Name                                                                                  | Description                                               | Default                                              |
 |:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
@@ -181,9 +181,9 @@ To set up the corresponding OpenID providers, please consult the relevant provid
 | `cognaioservice.env.openID.googleClientSecret`                                        | Client secret from Google registration                    | `""`                                                 |
 | `cognaioservice.env.openID.googleTenantsExpected`                                     | Internal filter to allow only certain domains             | `""`                                                 |
 | `cognaioservice.env.openID.googleLayoutOrder`                                         | Order if multiple provides are configured in UI           | `2`                                                  |
-| `cognaioservice.env.openID.githubDisabled`                                            | Enables Github open id connection                         | `true`                                               |
-| `cognaioservice.env.openID.githubClientId`                                            | Client ID from Github registration                        | `""`                                                 |
-| `cognaioservice.env.openID.githubClientSecret`                                        | Client secret from Github registration                    | `""`                                                 |
+| `cognaioservice.env.openID.githubDisabled`                                            | Enables GitHub open id connection                         | `true`                                               |
+| `cognaioservice.env.openID.githubClientId`                                            | Client ID from GitHub registration                        | `""`                                                 |
+| `cognaioservice.env.openID.githubClientSecret`                                        | Client secret from GitHub registration                    | `""`                                                 |
 | `cognaioservice.env.openID.githubTenantsExpected`                                     | Internal filter to allow only certain domains             | `""`                                                 |
 | `cognaioservice.env.openID.githubLayoutOrder`                                         | Order if multiple provides are configured in UI           | `3`                                                  |
 
@@ -300,12 +300,12 @@ cognaio:
 
 Frontend: https://cognaio.example.group/cognaioanalyze
 
-Per default a temporary trial license will be active for a limited amount of time (14 days) and with a limited rate limitation of analyze request (250 requests/day). During this trial phase, it is expected to request and apply an official platform license.
+By default a temporary trial license will be active for a limited amount of time (14 days) and with a limited rate limitation of analyze request (250 requests/day). During this trial phase, it is expected to request and apply an official platform license.
 A Platform license describes the available features and their limits and an expiration date. A license can be requested in two modes:
 
 - online, allows online activation, as reporting back the current counts of a license and it´s features to the license server at a certain interval of time
 
-- offline, checking the current feature counts locally at a certain interval of time. exceeding feature limits or expiration date, will raise warnings via email to the current Members of the My Cognaio Administration layer. An offline license also requires an offline activation.
+- offline, checking the current feature counts locally at a certain interval of time. exceeding feature limits or expiration date, will raise warnings via email to the current members of the My Cognaio Administration layer. An offline license also requires an offline activation.
 
 In a dedicated environment only the offline method is recommended.
 
