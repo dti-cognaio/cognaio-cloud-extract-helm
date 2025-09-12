@@ -132,6 +132,7 @@ cognaioservice:
   env:
     port: 3000
     node_env: production
+    # extra_ca_certs: /app/ca-certificates.crt
     secret:
       name: cognaioservice-env-secrets
       init: true
@@ -302,6 +303,7 @@ cognaioflexsearchservice:
       init: true
     logSeverity: "error"
     passPhrase_Repositories: ""
+    # extra_ca_certs: /app/ca-certificates.crt
   # resources:
   #   limits:
   #     memory: "2048Mi"

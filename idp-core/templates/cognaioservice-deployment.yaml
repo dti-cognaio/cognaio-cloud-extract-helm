@@ -165,7 +165,11 @@ spec:
         - name: PORT
           value: {{ .Values.cognaioservice.env.port | quote }}
         - name: NODE_ENV
-          value: {{ .Values.cognaioservice.env.node_env }} 
+          value: {{ .Values.cognaioservice.env.node_env }}
+        {{- if .Values.cognaioservice.env.extra_ca_certs }}
+        - name: NODE_EXTRA_CA_CERTS
+          value: {{ .Values.cognaioservice.env.extra_ca_certs }}
+        {{- end }}
         - name: BaseWebAppLink
           value: {{ .Values.cognaio.protocol }}://{{ .Values.cognaio.url }}{{ .Values.cognaiostudio.service.urlpath }}
         - name: BaseCognaioServiceUrl

@@ -36,6 +36,10 @@ spec:
           value: {{ .Values.cognaioflexsearchservice.env.port | quote }} 
         - name: NODE_ENV
           value: {{ .Values.cognaioflexsearchservice.env.node_env }} 
+        {{- if .Values.cognaioflexsearchservice.env.extra_ca_certs }}
+        - name: NODE_EXTRA_CA_CERTS
+          value: {{ .Values.cognaioflexsearchservice.env.extra_ca_certs }}
+        {{- end }}
         - name: PostgreSql_User
           valueFrom:
             secretKeyRef:
