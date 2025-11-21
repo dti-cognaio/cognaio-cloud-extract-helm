@@ -25,7 +25,7 @@ nginx:
   replicaCount: 1
   image:
     name: nginx/nginx
-    tag: 1.29.0-alpine-slim
+    tag: 1.29.3-alpine-slim
   service:
     name: nginx
     port: 80
@@ -54,7 +54,7 @@ redis:
   replicaCount: 1
   image:
     name: redis/redis
-    tag: 8.2.0-alpine
+    tag: 8.2.3-alpine
   service:
     name: redis
     port: 6379
@@ -70,7 +70,7 @@ cognaiostudio:
   replicaCount: 1
   image:
     name: dti/idp/cognaiostudio
-    tag: 2.5.0
+    tag: 2.5.1
   service:
     name: cognaiostudio
     port: 80
@@ -89,7 +89,7 @@ cognaioinsight:
   replicaCount: 1
   image:
     name: dti/idp/cognaioinsight
-    tag: 2.5.0-Insight-Preview
+    tag: 2.5.1-Insight-Preview
   service:
     name: cognaioinsight
     port: 80
@@ -109,7 +109,7 @@ cognaioservice:
   init:
     image:
       name: dti/idp/cognaioschemamanager
-      tag: 2.5.0
+      tag: 2.5.1
     # resources:
     #   limits:
     #     memory: "512Mi"
@@ -123,7 +123,7 @@ cognaioservice:
     #     name: volume-1
   image:
     name: dti/idp/cognaioservice
-    tag: 2.5.0
+    tag: 2.5.1
   service:
     name: cognaioservice
     port: 80
@@ -238,7 +238,7 @@ cognaioservice:
       uiAiChainCrafterDisabled: true
       cerebralEdgeDisabled: true
       awsServicesDisabled: true
-    environmentNameForNotifications: "Cognaio IDP"
+    environmentNameForNotifications: "COGNAiO IDP"
     endpointsManageDisabled: false
     logSeverity: "info"
   # resources:
@@ -258,7 +258,7 @@ emailservice:
   replicaCount: 1
   image:
     name: dti/idp/emailservice
-    tag: 2.5.0
+    tag: 2.5.1
   service:
     name: emailservice
     port: 80
@@ -282,7 +282,7 @@ cognaioflexsearchservice:
   replicaCount: 1
   image:
     name: dti/idp/cognaioflexsearchservice
-    tag: 2.5.0
+    tag: 2.5.1
   service:
     name: cognaioflexsearchservice
     port: 80
@@ -321,7 +321,7 @@ imageprovider:
   replicaCount: 3
   image:
     name: dti/idp/image
-    tag: 2.5.0
+    tag: 2.5.1
   service:
     name: imageprovider
     port: 80
@@ -339,7 +339,7 @@ objectdetectionprovider:
   replicaCount: 1
   image:
     name: dti/idp/objectdetectionprovider
-    tag: 2.5.0
+    tag: 2.5.1
   service:
     name: objectdetectionprovider
     port: 80
@@ -351,6 +351,44 @@ objectdetectionprovider:
       memory: "5120Mi"
     requests:
       memory: "512Mi"
+
+cognaioauditscleanup:
+  name: cognaioauditscleanup
+  replicaCount: 1
+  image:
+    name: dti/idp/cognaioauditscleanup
+    tag: 2.5.1
+  service:
+    name: cognaioauditscleanup
+    port: 80
+    type: ClusterIP
+  env:
+    port: 9789
+    node_env: production
+    db:
+      postgreSqlUser: ""
+      postgreSqlPwd: ""
+      postgreSqlDbServer: ""
+      postgreSqlDbPort: 5432
+      postgreSqlDbName: "cognaio_idp"
+      postgreSqlSslRequired: true
+      schemas: 'cognaio_design; cognaio_audits'
+    secret:
+      name: cognaioauditscleanup-env-secrets
+      init: true
+    logSeverity: "error"
+    # extra_ca_certs: /app/ca-certificates.crt
+  # resources:
+  #   limits:
+  #     memory: "512Mi"
+  #   requests:
+  #     memory: "256Mi"
+  # volumes: |
+  #   - name: volume-1
+  #     emptyDir: {}
+  # volumeMounts: |
+  #   - mountPath: /usr/tmp
+  #     name: volume-1
 
 # Default values for HelmCharts.
 # This is a YAML-formatted file.

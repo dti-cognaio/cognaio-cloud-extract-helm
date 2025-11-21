@@ -1,4 +1,28 @@
 # Change Log
+## Version 2.5.2
+### Changes
+- Added connector for AiBooster support
+- Added cognaioauditscleanup service
+- Updated used libraries and dependencies in images
+
+### Versions
+|Repository|Version|
+|---|---|
+|dtideregistry.azurecr.io/dti/idp/cognaiostudio              |2.5.1|
+|dtideregistry.azurecr.io/dti/idp/cognaioinsight             |2.5.1-Insight-Preview|
+|dtideregistry.azurecr.io/dti/idp/cognaioservice             |2.5.1|
+|dtideregistry.azurecr.io/dti/idp/image                      |2.5.1|
+|dtideregistry.azurecr.io/dti/idp/emailservice               |2.5.1|
+|dtideregistry.azurecr.io/dti/idp/cognaioflexsearchservice   |2.5.1|
+|dtideregistry.azurecr.io/dti/idp/cognaioauditscleanup       |2.5.1 *|
+|dtideregistry.azurecr.io/dti/idp/objectdetectionprovider    |2.5.1|
+|dtideregistry.azurecr.io/dti/idp/cognaioschemamanager       |2.5.1|
+|dtideregistry.azurecr.io/dti/idp/cce-user-manual            |2.5.1|
+|dtideregistry.azurecr.io/nginx/nginx                        |1.29.3-alpine-slim|
+|dtideregistry.azurecr.io/redis/redis                        |8.2.3-alpine|
+>\* = Added
+---
+
 ## Version 2.5.1
 ### Changes
 - Added volumes and volumemounts to cognaioservice and cognaioflexsearchservice

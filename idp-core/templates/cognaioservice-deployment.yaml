@@ -182,6 +182,8 @@ spec:
           value: http://{{ .Values.emailservice.service.name }}
         - name: BaseUrl_ObjectDetectionProvider
           value: http://{{ .Values.objectdetectionprovider.service.name }}
+        - name: BaseUrl_AuditCleanupProvider
+          value: http://{{ .Values.cognaioauditscleanup.service.name }}
         - name: BaseUrl_UserManual
           value: http://{{ .Values.nginx.service.name }}/usermanual
         - name: RedisProviderUrl

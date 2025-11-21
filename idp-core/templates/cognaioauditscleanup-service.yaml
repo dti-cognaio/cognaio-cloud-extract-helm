@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.cognaioauditscleanup.service.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    app: cognaio-idp
+    name: {{ .Values.cognaioauditscleanup.service.name }}
+spec:
+  ports:
+  - name: http
+    port: {{ .Values.cognaioauditscleanup.service.port }}
+    protocol: TCP
+    targetPort: {{ .Values.cognaioauditscleanup.env.port }}
+  selector:
+    {{- include "cognaio.selectorLabels" . | nindent 4 }}
+    name: {{ .Values.cognaioauditscleanup.name }}
+  type: {{ .Values.cognaioauditscleanup.service.type }}

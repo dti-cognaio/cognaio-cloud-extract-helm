@@ -6,42 +6,100 @@ metadata:
     {{- include "cognaio.labels" . | nindent 4 }}
 data:
   nginx.conf: |
+    # /etc/nginx/nginx.conf  (mounted by Docker)
+    user  nginx;
+    worker_processes auto;
+    pid   /var/run/nginx.pid;
+
+    # allow many sockets for client+upstream connections
+    worker_rlimit_nofile 200000;
+
+    events {
+    use epoll;
+    multi_accept on;
+    worker_connections 16384;   # bump from default 1024
+    }
+
+    http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    sendfile   on;
+    tcp_nopush on;
+    tcp_nodelay on;
+
+    # --- sane keepalive + proxy defaults (vhosts can override) ---
+    keepalive_requests 1000;
+    keepalive_timeout  10s;
+
+    # enable upstream keepalive reuse globally
+    proxy_http_version 1.1;
+    proxy_set_header   Connection "";
+    proxy_set_header   Host              $host;
+    proxy_set_header   X-Real-IP         $remote_addr;
+    proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Host  $host;
+
+    # your long timeouts
+    proxy_connect_timeout 1800;
+    proxy_send_timeout    1800;
+    proxy_read_timeout    1800;
+    send_timeout          1800;
+
+    # pull in all your upstreams/servers/Lua/map as-is
+    include /etc/nginx/conf.d/*.conf;
+    }
+    # --- end of /etc/nginx/nginx.conf ---
+  confd-nginx.conf: |
     #events { worker_connections 1024; }
     #upstream servers
     upstream cognaiostudios {
         server {{ .Values.cognaiostudio.service.name }};
+        keepalive 32;
     }
 
     upstream cognaioinsights {
         server {{ .Values.cognaioinsight.service.name }};
+        keepalive 32;
     }
 
     upstream cognaiodocumentation {
         server {{ .Values.usermanual.service.name }};
+        keepalive 32;
     }
 
     upstream serviceproviderimages {
         least_conn;
+        zone serviceproviderimages 64k;
         server {{ .Values.imageprovider.service.name }};
-        keepalive 32;
+        keepalive 256;
     }
 
     upstream serviceprovideremails {
         server {{ .Values.emailservice.service.name }};
+        keepalive 32;
     }
 
     upstream serviceproviderflexsearches {
         server {{ .Values.cognaioflexsearchservice.service.name }};
+        keepalive 32;
     }
     
     upstream serviceproviderextractions {
         least_conn;
+        zone serviceproviderextractions 64k;
         server {{ .Values.cognaioservice.service.name }};
-        keepalive 32;
+        keepalive 64;
     }
 
     upstream serviceproviderobjectdetection {
         server {{ .Values.objectdetectionprovider.service.name }};
+        keepalive 32;
+    }
+
+    upstream serviceproviderauditcleanup {
+        server {{ .Values.cognaioauditscleanup.service.name }};
+        keepalive 32;
     }
    
     map "$remote_addr-$request_uri" $block_this_request {
@@ -52,11 +110,6 @@ data:
     server {
         listen 80;
         listen [::]:80;
-
-        proxy_connect_timeout       1800;
-        proxy_send_timeout          1800;
-        proxy_read_timeout          1800;
-        send_timeout                1800;
 
         server_name {{ .Values.cognaio.url }};
         server_tokens off;
@@ -117,6 +170,15 @@ data:
             client_body_buffer_size 150M; 
             proxy_buffering off;
             proxy_pass http://serviceproviderobjectdetection/;
+        }
+
+        # Proxying the connections
+        location /auditscleanup/ {
+            if ($block_this_request) { return 403; }
+            client_max_body_size 5M;
+            client_body_buffer_size 5M; 
+            proxy_buffering off;
+            proxy_pass http://serviceproviderauditcleanup/;
         }
 
         location / {

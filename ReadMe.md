@@ -205,6 +205,13 @@ Some microservices require a postgres database to persist certain data. the foll
 | `cognaioflexsearchservice.env.db.postgreSqlSslRequired`                               | postgreSQL ssl required flag                              | `true`                                               |
 | `cognaioflexsearchservice.env.db.postgreSqlDbName`                                    | postgreSQL database name                                  | `postgres`                                           |
 | `cognaioflexsearchservice.env.db.schemas`                                             | postgreSQL schemas                                        | `cognaio_extensions; cognaio_repositories`           |
+| `cognaioauditscleanup.env.db.postgreSqlUser`                                          | postgreSQL username                                       | `<SQL-USER>`                                         |
+| `cognaioauditscleanup.env.db.postgreSqlPwd`                                           | postgreSQL password                                       | `<SQL-PASSWORD>`                                     |
+| `cognaioauditscleanup.env.db.postgreSqlDbServer`                                      | postgreSQL server                                         | `<SQL-SERVER>:<PORT>`                                |
+| `cognaioauditscleanup.env.db.postgreSqlDbPort`                                        | postgreSQL port                                           | `5432`                                               |
+| `cognaioauditscleanup.env.db.postgreSqlSslRequired`                                   | postgreSQL ssl required flag                              | `true`                                               |
+| `cognaioauditscleanup.env.db.postgreSqlDbName`                                        | postgreSQL database name                                  | `postgres`                                           |
+| `cognaioauditscleanup.env.db.schemas`                                                 | postgreSQL schemas                                        | `cognaio_design; cognaio_audits`                     |
 
 ### Redis
 Some microservices require a Redis cache for caching certain data. Persistence is not needed.
@@ -234,6 +241,7 @@ The following table lists the important configurable parameters of the COGNAiO c
 | `cognaioinsight.resources`                                                               | Provide limit and request resource information                     | none                                                 |
 | `cognaioservice.service.urlpath`                                                         | Url path for the service                                           | `/extraction`                                        |
 | `cognaioservice.env.port`                                                                | Port                                                               | `3000`                                               |
+| `cognaioservice.env.extra_ca_certs`                                                      | Add extra ca certs into image                                      | none                                                 |
 | `cognaioservice.env.secret.name`                                                         | Secret name, details in `cognaioservice-env-secrets.yaml`          | `cognaioservice-env-secrets`                         |
 | `cognaioservice.env.secret.init`                                                         | Whether or not to create a secret                                  | `true`                                               |
 | `cognaioservice.env.cognitiveServices.computervision.maxRequestTimeoutInSec`             | Max request timeouts in seconds                                    | `6`                                                  |
@@ -258,10 +266,17 @@ The following table lists the important configurable parameters of the COGNAiO c
 | `emailservice.env.secret.init`                                                           | Whether or not to create a secret                                  | `true`                                               |
 | `emailservice.resources`                                                                 | Provide limit and request resource information                     | none                                                 |
 | `cognaioflexsearchservice.env.port`                                                      | Port                                                               | `8688`                                               |
+| `cognaioflexsearchservice.env.extra_ca_certs`                                            | Add extra ca certs into image                                      | none                                                 |
 | `cognaioflexsearchservice.env.logSeverity`                                               | Log severity                                                       | `error`                                              |
 | `cognaioflexsearchservice.env.secret.name`                                               | Secret name, details in `cognaioflexsearchservice-env-secrets.yaml`| `cognaioflexsearchservice-env-secrets`               |
 | `cognaioflexsearchservice.env.secret.init`                                               | Whether or not to create a secret                                  | `true`                                               |
 | `cognaioflexsearchservice.resources`                                                     | Provide limit and request resource information                     | none                                                 |
+| `cognaioauditscleanup.env.port`                                                          | Port                                                               | `8688`                                               |
+| `cognaioauditscleanup.env.extra_ca_certs`                                                | Add extra ca certs into image                                      | none                                                 |
+| `cognaioauditscleanup.env.logSeverity`                                                   | Log severity                                                       | `error`                                              |
+| `cognaioauditscleanup.env.secret.name`                                                   | Secret name, details in `cognaioauditscleanup-env-secrets.yaml`    | `cognaioauditscleanup-env-secrets`                   | 
+| `cognaioauditscleanup.env.secret.init`                                                   | Whether or not to create a secret                                  | `true`                                               |
+| `cognaioauditscleanup.resources`                                                         | Provide limit and request resource information                     | none                                                 |
 | `imageprovider.env.port`                                                                 | Port                                                               | `3333`                                               |
 | `imageprovider.resources`                                                                | Provide limit and request resource information                     | `memory: 5120Mi/512Mi`                               |
 | `objectdetectionprovider.env.port`                                                       | Port                                                               | `7337`                                               |
@@ -271,12 +286,12 @@ The following table lists the important configurable parameters of the COGNAiO c
 Adjust Values in values.yaml according environment or pass a dedicated values.yaml.  
 
 ```
-helm upgrade cognaio-idp .\idp-core\ --install --create-namespace -n cognaio-idp -f individual-values.yaml
+helm upgrade cognaio-idp .\idp-core\ --install --create-namespace -n cce -f individual-values.yaml
 ```
 
 Wait until all pods are ready and running
 ```
-kubectl get pods -n cognaio-idp -w
+kubectl get pods -n cce -w
 ```
 |NAME|READY|STATUS|
 |:----|:---|:---|
@@ -299,6 +314,7 @@ cognaio:
 ```
 
 Frontend: https://cognaio.example.group/cognaioanalyze
+Frontend-preview: https://cognaio.example.group/cognaioinsight
 
 By default a temporary trial license will be active for a limited amount of time (14 days) and with a limited rate limitation of analyze request (250 requests/day). During this trial phase, it is expected to request and apply an official platform license.
 A Platform license describes the available features and their limits and an expiration date. A license can be requested in two modes:

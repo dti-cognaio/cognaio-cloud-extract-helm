@@ -13,7 +13,7 @@ data:
                 "language": "de"
             },
             "copyRight": "Copyright 2025 DTI",
-            "version": "2.5.0"
+            "version": "2.5.1"
         },
         "endpoints": {
             "analysis": "{{ .Values.cognaio.protocol }}://{{ .Values.cognaio.url }}/extraction/api"
