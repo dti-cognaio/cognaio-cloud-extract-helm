@@ -1,0 +1,10 @@
+suite: Global Logic Checks
+templates:
+  - "**/*ingress.yaml" # Nutzt Wildcards, um alle Secret-Templates zu erfassen
+tests:
+  - it: should not render any ingress when coganio.ingress.enabled is false
+    set:
+      cognaio.ingress.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

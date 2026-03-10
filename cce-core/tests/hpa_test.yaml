@@ -1,0 +1,126 @@
+suite: HPA Tests
+release:
+  name: cce-unittests
+templates:
+  - "**/hpa.yaml"
+tests:
+  - it: should not render any HPA when autoscaling is disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render nginx HPA when autoscaling is enabled
+    template: templates/nginx/hpa.yaml
+    set:
+      nginx:
+        name: nginx
+        autoscaling:
+          enabled: true
+          minReplicas: 2
+          maxReplicas: 10
+          targetCPUUtilizationPercentage: 80
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: nginx
+      - equal:
+          path: metadata.name
+          value: nginx
+      - equal:
+          path: spec.minReplicas
+          value: 2
+      - equal:
+          path: spec.maxReplicas
+          value: 10
+
+  - it: should render cognaioservice HPA targeting correct deployment name
+    template: templates/cognaio-service/hpa.yaml
+    set:
+      cognaioservice:
+        name: cognaioservice
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 5
+          targetCPUUtilizationPercentage: 75
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: cognaioservice
+      - equal:
+          path: spec.scaleTargetRef.kind
+          value: Deployment
+      - equal:
+          path: spec.scaleTargetRef.apiVersion
+          value: apps/v1
+      - equal:
+          path: metadata.name
+          value: cognaioservice
+
+  - it: should render imageprovider HPA targeting correct deployment name
+    template: templates/cognaio-image-provider/hpa.yaml
+    set:
+      imageprovider:
+        name: imageprovider
+        autoscaling:
+          enabled: true
+          minReplicas: 3
+          maxReplicas: 20
+          targetCPUUtilizationPercentage: 70
+          targetMemoryUtilizationPercentage: 85
+    asserts:
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: imageprovider
+      - equal:
+          path: spec.minReplicas
+          value: 3
+      - equal:
+          path: spec.maxReplicas
+          value: 20
+
+  - it: should include CPU metric when targetCPUUtilizationPercentage is set
+    template: templates/cognaio-service/hpa.yaml
+    set:
+      cognaioservice:
+        name: cognaioservice
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 5
+          targetCPUUtilizationPercentage: 80
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: cpu
+              target:
+                type: Utilization
+                averageUtilization: 80
+
+  - it: should include memory metric when targetMemoryUtilizationPercentage is set
+    template: templates/redis/hpa.yaml
+    set:
+      redis:
+        name: redis
+        autoscaling:
+          enabled: true
+          minReplicas: 1
+          maxReplicas: 3
+          targetMemoryUtilizationPercentage: 90
+    asserts:
+      - contains:
+          path: spec.metrics
+          content:
+            type: Resource
+            resource:
+              name: memory
+              target:
+                type: Utilization
+                averageUtilization: 90

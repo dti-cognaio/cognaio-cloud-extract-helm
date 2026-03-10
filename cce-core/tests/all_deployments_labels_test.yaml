@@ -1,0 +1,37 @@
+suite: Global Labels Check for all Deployments
+release:
+  name: cce-unittests
+templates:
+  - "**/deployment.yaml" # Scannt alle Deployment-Files in allen Unterordnern
+tests:
+  - it: should apply the global labels to all deployments
+    set:
+      labels:
+        custom: dti
+        hello: world
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            hello: world
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            hello: world
+      - isNotSubset:
+          path: spec.selector.matchLabels
+          content:
+            hello: world
+  - it: deployment labels are not in selector matchLabels
+    template: templates/cognaio-service/deployment.yaml
+    set:
+      cognaioservice.podLabels:
+        custom-label: custom-value
+        another-label: another-value
+    asserts:
+      - equal:
+          path: spec.selector.matchLabels
+          value:
+            app.kubernetes.io/name: cognaio-cloud-extract
+            app.kubernetes.io/instance: cce-unittests
+            app.kubernetes.io/component: cognaioservice

@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.imageprovider.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    {{- with .Values.imageprovider.podLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not .Values.imageprovider.autoscaling.enabled }}
+  replicas: {{ .Values.imageprovider.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+      {{- with .Values.imageprovider.podSelectorLabels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+  template:
+    metadata:
+      {{- with (merge (.Values.imageprovider.podAnnotations | default dict) (.Values.podAnnotations | default dict)) }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "cognaio.labels" . | nindent 8 }}
+        {{- with (merge (.Values.imageprovider.podLabels | default dict) (.Values.podLabels | default dict)) }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.imageprovider.serviceAccount.name }}
+      {{- with (default .Values.podSecurityContext .Values.imageprovider.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ default .Values.image.restartPolicy .Values.imageprovider.restartPolicy | default "Always" }}
+      containers:
+        - name: {{ .Values.imageprovider.name }}
+          image: {{ .Values.image.containerRegistry }}/{{ .Values.imageprovider.image.name }}:{{ .Values.imageprovider.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with (default .Values.securityContext .Values.imageprovider.securityContext ) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+          - name: http
+            containerPort: {{ .Values.imageprovider.env.port }}
+            protocol: TCP
+          {{- with (default .Values.livenessProbe .Values.imageprovider.livenessProbe) }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (default .Values.readinessProbe .Values.imageprovider.readinessProbe) }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.imageprovider.extraEnv }}
+          env:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.imageprovider.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.imageprovider.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- with .Values.imageprovider.additionalVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end}}
+      volumes:
+      {{- with .Values.imageprovider.additionalVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
+      {{- with .Values.imageprovider.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imageprovider.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.imageprovider.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

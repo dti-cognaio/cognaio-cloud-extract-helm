@@ -1,0 +1,47 @@
+suite: Affinity value set for all Deployments
+templates:
+  - "**/deployment.yaml"
+tests:
+  - it: should apply the podAffinity and podAntiAffinity to every deployment
+    set:
+      redis.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
+      nginx.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
+      usermanual.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
+      cognaioinsightagentic.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
+      cognaioinsight.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
+      cognaioservice.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
+      emailservice.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
+      cognaioflexsearchservice.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
+      imageprovider.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
+      cognaioauditscleanup.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
+      objectdetectionprovider.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
+    asserts:
+      - exists:
+          path: spec.template.spec.affinity
+      - equal:
+          path: spec.template.spec.affinity
+          value:
+            podAffinity: {}
+            podAntiAffinity: {}

@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.usermanual.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    {{- with .Values.usermanual.podLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not .Values.usermanual.autoscaling.enabled }}
+  replicas: {{ .Values.usermanual.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with (merge (.Values.usermanual.podAnnotations | default dict) (.Values.podAnnotations | default dict)) }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "cognaio.labels" . | nindent 8 }}
+        {{- with (merge (.Values.usermanual.podLabels | default dict) (.Values.podLabels | default dict)) }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.usermanual.serviceAccount.name }}
+      {{- with (default .Values.podSecurityContext .Values.usermanual.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ default .Values.image.restartPolicy .Values.usermanual.restartPolicy | default "Always" }}
+      containers:
+        - name: {{ .Values.usermanual.name }}
+          image: {{ .Values.image.containerRegistry }}/{{ .Values.usermanual.image.name }}:{{ .Values.usermanual.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+           {{- with (default .Values.securityContext .Values.usermanual.securityContext ) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+          - name: http
+            containerPort: {{ .Values.usermanual.env.port }}
+            protocol: TCP
+          {{- with (default .Values.livenessProbe .Values.usermanual.livenessProbe) }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (default .Values.readinessProbe .Values.usermanual.readinessProbe) }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.usermanual.extraEnv }}
+          env:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.usermanual.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.usermanual.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- with .Values.usermanual.additionalVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end}}
+      volumes:
+      {{- with .Values.usermanual.additionalVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
+      {{- with .Values.usermanual.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.usermanual.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.usermanual.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

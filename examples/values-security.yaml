@@ -1,0 +1,171 @@
+# =============================================================================
+# COGNAiO Cloud Extract - Security Hardening
+# =============================================================================
+# Applies pod-level and container-level security contexts to all services,
+# and adds emptyDir additionalVolumes where a writable filesystem is required
+# (read-only root filesystem).
+#
+# Merge with the base values:
+#   helm upgrade cognaio-idp ./cce-core/ --install -n cce \
+#     -f individual-values.yaml -f examples/values-security.yaml
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Global defaults (applied via fallback pattern in templates)
+# ---------------------------------------------------------------------------
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+# ---------------------------------------------------------------------------
+# nginx
+# ---------------------------------------------------------------------------
+nginx:
+  additionalVolumeMounts:
+    - mountPath: /var/cache/nginx
+      name: cache-volume
+    - mountPath: /var/run
+      name: cache-volume-run
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+    - name: cache-volume-run
+      emptyDir: {}
+
+# ---------------------------------------------------------------------------
+# usermanual
+# ---------------------------------------------------------------------------
+usermanual:
+  additionalVolumeMounts:
+    - mountPath: /var/cache/nginx
+      name: cache-volume
+    - mountPath: /var/run
+      name: cache-volume-run
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+    - name: cache-volume-run
+      emptyDir: {}
+
+# ---------------------------------------------------------------------------
+# cognaioinsight
+# ---------------------------------------------------------------------------
+cognaioinsight:
+  additionalVolumeMounts:
+    - mountPath: /var/cache/nginx
+      name: cache-volume
+    - mountPath: /var/run
+      name: cache-volume-run
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+    - name: cache-volume-run
+      emptyDir: {}
+
+# ---------------------------------------------------------------------------
+# cognaioinsightagentic
+# ---------------------------------------------------------------------------
+cognaioinsightagentic:
+  additionalVolumeMounts:
+    - mountPath: /var/cache/nginx
+      name: cache-volume
+    - mountPath: /var/run
+      name: cache-volume-run
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+    - name: cache-volume-run
+      emptyDir: {}
+
+# ---------------------------------------------------------------------------
+# cognaioservice  (core API + init container)
+# ---------------------------------------------------------------------------
+cognaioservice:
+  init:
+    additionalVolumes:
+      - name: cache-volume
+        emptyDir: {}
+    additionalVolumeMounts:
+      - mountPath: /app/tmp
+        name: cache-volume
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+  additionalVolumeMounts:
+    - mountPath: /app/tmp
+      name: cache-volume
+
+# ---------------------------------------------------------------------------
+# emailservice
+# ---------------------------------------------------------------------------
+emailservice:
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+  additionalVolumeMounts:
+    - mountPath: /tmp
+      name: cache-volume
+
+# ---------------------------------------------------------------------------
+# cognaioflexsearchservice
+# ---------------------------------------------------------------------------
+cognaioflexsearchservice:
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+  additionalVolumeMounts:
+    - mountPath: /app/tmp
+      name: cache-volume
+
+# ---------------------------------------------------------------------------
+# imageprovider
+# ---------------------------------------------------------------------------
+imageprovider:
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+  additionalVolumeMounts:
+    - mountPath: /tmp
+      name: cache-volume
+
+# ---------------------------------------------------------------------------
+# cognaioauditscleanup
+# ---------------------------------------------------------------------------
+cognaioauditscleanup:
+  additionalVolumes:
+    - name: volume-1
+      emptyDir: {}
+  additionalVolumeMounts:
+    - mountPath: /usr/tmp
+      name: volume-1
+
+# ---------------------------------------------------------------------------
+# objectdetectionprovider
+# ---------------------------------------------------------------------------
+objectdetectionprovider:
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+  additionalVolumeMounts:
+    - mountPath: /tmp
+      name: cache-volume
+
+# ---------------------------------------------------------------------------
+# redis
+# ---------------------------------------------------------------------------
+redis:
+  additionalVolumeMounts:
+    - mountPath: /data
+      name: cache-volume
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}

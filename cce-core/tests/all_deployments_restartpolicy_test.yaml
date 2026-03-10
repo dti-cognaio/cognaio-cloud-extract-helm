@@ -1,0 +1,65 @@
+suite: RestartPolicy for all Deployments
+templates:
+  - "**/deployment.yaml"
+tests:
+  - it: should default restartPolicy to Always when no override is set
+    asserts:
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Always
+
+  - it: should use global image.restartPolicy when set
+    set:
+      image:
+        restartPolicy: "Never"
+    asserts:
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+
+  - it: should allow per-service restartPolicy to override global
+    set:
+      image:
+        restartPolicy: "Always"
+      nginx:
+        restartPolicy: "OnFailure"
+    asserts:
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: OnFailure
+        template: nginx/deployment.yaml
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Always
+        template: redis/deployment.yaml
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Always
+        template: cognaio-service/deployment.yaml
+
+  - it: should allow setting restartPolicy to Never for a single service
+    set:
+      cognaioservice:
+        restartPolicy: "Never"
+    asserts:
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+        template: cognaio-service/deployment.yaml
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Always
+        template: nginx/deployment.yaml
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Always
+        template: redis/deployment.yaml
+
+  - it: should set restartPolicy to OnFailure for all deployments via global
+    set:
+      image:
+        restartPolicy: "OnFailure"
+    asserts:
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: OnFailure

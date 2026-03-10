@@ -1,0 +1,989 @@
+# Global values for each deployment in this helm charts
+imagePullSecrets: []
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # seccompProfile:
+  #   type: RuntimeDefault
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+securityContext: {}
+  # allowPrivilegeEscalation: false
+  # readOnlyRootFilesystem: true
+  # capabilities:
+  #   drop: ["ALL"]
+
+annotations: {}
+labels: {}
+
+image:
+  pullPolicy: Always
+  containerRegistry: "dtideregistry.azurecr.io"
+  restartPolicy: "Always"
+
+# COGNAiO specific values
+cognaio:
+  namespace: cognaio-idp
+  url: ""
+  protocol: "https"
+  wildcardUrl: ""
+  cert:
+    certificate: ""
+    key: "" 
+    secret:
+      name: cognaio-com-tls-secret
+      init: true
+  ingress:
+    enabled: true
+
+# Values for each COGNAiO deployment
+nginx:
+  name: nginx
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/component: nginx
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: nginx
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  image:
+    name: nginx/nginx
+    tag: 1.29.5-alpine-slim
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    name: nginx
+    port: 80
+    type: ClusterIP
+    additionalAnnotations: {}
+  env:
+    port: 8080
+  livenessProbe:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  additionalVolumeMounts: []
+    # - mountPath: /var/cache/nginx
+    #   name: cache-volume
+    # - mountPath: /var/run
+    #   name: cache-volume-run
+  additionalVolumes: []
+    # - name: cache-volume
+    #   emptyDir: {}
+    # - name: cache-volume-run
+    #   emptyDir: {}
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "256Mi"
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET_VAR
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key
+
+usermanual:
+  name: cce-user-manual
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/component: cce-user-manual
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: cce-user-manual
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  image:
+    name: dti/idp/cce-user-manual
+    tag: 2.6.0
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    name: cce-user-manual
+    port: 80
+    type: ClusterIP
+  env:
+    port: 8080
+  livenessProbe:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  additionalVolumeMounts: []
+    # - mountPath: /var/cache/nginx
+    #   name: cache-volume
+    # - mountPath: /var/run
+    #   name: cache-volume-run
+  additionalVolumes: []
+    # - name: cache-volume
+    #   emptyDir: {}
+    # - name: cache-volume-run
+    #   emptyDir: {}
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "64Mi"
+    requests:
+      memory: "32Mi"
+      cpu: "50m"
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET_VAR
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key
+
+redis:
+  name: redis
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: redis
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  image:
+    name: redis/redis
+    tag: 8.6.1-alpine
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    name: redis
+    port: 6379
+    type: ClusterIP
+    additionalAnnotations: {}
+  livenessProbe:
+    tcpSocket:
+      port: 6379
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 6379
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  secret:
+    name: redis-secrets
+    init: true
+    password: "changeme"
+    providerUrl: redis://:changeme@redis:6379
+  additionalVolumeMounts: []
+  #   - mountPath: /data
+  #     name: cache-volume
+  additionalVolumes: []
+  #   - name: cache-volume
+  #     emptyDir: { }
+  maxmemory: "1gb"
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "1512Mi"
+    requests:
+      memory: "1024Mi"
+      cpu: "100m"
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET_VAR
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key
+
+cognaioinsightagentic:
+  name: cognaioinsight-agentic
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/component: cognaioinsight-agentic
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: cognaioinsight-agentic
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  image:
+    name: dti/idp/cognaioinsight-agentic
+    tag: 2.6.0-Agentic-Preview
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    name: cognaioinsight-agentic
+    port: 80
+    type: ClusterIP
+    urlpath: /cognaioinsight-agentic
+  env:
+    port: 8080
+  livenessProbe:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  additionalVolumeMounts: []
+    # - mountPath: /var/cache/nginx
+    #   name: cache-volume
+    # - mountPath: /var/run
+    #   name: cache-volume-run
+  additionalVolumes: []
+    # - name: cache-volume
+    #   emptyDir: {}
+    # - name: cache-volume-run
+    #   emptyDir: {}
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET_VAR
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key
+
+cognaioinsight:
+  name: cognaioinsight
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/component: cognaioinsight
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: cognaioinsight
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  image:
+    name: dti/idp/cognaioinsight
+    tag: 2.6.0
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    name: cognaioinsight
+    port: 80
+    type: ClusterIP
+    urlpath: /cognaioinsight
+  env:
+    port: 8080
+  livenessProbe:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 8080
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  additionalVolumeMounts: []
+    # - mountPath: /var/cache/nginx
+    #   name: cache-volume
+    # - mountPath: /var/run
+    #   name: cache-volume-run
+  additionalVolumes: []
+    # - name: cache-volume
+    #   emptyDir: {}
+    # - name: cache-volume-run
+    #   emptyDir: {}
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET_VAR
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key
+
+cognaioservice:
+  name: cognaioservice
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: cognaioservice
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  init:
+    image:
+      name: dti/idp/cognaioschemamanager
+      tag: 2.6.0
+    securityContext: {}
+    resources:
+      limits:
+        memory: "512Mi"
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+    additionalVolumeMounts: []
+    #   - mountPath: /app/tmp
+    #     name: cache-volume
+    additionalVolumes: []
+    #   - name: cache-volume
+    #     emptyDir: {}
+    extraEnv: []
+    # - name: MY_EXTRA_VAR
+    #   value: "my-value"
+    # - name: MY_SECRET_VAR
+    #   valueFrom:
+    #     secretKeyRef:
+    #       name: my-secret
+    #       key: my-key
+  image:
+    name: dti/idp/cognaioservice
+    tag: 2.6.0
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    name: cognaioservice
+    port: 80
+    type: ClusterIP
+    urlpath: /extraction/api
+  env:
+    port: 3000
+    # extra_ca_certs: /app/ca-certificates.crt
+    secret:
+      name: cognaioservice-env-secrets
+      init: true
+    db:
+      dbCheckExistence: true
+      postgreSqlUser: ""
+      postgreSqlPwd: ""
+      postgreSqlDbServer: ""
+      postgreSqlDbPort: 5432
+      postgreSqlSslRequired: true
+      postgreSqlDbName: "cognaio_idp"
+      schemas:
+        - cognaio_extensions
+        - cognaio_design
+        - cognaio_audits
+      postgreSqlAuthMode: "basic" # any other mode than entra would lead to standard username/password usage
+    tokens:
+      passPhraseAuditArtifacts: ""
+      passPhraseDefinitions: ""
+      passPhraseTemplates: ""
+      passPhraseCryptoAsymetric: ""
+      passPhraseCryptoSymetric: ""
+      tokenEncryptionTokenJwtKey: ""
+      passPhraseAccessTokenJwtKey: ""
+      passPhraseRefreshTokenJwtKey: ""
+      passPhraseUnsubscribeTokenJwtKey: ""
+      passPhraseExportTokenJwtKey: ""
+      passPhraseMailboxesTokenJwtKey: ""
+      passPhraseEnvelopesTokenJwtKey: ""
+      passPhraseRegisterTokenJwtKey: ""
+      passPhraseOtpTokenJwtKey: ""
+      passPhraseAppKeyJwtKey: ""
+      passPhraseCryptoSymetricAppKey: ""
+      passPhraseAnalyzeFromContentJwtKey: ""
+      passPhraseAnalyzeResponseDownloadJwtKey: ""
+    ai:
+      apikeyAzureOpenAi: ""
+      apikeyNativeOpenAi: ""
+      apikeyAiFoundry: ""
+      apikeyAzureAiDocumentIntelligence: ""
+      apikeyAzureCognitiveServicesComputervision: ""
+      endpointAzureOpenAi: ""
+      endpointNativeOpenAi: ""
+      endpointAiFoundry: ""
+      endpointAzureAiDocumentIntelligence: ""
+      endpointAzureCognitiveServicesComputerVision: ""
+      apikeyNativeGemini: ""
+      apikeyNativeAnthropic: ""
+      apikeyNativeCerebral: ""
+      endpointNativeCerebral: ""
+    aws:
+      accesskeyIdAwsTextract: ""
+      secretAccessKeyAwsTextract: ""
+      regionAwsTextract: ""
+      accesskeyIdAwsBedrock: ""
+      secretAccessKeyAwsBedrock: ""
+      regionAwsBedrock: ""
+    mailAccount:
+      user: ""
+      password: ""
+      host: "smtp.office365.com"
+      port: 587
+      fromAddressFriendlyName: "Cognaio"
+      useAdvancedAuth: false
+      advancedAuth:
+        auth:
+          user: "yourEmailAddress"
+          pass: "yourPassword"
+      useCustomSettings: false
+      customSettings:
+        secure: false
+        maxConnections: 150
+        tls:
+          ciphers: "SSLv3"
+          rejectUnauthorized: false
+      notificationProvider: "smtp" # any other provider than 'graph' would lead to standard SMTP usage
+    organization:
+      users:
+        - "'email_1@example.com'"
+        - "'email_2@example.com'"
+    cognitiveServices:
+      computervision:
+        maxRequestTimeoutInSec: 6
+        maxRetries: 30
+        maxRetriesWaitTimeoutInSec: 1
+        maxWaitTimeoutForFinishedInSec: 1
+      aiDocumentIntelligence:
+        maxRequestTimeoutInSec: 60
+        maxRetries: 30
+        maxRetriesWaitTimeoutInSec: 3
+      awsTextract:
+        maxRequestTimeoutInSec: 60
+        maxRetries: 30
+        maxRetriesWaitTimeoutInSec: 3
+    openID:
+      passPhraseUserInfo: ""
+      microsoftDisabled: true
+      microsoftClientId: ""
+      microsoftClientSecret: ""
+      microsoftTenant: "common"
+      microsoftTenantsExpected: ""
+      microsoftLayoutOrder: 1
+      googleDisabled: true
+      googleClientId: ""
+      googleClientSecret: ""
+      googleTenantsExpected: ""
+      googleLayoutOrder: 2
+      githubDisabled: true
+      githubClientId: ""
+      githubClientSecret: ""
+      githubTenantsExpected: ""
+      githubLayoutOrder: 3
+    essentials:
+      warningNotificationTimeoutInHours: 48
+      featureExceedsLimitsNotificationTimeoutInDays: 2
+      endpointsPrivateKey: ""
+      endpointsPublicKey: ""
+    featurePreview:
+      uiAiChainCrafterDisabled: true
+      cerebralEdgeDisabled: true
+      awsServicesDisabled: true
+    environmentNameForNotifications: "COGNAiO IDP"
+    endpointsManageDisabled: false
+    otpDisabled: false
+    logSeverity: "info"
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET_VAR
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key
+  livenessProbe:
+    tcpSocket:
+      port: 3000
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 3000
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "1Gi"
+    requests:
+      memory: "512Mi"
+      cpu: "200m"
+  additionalVolumeMounts: []
+  #   - mountPath: /app
+  #     name: extra-ca-cert
+  additionalVolumes: []
+  #   - name: extra-ca-cert
+  #     emptyDir: {}
+
+emailservice:
+  name: emailservice
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/component: emailservice
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: emailservice
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  image:
+    name: dti/idp/emailservice
+    tag: 2.6.0
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    name: emailservice
+    port: 80
+    type: ClusterIP
+  env:
+    port: 7171
+    logSeverity: "error"
+    secret:
+      name: emailservice-env-secrets
+      init: true
+    passPhraseCryptoSymetricAppKey: ""
+  livenessProbe:
+    tcpSocket:
+      port: 7171
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 7171
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+  additionalVolumeMounts: []
+  additionalVolumes: []
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET_VAR
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key
+
+cognaioflexsearchservice:
+  name: cognaioflexsearchservice
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/component: cognaioflexsearchservice
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: cognaioflexsearchservice
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  image:
+    name: dti/idp/cognaioflexsearchservice
+    tag: 2.6.0
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    name: cognaioflexsearchservice
+    port: 80
+    type: ClusterIP
+  env:
+    port: 8688
+    db:
+      postgreSqlUser: ""
+      postgreSqlPwd: ""
+      postgreSqlDbServer: ""
+      postgreSqlDbPort: 5432
+      postgreSqlDbName: "cognaio_idp"
+      postgreSqlSslRequired: true
+      postgreSqlAuthMode: "basic" # any other mode than entra would lead to standard username/password usage
+      schemas:
+        - cognaio_extensions
+        - cognaio_repositories
+    secret:
+      name: cognaioflexsearchservice-env-secrets
+      init: true
+    logSeverity: "error"
+    passPhrase_Repositories: ""
+    # extra_ca_certs: /app/ca-certificates.crt
+  livenessProbe:
+    tcpSocket:
+      port: 8688
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 8688
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "2Gi"
+    requests:
+      memory: "1Gi"
+      cpu: "200m"
+  additionalVolumeMounts: []
+  #   - mountPath: /app
+  #     name: extra-ca-cert
+  additionalVolumes: []
+  #   - name: extra-ca-cert
+  #     emptyDir: {}
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET_VAR
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key
+
+imageprovider:
+  name: imageprovider
+  replicaCount: 3
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/component: imageprovider
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: imageprovider
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  image:
+    name: dti/idp/image
+    tag: 2.6.0
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    name: imageprovider
+    port: 80
+    type: ClusterIP
+  env:
+    port: 3333
+  livenessProbe:
+    tcpSocket:
+      port: 3333
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 3333
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "4Gi"
+    requests:
+      memory: "1Gi"
+      cpu: "200m"
+  additionalVolumeMounts: []
+  additionalVolumes: []
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET_VAR
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key
+
+cognaioauditscleanup:
+  name: cognaioauditscleanup
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/component: cognaioauditscleanup
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: cognaioauditscleanup
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  image:
+    name: dti/idp/cognaioauditscleanup
+    tag: 2.6.0
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    name: cognaioauditscleanup
+    port: 80
+    type: ClusterIP
+  env:
+    port: 9789
+    db:
+      postgreSqlUser: ""
+      postgreSqlPwd: ""
+      postgreSqlDbServer: ""
+      postgreSqlDbPort: 5432
+      postgreSqlDbName: "cognaio_idp"
+      postgreSqlSslRequired: true
+      schemas:
+        - cognaio_design
+        - cognaio_audits
+      postgreSqlAuthMode: "sql" # any other mode than entra would lead to standard username/password usage
+    secret:
+      name: cognaioauditscleanup-env-secrets
+      init: true
+    logSeverity: "error"
+    # extra_ca_certs: /app/ca-certificates.crt
+  livenessProbe:
+    tcpSocket:
+      port: 9789
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 9789
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+  additionalVolumeMounts: []
+  #   - mountPath: /usr/tmp
+  #     name: volume-1
+  additionalVolumes: []
+  #   - name: volume-1
+  #     emptyDir: {}
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET_VAR
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key
+
+objectdetectionprovider:
+  name: objectdetectionprovider
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/component: objectdetectionprovider
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: objectdetectionprovider
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  image:
+    name: dti/idp/objectdetectionprovider
+    tag: 2.6.0
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  service:
+    name: objectdetectionprovider
+    port: 80
+    type: ClusterIP
+  env:
+    port: 7337
+  livenessProbe:
+    tcpSocket:
+      port: 7337
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  readinessProbe:
+    tcpSocket:
+      port: 7337
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "5Gi"
+    requests:
+      memory: "1Gi"
+      cpu: "200m"
+  additionalVolumeMounts: []
+  additionalVolumes: []
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"
+  # - name: MY_SECRET_VAR
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key

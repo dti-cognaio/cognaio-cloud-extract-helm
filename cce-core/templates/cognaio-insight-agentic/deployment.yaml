@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.cognaioinsightagentic.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    {{- with .Values.cognaioinsightagentic.podLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+      {{- with .Values.cognaioinsightagentic.podSelectorLabels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+  template:
+    metadata:
+      {{- with (merge (.Values.cognaioinsightagentic.podAnnotations | default dict) (.Values.podAnnotations | default dict)) }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "cognaio.labels" . | nindent 8 }}
+        {{- with (merge (.Values.cognaioinsightagentic.podLabels | default dict) (.Values.podLabels | default dict)) }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.cognaioinsightagentic.selectorLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.cognaioinsightagentic.serviceAccount.name }}
+      {{- with (default .Values.podSecurityContext .Values.cognaioinsightagentic.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ default .Values.image.restartPolicy .Values.cognaioinsightagentic.restartPolicy | default "Always" }}
+      containers:
+        - name: {{ .Values.cognaioinsightagentic.name }}
+          image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioinsightagentic.image.name }}:{{ .Values.cognaioinsightagentic.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with (default .Values.securityContext .Values.cognaioinsightagentic.securityContext ) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+          - name: http
+            containerPort: {{ .Values.cognaioinsightagentic.env.port }}
+            protocol: TCP
+          {{- with (default .Values.livenessProbe .Values.cognaioinsightagentic.livenessProbe) }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (default .Values.readinessProbe .Values.cognaioinsightagentic.readinessProbe) }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.cognaioinsightagentic.extraEnv }}
+          env:
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html/assets/configs.json
+              subPath: configs.json
+              name: config
+            - mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              name: config
+          {{- with .Values.cognaioinsightagentic.additionalVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end}}
+          {{- with .Values.cognaioinsightagentic.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.cognaioinsightagentic.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: cognaioinsight-agentic-configs
+      {{- with .Values.cognaioinsightagentic.additionalVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
+      {{- with .Values.cognaioinsightagentic.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cognaioinsightagentic.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cognaioinsightagentic.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

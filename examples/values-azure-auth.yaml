@@ -1,0 +1,108 @@
+# =============================================================================
+# COGNAiO Cloud Extract - Azure Entra ID Authentication
+# =============================================================================
+# Enables Microsoft Entra (Azure AD) authentication for PostgreSQL and
+# Microsoft Graph for email notifications.
+#
+# Two identity approaches are shown:
+#   1. Service Principal (active by default)  - uses client secret
+#   2. Workload Identity  (commented out)     - uses federated credentials
+#
+# Merge with the base values:
+#   helm upgrade cognaio-idp ./cce-core/ --install -n cce \
+#     -f individual-values.yaml -f examples/values-azure-auth.yaml
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# cognaioservice  (core API + schema manager init container)
+# ---------------------------------------------------------------------------
+cognaioservice:
+  env:
+    db:
+      postgreSqlAuthMode: "entra"
+    mailAccount:
+      notificationProvider: "graph"
+
+  # --- Option 1: Service Principal (uncomment & fill in) ---
+  extraEnv:
+    - name: AZURE_TENANT_ID
+      value: "<your-tenant-id>"
+    - name: AZURE_CLIENT_ID
+      value: "<your-client-id>"
+    - name: AZURE_CLIENT_SECRET
+      value: "<your-client-secret>"
+
+  init:
+    extraEnv:
+      - name: AZURE_TENANT_ID
+        value: "<your-tenant-id>"
+      - name: AZURE_CLIENT_ID
+        value: "<your-client-id>"
+      - name: AZURE_CLIENT_SECRET
+        value: "<your-client-secret>"
+
+  # --- Option 2: Workload Identity (uncomment below, remove extraEnv above) ---
+  # serviceAccount:
+  #   create: true
+  #   annotations:
+  #     azure.workload.identity/client-id: "<your-client-id>"
+  #   automount: true
+  # podLabels:
+  #   azure.workload.identity/use: "true"
+  #   app.kubernetes.io/part-of: cce-core
+
+# ---------------------------------------------------------------------------
+# cognaioflexsearchservice
+# ---------------------------------------------------------------------------
+cognaioflexsearchservice:
+  env:
+    db:
+      postgreSqlAuthMode: "entra"
+
+  # --- Option 1: Service Principal ---
+  extraEnv:
+    - name: AZURE_TENANT_ID
+      value: "<your-tenant-id>"
+    - name: AZURE_CLIENT_ID
+      value: "<your-client-id>"
+    - name: AZURE_CLIENT_SECRET
+      value: "<your-client-secret>"
+
+  # --- Option 2: Workload Identity ---
+  # serviceAccount:
+  #   create: true
+  #   annotations:
+  #     azure.workload.identity/client-id: "<your-client-id>"
+  #   automount: true
+  # podLabels:
+  #   azure.workload.identity/use: "true"
+  #   app.kubernetes.io/component: cognaioflexsearchservice
+  #   app.kubernetes.io/part-of: cce-core
+
+# ---------------------------------------------------------------------------
+# cognaioauditscleanup
+# ---------------------------------------------------------------------------
+cognaioauditscleanup:
+  env:
+    db:
+      postgreSqlAuthMode: "entra"
+
+  # --- Option 1: Service Principal ---
+  extraEnv:
+    - name: AZURE_TENANT_ID
+      value: "<your-tenant-id>"
+    - name: AZURE_CLIENT_ID
+      value: "<your-client-id>"
+    - name: AZURE_CLIENT_SECRET
+      value: "<your-client-secret>"
+
+  # --- Option 2: Workload Identity ---
+  # serviceAccount:
+  #   create: true
+  #   annotations:
+  #     azure.workload.identity/client-id: "<your-client-id>"
+  #   automount: true
+  # podLabels:
+  #   azure.workload.identity/use: "true"
+  #   app.kubernetes.io/component: cognaioauditscleanup
+  #   app.kubernetes.io/part-of: cce-core

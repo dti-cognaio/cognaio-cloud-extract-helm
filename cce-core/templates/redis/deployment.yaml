@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.redis.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    {{- with .Values.redis.podLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not .Values.redis.autoscaling.enabled }}
+  replicas: {{ .Values.redis.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+      {{- with .Values.redis.podSelectorLabels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+  template:
+    metadata:
+      {{- with (merge (.Values.redis.podAnnotations | default dict) (.Values.podAnnotations | default dict)) }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "cognaio.labels" . | nindent 8 }}
+        {{- with (merge (.Values.redis.podLabels | default dict) (.Values.podLabels | default dict)) }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.redis.serviceAccount.name }}
+      {{- with (default .Values.podSecurityContext .Values.redis.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ default .Values.image.restartPolicy .Values.redis.restartPolicy | default "Always" }}
+      containers:
+        - name: {{ .Values.redis.name }}
+          image: {{ .Values.image.containerRegistry }}/{{ .Values.redis.image.name }}:{{ .Values.redis.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with (default .Values.securityContext .Values.redis.securityContext) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+          - name: redis
+            containerPort: {{ .Values.redis.service.port }}
+            protocol: TCP
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              redis-server --appendonly no --requirepass "$${REDIS_PASSWORD}" --maxmemory {{ .Values.redis.maxmemory }} --maxmemory-policy allkeys-lru
+          {{- with (default .Values.livenessProbe .Values.redis.livenessProbe) }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (default .Values.readinessProbe .Values.redis.readinessProbe) }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.redis.secret.name }}
+                key: password
+          {{- with .Values.redis.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.redis.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.redis.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- with .Values.redis.additionalVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end}}
+      volumes:
+      {{- with .Values.redis.additionalVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
+      {{- with .Values.redis.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.redis.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.redis.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

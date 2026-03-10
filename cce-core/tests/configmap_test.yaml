@@ -1,0 +1,102 @@
+suite: ConfigMap Tests
+release:
+  name: cce-unittests
+tests:
+  - it: should render nginx configmap with correct name
+    template: templates/nginx/configmap.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: idp-nginx-config
+      - isKind:
+          of: ConfigMap
+
+  - it: should render cognaioinsight configmap with correct name
+    template: templates/cognaio-insight/configmap.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: cognaioinsight-configs
+      - isKind:
+          of: ConfigMap
+
+  - it: should render cognaioinsight-agentic configmap with correct name
+    template: templates/cognaio-insight-agentic/configmap.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: cognaioinsight-agentic-configs
+      - isKind:
+          of: ConfigMap
+
+  - it: should interpolate service names in nginx upstream config
+    template: templates/nginx/configmap.yaml
+    set:
+      cognaioservice:
+        service:
+          name: my-cognaioservice
+      imageprovider:
+        service:
+          name: my-imageprovider
+      emailservice:
+        service:
+          name: my-emailservice
+      cognaioflexsearchservice:
+        service:
+          name: my-flexsearch
+      objectdetectionprovider:
+        service:
+          name: my-objectdetection
+      cognaioauditscleanup:
+        service:
+          name: my-auditscleanup
+      cognaioinsight:
+        service:
+          name: my-insight
+      cognaioinsightagentic:
+        service:
+          name: my-insight-agentic
+      usermanual:
+        service:
+          name: my-usermanual
+    asserts:
+      - matchRegex:
+          path: data["confd-nginx.conf"]
+          pattern: "server my-cognaioservice;"
+      - matchRegex:
+          path: data["confd-nginx.conf"]
+          pattern: "server my-imageprovider;"
+      - matchRegex:
+          path: data["confd-nginx.conf"]
+          pattern: "server my-emailservice;"
+      - matchRegex:
+          path: data["confd-nginx.conf"]
+          pattern: "server my-flexsearch;"
+
+  - it: should include listen port from values in nginx config
+    template: templates/nginx/configmap.yaml
+    set:
+      nginx:
+        env:
+          port: 9090
+    asserts:
+      - matchRegex:
+          path: data["confd-nginx.conf"]
+          pattern: "listen 9090;"
+
+  - it: should include cognaioinsight port in insight nginx config
+    template: templates/cognaio-insight/configmap.yaml
+    set:
+      cognaioinsight:
+        env:
+          port: 8080
+    asserts:
+      - matchRegex:
+          path: data["nginx.conf"]
+          pattern: "listen 8080;"

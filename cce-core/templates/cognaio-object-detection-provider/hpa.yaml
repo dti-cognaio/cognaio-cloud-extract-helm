@@ -1,0 +1,32 @@
+{{- if .Values.objectdetectionprovider.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.objectdetectionprovider.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.objectdetectionprovider.name }}
+  minReplicas: {{ .Values.objectdetectionprovider.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.objectdetectionprovider.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.objectdetectionprovider.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.objectdetectionprovider.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.objectdetectionprovider.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.objectdetectionprovider.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

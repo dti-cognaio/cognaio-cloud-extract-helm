@@ -1,0 +1,22 @@
+suite: Test cognaio service deployment
+templates:
+  - "cognaio-service/deployment.yaml" # Scannt alle Deployment-Files in allen Unterordnern
+tests:
+  - it: initcontainer and normal container should have security context
+    set:
+      cognaioservice.init.securityContext:
+        runAsUser: 1000
+        fsGroup: 2000
+      cognaioservice.securityContext:
+        runAsUser: 1000
+        fsGroup: 2000
+    asserts:
+      - exists:
+          path: spec.template.spec.initContainers[0].securityContext
+      - exists:
+          path: spec.template.spec.containers[0].securityContext
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            runAsUser: 1000
+            fsGroup: 2000

@@ -1,0 +1,25 @@
+suite: Global Resources set on all deployments
+templates:
+  - "**/deployment.yaml" # Scannt alle Deployment-Files in allen Unterordnern
+tests:
+  - it: should have livenessPrope definitions
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].livenessProbe
+      - exists:
+          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
+      - exists:
+          path: spec.template.spec.containers[0].livenessProbe.initialDelaySeconds
+      - exists:
+          path: spec.template.spec.containers[0].livenessProbe.periodSeconds
+
+  - it: should have readinessProbe definitions
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
+      - exists:
+          path: spec.template.spec.containers[0].readinessProbe.periodSeconds

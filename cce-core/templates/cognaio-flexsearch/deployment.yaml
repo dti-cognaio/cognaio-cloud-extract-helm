@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.cognaioflexsearchservice.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    {{- with .Values.cognaioflexsearchservice.podLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not .Values.cognaioflexsearchservice.autoscaling.enabled }}
+  replicas: {{ .Values.cognaioflexsearchservice.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+      {{- with .Values.cognaioflexsearchservice.podSelectorLabels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+  template:
+    metadata:
+      {{- with (merge (.Values.cognaioflexsearchservice.podAnnotations | default dict) (.Values.podAnnotations | default dict)) }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "cognaio.labels" . | nindent 8 }}
+        {{- with (merge (.Values.cognaioflexsearchservice.podLabels | default dict) (.Values.podLabels | default dict)) }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.cognaioflexsearchservice.serviceAccount.name }}
+      {{- with (default .Values.podSecurityContext .Values.cognaioflexsearchservice.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ default .Values.image.restartPolicy .Values.cognaioflexsearchservice.restartPolicy | default "Always" }}
+      containers:
+        - name: {{ .Values.cognaioflexsearchservice.name }}
+          image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioflexsearchservice.image.name }}:{{ .Values.cognaioflexsearchservice.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with (default .Values.securityContext .Values.cognaioflexsearchservice.securityContext ) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+          - name: http
+            containerPort: {{ .Values.cognaioflexsearchservice.env.port }}
+            protocol: TCP
+          {{- with (default .Values.livenessProbe .Values.cognaioflexsearchservice.livenessProbe) }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (default .Values.readinessProbe .Values.cognaioflexsearchservice.readinessProbe) }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+          - name: PORT
+            value: {{ .Values.cognaioflexsearchservice.env.port | quote }}  
+          {{- if .Values.cognaioflexsearchservice.env.extra_ca_certs }}
+          - name: NODE_EXTRA_CA_CERTS
+            value: {{ .Values.cognaioflexsearchservice.env.extra_ca_certs }}
+          {{- end }}
+          - name: PostgreSql_User
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cognaioflexsearchservice.env.secret.name }}
+                key: postgreSqlUser
+          - name: PostgreSql_Pwd
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cognaioflexsearchservice.env.secret.name }}
+                key: postgreSqlPwd
+          - name: PostgreSql_Db_Server
+            value: {{ .Values.cognaioflexsearchservice.env.db.postgreSqlDbServer }}:{{ .Values.cognaioflexsearchservice.env.db.postgreSqlDbPort }}
+          - name: PostgreSql_Schemas
+            value: {{ include "cognaio.dbSchemas" .Values.cognaioflexsearchservice.env.db.schemas }}
+          - name: PostgreSql_Db_Name
+            value: {{ .Values.cognaioflexsearchservice.env.db.postgreSqlDbName | quote }} 
+          - name: PostgreSql_Ssl_Required
+            value: {{ .Values.cognaioflexsearchservice.env.db.postgreSqlSslRequired | quote }}
+          - name: PostgreSql_Auth_Mode
+            value: {{ .Values.cognaioflexsearchservice.env.db.postgreSqlAuthMode | quote }}
+          - name: LogSeverity
+            value: {{ .Values.cognaioflexsearchservice.env.logSeverity }}
+          - name: PassPhrase_Repositories
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cognaioflexsearchservice.env.secret.name }}
+                key: passPhrase
+          - name: RedisProviderUrl
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.redis.secret.name }}
+                key: providerUrl
+          {{- with .Values.cognaioflexsearchservice.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.cognaioflexsearchservice.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.cognaioflexsearchservice.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- with .Values.cognaioflexsearchservice.additionalVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end}}
+      volumes:
+      {{- with .Values.cognaioflexsearchservice.additionalVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
+      {{- with .Values.cognaioflexsearchservice.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cognaioflexsearchservice.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cognaioflexsearchservice.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

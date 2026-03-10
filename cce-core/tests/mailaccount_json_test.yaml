@@ -1,0 +1,31 @@
+suite: Test mail account JSON generation
+templates:
+  - "cognaio-service/deployment.yaml"
+tests:
+  - it: should generate correct advancedAuth JSON
+    set:
+      cognaioservice.env.mailAccount.advancedAuth:
+        auth:
+          user: "emailAddress"
+          pass: "securePassword"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MailAccount_AdvancedAuthJson
+            value: '{"auth":{"pass":"securePassword","user":"emailAddress"}}'
+
+  - it: should generate correct customSettings JSON
+    set:
+      cognaioservice.env.mailAccount.customSettings:
+        secure: true
+        maxConnections: 100
+        tls:
+          ciphers: "TLSv1.2"
+          rejectUnauthorized: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MailAccount_CustomSettingsJson
+            value: '{"maxConnections":100,"secure":true,"tls":{"ciphers":"TLSv1.2","rejectUnauthorized":true}}'

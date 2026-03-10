@@ -24,6 +24,43 @@ The database is the only component requiring a backup, as no other data storage 
 To ensure all updates work as expected, we recommend testing deployments in a **staging environment** prior to deploying to production. This allows you to verify the functionality and compatibility of the new version in a controlled setting.
 
 
+## Architecture Overview
+The following diagram illustrates how the COGNAiO Cloud Extract microservices communicate within the Kubernetes cluster and with external systems.
+
+![COGNAiO Cloud Extract — Service Architecture](assets/architecture.png)
+
+### Services
+
+**nginx**
+Service that serves as the single gateway for all external traffic entering the cluster. It routes requests to the appropriate internal services. In future versions, this component will be replaced by native Kubernetes ingress capabilities.
+
+**cognaioservice**
+Central API service and primary orchestrator of the platform. Handles user authentication, request routing, email notifications, database operations, and Redis-based caching. Communicates with AI services (Azure OpenAI, Document Intelligence, AWS Textract, etc.) and contains the core business logic of COGNAiO Cloud Extract.
+
+**imageprovider**
+Normalizes heterogeneous document inputs (PDF, TIFF, scanned images, etc.) into well-formatted, standardized images through format conversion and preprocessing. Runs with multiple replicas by default to handle concurrent processing workloads.
+
+**objectdetectionprovider**
+Provides machine-learning-based object detection using a YOLO model to identify specific document elements such as signatures, stamps, or checkboxes. Must be explicitly activated per project within the platform configuration. If object detection is not required, this service can safely be scaled to zero replicas.
+
+**emailservice**
+Connects to external Microsoft Exchange mailboxes via the Microsoft Graph API to process inbound emails for automated document ingestion. If automated email processing is not required, this service can safely be scaled to zero replicas.
+
+**cognaioflexsearchservice**
+Manages repository data, providing storage and retrieval capabilities for indexed document content. If the repository feature is not required, this service can safely be scaled to zero replicas.
+
+**cognaioinsight**
+Primary web-based user interface for interacting with the COGNAiO Cloud Extract platform. Provides access to document processing workflows, project configuration, administration, and result review.
+
+**usermanual**
+Serves the official user documentation, accessible directly from the cognaioinsight UI.
+
+**cognaioauditscleanup**
+Runs periodic cleanup jobs to remove expired audit records and temporary data from the database, ensuring long-term storage efficiency.
+
+**redis**
+In-memory cache used for temporary data storage during document processing operations. Data is non-persistent and is not backed up.
+
 ## Prerequisites
 ### Tools & Skills
 - Basic knowledge of Helm and deployments in Kubernetes
@@ -49,6 +86,56 @@ az aks get-credentials --resource-group <RessourceGroup> --name <AKS-Name>
 ## Configuration and installation details
 ### Secrets
 All secrets can be individually controlled via the property `secret.init`, whether they should be created automatically by the deployment or not. If they are to be created, the required parameters must be filled in - see further descriptions below. If not, the already created secret can be used via `secret.name`.
+
+### Global Values
+The following global values apply to all deployments in the chart. These can be overridden per service where applicable.
+| Name                                                                                     | Description                                                        | Default                                              |
+|:-----------------------------------------------------------------------------------------|:-------------------------------------------------------------------|:-----------------------------------------------------|
+| `image.containerRegistry`                                                                | Container registry where all images are placed                     | `dtideregistry.azurecr.io`                           |
+| `image.pullPolicy`                                                                       | Image pull policy for all containers                               | `Always`                                             |
+| `image.restartPolicy`                                                                    | Global restart policy for all pods                                 | `Always`                                             |
+| `imagePullSecrets`                                                                       | Image pull secrets for private registries                          | `[]`                                                 |
+| `podAnnotations`                                                                         | Global pod annotations applied to all deployments                  | `{}`                                                 |
+| `podSecurityContext`                                                                     | Global pod security context applied to all deployments             | `{}`                                                 |
+| `securityContext`                                                                        | Global container security context applied to all deployments       | `{}`                                                 |
+| `annotations`                                                                            | Global annotations applied to all resources                        | `{}`                                                 |
+| `labels`                                                                                 | Global labels applied to all resources                             | `{}`                                                 |
+| `cognaio.namespace`                                                                      | Kubernetes namespace for the deployment                            | `cognaio-idp`                                        |
+| `cognaio.url`                                                                            | Base URL to COGNAiO App                                            | `""`                                                 |
+| `cognaio.protocol`                                                                       | Protocol for the base URL                                          | `https`                                              |
+| `cognaio.wildcardUrl`                                                                    | Base URL wildcard for ingress                                      | `""`                                                 |
+| `cognaio.cert.certificate`                                                               | Certificate for TLS termination in pem format                      | `""`                                                 |
+| `cognaio.cert.key`                                                                       | Certificate Key for TLS termination in pem format                  | `""`                                                 |
+| `cognaio.cert.secret.name`                                                               | Secret name, details in `cognaio-tls-secret.yaml`                  | `cognaio-com-tls-secret`                             |
+| `cognaio.cert.secret.init`                                                               | Whether or not to create a secret                                  | `true`                                               |
+| `cognaio.ingress.enabled`                                                                | Enable deployment of ingress                                       | `true`                                               |
+
+### Per-Service Common Parameters
+Each service supports the following common parameters. Replace `<service>` with the service key (e.g., `cognaioservice`, `nginx`, `redis`, etc.).
+| Name                                                                                     | Description                                                        | Default (varies)                                     |
+|:-----------------------------------------------------------------------------------------|:-------------------------------------------------------------------|:-----------------------------------------------------|
+| `<service>.name`                                                                         | Name used for deployment and service resources                     | (service-specific)                                   |
+| `<service>.replicaCount`                                                                 | Number of replicas                                                 | `1`                                                  |
+| `<service>.autoscaling.enabled`                                                          | Enable horizontal pod autoscaling                                  | `false`                                              |
+| `<service>.autoscaling.minReplicas`                                                      | Minimum replicas for HPA                                           | `1`                                                  |
+| `<service>.autoscaling.maxReplicas`                                                      | Maximum replicas for HPA                                           | `100`                                                |
+| `<service>.autoscaling.targetCPUUtilizationPercentage`                                   | Target CPU utilization for HPA                                     | `80`                                                 |
+| `<service>.autoscaling.targetMemoryUtilizationPercentage`                                | Target memory utilization for HPA                                  | `80`                                                 |
+| `<service>.podLabels`                                                                    | Additional labels applied to pods                                  | (service-specific)                                   |
+| `<service>.podSelectorLabels`                                                            | Immutable selector labels for pods                                 | (service-specific)                                   |
+| `<service>.serviceAccount.create`                                                        | Whether to create a service account                                | `false`                                              |
+| `<service>.serviceAccount.annotations`                                                   | Annotations for the service account                                | `{}`                                                 |
+| `<service>.serviceAccount.name`                                                          | Name of the service account                                        | `default`                                            |
+| `<service>.serviceAccount.automount`                                                     | Automount service account token                                    | `false`                                              |
+| `<service>.podSecurityContext`                                                           | Pod security context (overrides global)                            | `{}`                                                 |
+| `<service>.securityContext`                                                              | Container security context (overrides global)                      | `{}`                                                 |
+| `<service>.nodeSelector`                                                                 | Node selector for pod scheduling                                   | `{}`                                                 |
+| `<service>.tolerations`                                                                  | Tolerations for pod scheduling                                     | `[]`                                                 |
+| `<service>.affinity`                                                                     | Affinity rules for pod scheduling                                  | `{}`                                                 |
+| `<service>.resources`                                                                    | CPU/memory resource requests and limits                            | (service-specific)                                   |
+| `<service>.restartPolicy`                                                                | Restart policy for the pod (overrides global `image.restartPolicy`) | `Always`                                            |
+| `<service>.lifecycle`                                                                    | Container lifecycle hooks (e.g., preStop for graceful shutdown)    | `{}`                                                 |
+| `<service>.extraEnv`                                                                     | Additional environment variables as array                          | `[]`                                                 |
 
 ### Cognitive Service Endpoints
 Our application integrates with multiple Azure resources, which are detailed in our [infrastructure](https://github.com/dti-cognaio/cognaio-cloud-extract-iac) GitHub repository. However, certain configuration details for deploying COGNAiO® Cloud Extract must be retrieved directly from the Azure portal. Please navigate to each relevant resource and locate the required endpoint information.
@@ -81,10 +168,10 @@ While Azure is our preferred platform for AI services, our solution also support
 If you want to use other Ai services you can provide following information otherwise it can be empty.
 |Name                                           | Resource            | Example / Description                                 |
 |:----------------------------------------------|:--------------------|:------------------------------------------------------|
-|`cognaioservice.env.ai.apikeyNativeOpenAi`     | openai.io           | Create individual ApiKey in your openAi account       | 
+|`cognaioservice.env.ai.apikeyNativeOpenAi`     | openai.io           | Create individual ApiKey in your openAi account       |
 |`cognaioservice.env.ai.endpointNativeOpenAi`   | openai.io           |`"https://api.openai.com/v1"`                          |
 |`cognaioservice.env.ai.apikeyNativeGemini`     | google Gemini       |`"https://gemini.google.com/app"`                      |
-|`cognaioservice.env.ai.apikeyNativeAnthropic`  | Amazon Anthropic    |`"https://api.openai.com/v1"`                          |
+|`cognaioservice.env.ai.apikeyNativeAnthropic`  | Anthropic           |`"https://api.anthropic.com"`                          |
 |`cognaioservice.env.ai.apikeyNativeCerebral`   | Cerebral            |`"https://cerebralai.com.au/"`                         |
 |`cognaioservice.env.ai.endpointNativeCerebral` | Cerebral            |`"https://cerebralai.com.au/"`                         |
 
@@ -94,7 +181,7 @@ If you want to use other Ai services you can provide following information other
 
 The endpoints for AI services can be configured directly in COGNAiO UI. Because the database is encrypted, it requires a private and public key, which must be included in the deployment.
 There are two ways to create these.
-1. Existing COGNAiO 2.5 installation
+1. Existing COGNAiO 2.5+ installation
 ```sh
 GET <BASE_URL>/extraction/api/crypto/generatekeypair
 ```
@@ -141,28 +228,44 @@ The PassPhrases and tokens are needed to encrypt the database tables and the jwt
 | `emailservice.env.passPhraseCryptoSymetricAppKey`                                        | Pass phrase token               | `""` (Same as `cognaioservice.env.tokens.passPhraseCryptoSymetricAppKey`)   |
 
 ### Mail Account
-In order for the application to send email notifications for licensing, project management and generation of one-time passwords, an email inbox is required. 
+In order for the application to send email notifications for licensing, project management and generation of one-time passwords, an email inbox is required. The notification provider can be configured to use either SMTP or Microsoft Graph API.
 | Name                                                                                     | Description                                            | Default                                                                                      |
 |:-----------------------------------------------------------------------------------------|:-------------------------------------------------------|:---------------------------------------------------------------------------------------------|
 | `cognaioservice.env.mailAccount.user`                                                    | Mail account user                                      | `""`                                                                                         |
 | `cognaioservice.env.mailAccount.password`                                                | Mail account password                                  | `""`                                                                                         |
 | `cognaioservice.env.mailAccount.host`                                                    | Mail account host                                      | `smtp.office365.com`                                                                         |
 | `cognaioservice.env.mailAccount.port`                                                    | Mail account port                                      | `587`                                                                                        |
+| `cognaioservice.env.mailAccount.fromAddressFriendlyName`                                 | From address friendly name                             | `Cognaio`                                                                                    |
+| `cognaioservice.env.mailAccount.useAdvancedAuth`                                         | Use advanced authentication methods                   | `false`                                                                                      |
+| `cognaioservice.env.mailAccount.advancedAuth.auth.user`                                  | Advanced authentication username                       | `yourEmailAddress`                                                                           |
+| `cognaioservice.env.mailAccount.advancedAuth.auth.pass`                                  | Advanced authentication password                       | `yourPassword`                                                                              |
+| `cognaioservice.env.mailAccount.useCustomSettings`                                       | Boolean to use custom settings                         | `false`                                                                                      |
+| `cognaioservice.env.mailAccount.customSettings.secure`                                   | Custom settings secure flag                             | `false`                                                                                      |
+| `cognaioservice.env.mailAccount.customSettings.maxConnections`                           | Custom settings max connections                         | `150`                                                                                         |
+| `cognaioservice.env.mailAccount.customSettings.tls.ciphers`                              | Custom settings TLS ciphers                             | `SSLv3`                                                                                      |
+| `cognaioservice.env.mailAccount.customSettings.tls.rejectUnauthorized`                   | Custom settings TLS reject unauthorized                | `false`                                                                                      |
+| `cognaioservice.env.mailAccount.notificationProvider`                                    | Notification provider (`smtp` or `graph`)              | `smtp`                                                                                       |
 | `cognaioservice.env.organization.users`                                                  | Array of users to manage COGNAiO Cloud Extract         | `""`                                                                                         |
-| `cognaioservice.env.organization.fromAddressFriendlyName`                                | From address friendly name                             | `Cognaio`                                                                                    |
-| `cognaioservice.env.organization.useAdvancedAuth`                                        | Use advanced authentication methods as json            | `{"auth":{"user":"yourEmailAddress","pass":"yourPassword"}}                                  |
-| `cognaioservice.env.organization.advancedAuthJson`                                       | Array of users to manage COGNAiO Cloud Extract         | `""`                                                                                         |
-| `cognaioservice.env.organization.useCustomSettings`                                      | Boolean to use custom settings                         | `false`                                                                                      |
-| `cognaioservice.env.organization.customSettingsJson`                                     | Apply custom settings as json                          | `{"secure":false,"maxConnections":150,"tls":{"ciphers":"SSLv3","rejectUnauthorized":false}}  |
+
 The emails are sent to so-called organization users which emails can be configured in the following array property.
-Please note the exact spelling with **“'name1','name2'”**
 ```yaml
 cognaioservice:
   env:
     organization:
-      users: "'email_1@example.com','email_2@example.com'"
+      users:
+        - "email_1@example.com"
+        - "email_2@example.com"
 ```
 > Change from version 2.2.0 to 2.2.1 | new provide string instead of array
+> Change from version 2.6.0 | new provide array instead of string
+
+### OTP Configuration
+> ⚠️ From version 2.6 onwards
+
+One-time password (OTP) authentication can be disabled if an OpenID provider is configured as the sole authentication method.
+| Name                                                                                     | Description                                            | Default                                              |
+|:-----------------------------------------------------------------------------------------|:-------------------------------------------------------|:-----------------------------------------------------|
+| `cognaioservice.env.otpDisabled`                                                         | Disable OTP authentication                             | `false`                                              |
 
 ### OpenID
 Instead of retrieving an one time password (otp) via eMail you can connect an OpenID provider. Supported providers are Azure Entra ID, Google and GitHub.
@@ -173,7 +276,7 @@ To set up the corresponding OpenID providers, please consult the relevant provid
 | `cognaioservice.env.openID.microsoftDisabled`                                         | Enables Microsoft open id connection                      | `true`                                               |
 | `cognaioservice.env.openID.microsoftClientId`                                         | Client ID from Microsoft App registration                 | `""`                                                 |
 | `cognaioservice.env.openID.microsoftClientSecret`                                     | Client secret from Microsoft App registration             | `""`                                                 |
-| `cognaioservice.env.openID.microsoftTenant`                                           | Tenant ID from Microsoft App registration                 | `""`                                                 |
+| `cognaioservice.env.openID.microsoftTenant`                                           | Tenant ID from Microsoft App registration                 | `common`                                             |
 | `cognaioservice.env.openID.microsoftTenantsExpected`                                  | Internal filter to allow only certain domains             | `""`                                                 |
 | `cognaioservice.env.openID.microsoftLayoutOrder`                                      | Order if multiple provides are configured in UI           | `1`                                                  |
 | `cognaioservice.env.openID.googleDisabled`                                            | Enables Google open id connection                         | `true`                                               |
@@ -188,30 +291,113 @@ To set up the corresponding OpenID providers, please consult the relevant provid
 | `cognaioservice.env.openID.githubLayoutOrder`                                         | Order if multiple provides are configured in UI           | `3`                                                  |
 
 ### Database
-Some microservices require a postgres database to persist certain data. the following parameters are described for this purpose.
+Some microservices require a PostgreSQL database to persist certain data. The following parameters are described for this purpose. For Entra ID authentication, see the [Azure Authentication](#azure-authentication-entra-id) section below.
+
+#### cognaioservice
 | Name                                                                                  | Description                                               | Default                                              |
 |:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
-| `cognaioservice.env.db.postgreSqlUser`                                                | postgreSQL username                                       | `<SQL-USER>`                                         |
-| `cognaioservice.env.db.postgreSqlPwd`                                                 | postgreSQL password                                       | `<SQL-PASSWORD>`                                     |
-| `cognaioservice.env.db.postgreSqlDbServer`                                            | postgreSQL server                                         | `<SQL-SERVER>`                                       |
+| `cognaioservice.env.db.postgreSqlUser`                                                | postgreSQL username                                       | `""`                                                 |
+| `cognaioservice.env.db.postgreSqlPwd`                                                 | postgreSQL password                                       | `""`                                                 |
+| `cognaioservice.env.db.postgreSqlDbServer`                                            | postgreSQL server                                         | `""`                                                 |
 | `cognaioservice.env.db.postgreSqlDbPort`                                              | postgreSQL port                                           | `5432`                                               |
 | `cognaioservice.env.db.postgreSqlSslRequired`                                         | postgreSQL ssl required flag                              | `true`                                               |
-| `cognaioservice.env.db.postgreSqlDbName`                                              | postgreSQL database name                                  | `postgres`                                           |
-| `cognaioservice.env.db.schemas`                                                       | postgreSQL schemas                                        | `cognaio_extensions; cognaio_design; cognaio_audits` |
-| `cognaioflexsearchservice.env.db.postgreSqlUser`                                      | postgreSQL username                                       | `<SQL-USER>`                                         |
-| `cognaioflexsearchservice.env.db.postgreSqlPwd`                                       | postgreSQL password                                       | `<SQL-PASSWORD>`                                     |
-| `cognaioflexsearchservice.env.db.postgreSqlDbServer`                                  | postgreSQL server                                         | `<SQL-SERVER>:<PORT>`                                |
+| `cognaioservice.env.db.postgreSqlDbName`                                              | postgreSQL database name                                  | `cognaio_idp`                                        |
+| `cognaioservice.env.db.schemas`                                                       | postgreSQL schemas as a array                             | `[cognaio_extensions,cognaio_design,cognaio_audits]` |
+| `cognaioservice.env.db.dbCheckExistence`                                              | Check database existence on startup                       | `true`                                               |
+| `cognaioservice.env.db.postgreSqlAuthMode`                                            | Authentication mode (`basic` or `entra`)                  | `basic`                                              |
+
+#### cognaioflexsearchservice
+| Name                                                                                  | Description                                               | Default                                              |
+|:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
+| `cognaioflexsearchservice.env.db.postgreSqlUser`                                      | postgreSQL username                                       | `""`                                                 |
+| `cognaioflexsearchservice.env.db.postgreSqlPwd`                                       | postgreSQL password                                       | `""`                                                 |
+| `cognaioflexsearchservice.env.db.postgreSqlDbServer`                                  | postgreSQL server                                         | `""`                                                 |
 | `cognaioflexsearchservice.env.db.postgreSqlDbPort`                                    | postgreSQL port                                           | `5432`                                               |
 | `cognaioflexsearchservice.env.db.postgreSqlSslRequired`                               | postgreSQL ssl required flag                              | `true`                                               |
-| `cognaioflexsearchservice.env.db.postgreSqlDbName`                                    | postgreSQL database name                                  | `postgres`                                           |
-| `cognaioflexsearchservice.env.db.schemas`                                             | postgreSQL schemas                                        | `cognaio_extensions; cognaio_repositories`           |
-| `cognaioauditscleanup.env.db.postgreSqlUser`                                          | postgreSQL username                                       | `<SQL-USER>`                                         |
-| `cognaioauditscleanup.env.db.postgreSqlPwd`                                           | postgreSQL password                                       | `<SQL-PASSWORD>`                                     |
-| `cognaioauditscleanup.env.db.postgreSqlDbServer`                                      | postgreSQL server                                         | `<SQL-SERVER>:<PORT>`                                |
+| `cognaioflexsearchservice.env.db.postgreSqlDbName`                                    | postgreSQL database name                                  | `cognaio_idp`                                        |
+| `cognaioflexsearchservice.env.db.schemas`                                             | postgreSQL schemas as a array                             | `[cognaio_extensions,cognaio_repositories]`          |
+| `cognaioflexsearchservice.env.db.postgreSqlAuthMode`                                  | Authentication mode (`basic` or `entra`)                  | `basic`                                              |
+
+#### cognaioauditscleanup
+| Name                                                                                  | Description                                               | Default                                              |
+|:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
+| `cognaioauditscleanup.env.db.postgreSqlUser`                                          | postgreSQL username                                       | `""`                                                 |
+| `cognaioauditscleanup.env.db.postgreSqlPwd`                                           | postgreSQL password                                       | `""`                                                 |
+| `cognaioauditscleanup.env.db.postgreSqlDbServer`                                      | postgreSQL server                                         | `""`                                                 |
 | `cognaioauditscleanup.env.db.postgreSqlDbPort`                                        | postgreSQL port                                           | `5432`                                               |
 | `cognaioauditscleanup.env.db.postgreSqlSslRequired`                                   | postgreSQL ssl required flag                              | `true`                                               |
-| `cognaioauditscleanup.env.db.postgreSqlDbName`                                        | postgreSQL database name                                  | `postgres`                                           |
-| `cognaioauditscleanup.env.db.schemas`                                                 | postgreSQL schemas                                        | `cognaio_design; cognaio_audits`                     |
+| `cognaioauditscleanup.env.db.postgreSqlDbName`                                        | postgreSQL database name                                  | `cognaio_idp`                                        |
+| `cognaioauditscleanup.env.db.schemas`                                                 | postgreSQL schemas as a array                             | `[cognaio_design, cognaio_audits]`                   |
+| `cognaioauditscleanup.env.db.postgreSqlAuthMode`                                      | Authentication mode (`sql` or `entra`)                    | `sql`                                                |
+
+The `schemas` field accepts a YAML list.
+```yaml
+cognaioservice:
+  env:
+    db:
+      schemas:
+        - cognaio_extensions
+        - cognaio_design
+        - cognaio_audits
+```
+
+### Azure Authentication (Entra ID)
+The database services (`cognaioservice`, `cognaioflexsearchservice`, `cognaioauditscleanup`) and the Graph API notification provider (`cognaioservice`) support Azure Entra ID authentication. Instead of hardcoding Entra credentials in the chart values, use one of the following standard approaches via `extraEnv` or Workload Identity.
+
+#### Service Principal via extraEnv
+Provide the standard Azure SDK environment variables through the `extraEnv` field of each service that needs Entra authentication:
+
+```yaml
+cognaioservice:
+  env:
+    db:
+      postgreSqlAuthMode: "entra"
+    mailAccount:
+      notificationProvider: "graph"
+  extraEnv:
+    - name: AZURE_TENANT_ID
+      value: "<your-tenant-id>"
+    - name: AZURE_CLIENT_ID
+      value: "<your-client-id>"
+    - name: AZURE_CLIENT_SECRET
+      value: "<your-client-secret>"
+```
+
+The same pattern applies to `cognaioflexsearchservice` and `cognaioauditscleanup` for database authentication:
+
+```yaml
+cognaioflexsearchservice:
+  env:
+    db:
+      postgreSqlAuthMode: "entra"
+  extraEnv:
+    - name: AZURE_TENANT_ID
+      value: "<your-tenant-id>"
+    - name: AZURE_CLIENT_ID
+      value: "<your-client-id>"
+    - name: AZURE_CLIENT_SECRET
+      value: "<your-client-secret>"
+```
+
+For the schema manager init container of `cognaioservice`, use `cognaioservice.init.extraEnv` with the same variables.
+
+#### Workload Identity
+If your cluster supports Azure Workload Identity, configure the service account and pod labels instead:
+
+```yaml
+cognaioservice:
+  serviceAccount:
+    create: true
+    annotations:
+      azure.workload.identity/client-id: "<your-client-id>"
+  podLabels:
+    azure.workload.identity/use: "true"
+  env:
+    db:
+      postgreSqlAuthMode: "entra"
+```
+
+With Workload Identity, no client secret is needed — the Azure SDK automatically obtains tokens via the projected service account token.
 
 ### Redis
 Some microservices require a Redis cache for caching certain data. Persistence is not needed.
@@ -221,25 +407,25 @@ Some microservices require a Redis cache for caching certain data. Persistence i
 | `redis.secret.init`                                                                   | Whether or not to create a secret                         | `true`                                               |
 | `redis.secret.password`                                                               | Password for redis                                        | `changeme`                                           |
 | `redis.secret.providerUrl`                                                            | Redis provider url                                        | `redis://:changeme@redis:6379`                       |
+| `redis.maxmemory`                                                                     | Maximum memory for Redis                                  | `1gb`                                                |
 
-### Additional Parameter
-The following table lists the important configurable parameters of the COGNAiO cloud extract chart and their default values. All other parameters can be taken from values.yaml
+### Feature Preview
+> ⚠️ From version 2.6 onwards
+
+Feature preview flags allow enabling or disabling preview features in the application.
 | Name                                                                                     | Description                                                        | Default                                              |
 |:-----------------------------------------------------------------------------------------|:-------------------------------------------------------------------|:-----------------------------------------------------|
-| `image.containerRegistry`                                                                | Container registry where all images are placed                     | `dtideregistry.azurecr.io`                           |
-| `cognaio.namespace`                                                                      | Kubernetes namespace for the deployment                            | `cognaio-idp`                                        |
-| `cognaio.url`                                                                            | Base URL to COGNAiO App                                            | `<YOUR-BASE-URL>`                                    |
-| `cognaio.wildcardUrl`                                                                    | Base URL wildcard for ingress                                      | `<WILDCARD-VARIATION-OF-BASE-URL>`                   |
-| `cognaio.cert.certificate`                                                               | Certificate for TLS termination in pem format                      | `""`                                                 |
-| `cognaio.cert.key`                                                                       | Certificate Key for TLS termination in pem format                  | `""`                                                 |
-| `cognaio.cert.secret.name`                                                               | Secret name, details in `cognaio-tls-secret.yaml`                  | `cognaio-com-tls-secret`                             |
-| `cognaio.cert.secret.init`                                                               | Whether or not to create a secret                                  | `true`                                               |
-| `cognaio.ingress.enabled`                                                                | Enable deployment of ingress                                       | `true`                                               |
-| `cognaiostudio.service.urlpath`                                                          | Url path for the service                                           | `/cognaioalnalyze`                                   |
-| `cognaiostudio.resources`                                                                | Provide limit and request resource information                     | none                                                 |
-| `cognaioinsight.service.urlpath`                                                         | Url path for the service                                           | `/cognaioinsight`                                    |
-| `cognaioinsight.resources`                                                               | Provide limit and request resource information                     | none                                                 |
-| `cognaioservice.service.urlpath`                                                         | Url path for the service                                           | `/extraction`                                        |
+| `cognaioservice.env.featurePreview.uiAiChainCrafterDisabled`                             | Disable AI Chain Crafter UI feature preview                        | `true`                                               |
+| `cognaioservice.env.featurePreview.cerebralEdgeDisabled`                                 | Disable Cerebral Edge feature preview                              | `true`                                               |
+| `cognaioservice.env.featurePreview.awsServicesDisabled`                                  | Disable AWS services feature preview                               | `true`                                               |
+
+### Additional Parameters
+The following table lists additional configurable parameters of the COGNAiO cloud extract chart and their default values. All other parameters can be taken from values.yaml
+| Name                                                                                     | Description                                                        | Default                                              |
+|:-----------------------------------------------------------------------------------------|:-------------------------------------------------------------------|:-----------------------------------------------------|
+| `cognaioinsight.service.urlpath`                                                         | Url path for the cognaioinsight service                            | `/cognaioinsight`                                    |
+| `cognaioinsightagentic.service.urlpath`                                                  | Url path for the agentic preview UI                                | `/cognaioinsight-agentic`                            |
+| `cognaioservice.service.urlpath`                                                         | Url path for the service                                           | `/extraction/api`                                    |
 | `cognaioservice.env.port`                                                                | Port                                                               | `3000`                                               |
 | `cognaioservice.env.extra_ca_certs`                                                      | Add extra ca certs into image                                      | none                                                 |
 | `cognaioservice.env.secret.name`                                                         | Secret name, details in `cognaioservice-env-secrets.yaml`          | `cognaioservice-env-secrets`                         |
@@ -248,57 +434,81 @@ The following table lists the important configurable parameters of the COGNAiO c
 | `cognaioservice.env.cognitiveServices.computervision.maxRetries`                         | Max retries                                                        | `30`                                                 |
 | `cognaioservice.env.cognitiveServices.computervision.maxRetriesWaitTimeoutInSec`         | Max retries wait timeout in seconds                                | `1`                                                  |
 | `cognaioservice.env.cognitiveServices.computervision.maxWaitTimeoutForFinishedInSec`     | Max wait timeouts for finished in seconds                          | `1`                                                  |
-| `cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRequestTimeoutInSec`     | Max request timeouts in seconds                                    | `10`                                                 |
+| `cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRequestTimeoutInSec`     | Max request timeouts in seconds                                    | `60`                                                 |
 | `cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetries`                 | Max retries                                                        | `30`                                                 |
-| `cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetriesWaitTimeoutInSec` | Max retries wait timeouts in seconds                               | `1`                                                  |
-| `cognaioservice.env.cognitiveServices.awsTextract.maxRequestTimeoutInSec`                | Max request timeouts in seconds                                    | `10`                                                 |
+| `cognaioservice.env.cognitiveServices.aiDocumentIntelligence.maxRetriesWaitTimeoutInSec` | Max retries wait timeouts in seconds                               | `3`                                                  |
+| `cognaioservice.env.cognitiveServices.awsTextract.maxRequestTimeoutInSec`                | Max request timeouts in seconds                                    | `60`                                                 |
 | `cognaioservice.env.cognitiveServices.awsTextract.maxRetries`                            | Max retries                                                        | `30`                                                 |
 | `cognaioservice.env.cognitiveServices.awsTextract.maxRetriesWaitTimeoutInSec`            | Max retries wait timeouts in seconds                               | `3`                                                  |
 | `cognaioservice.env.essentials.warningNotificationTimeoutInHours`                        | Warning notification timeouts in hours                             | `48`                                                 |
-| `cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays`            | Feature exeeds limits notification timout in days                  | `2`                                                  |
+| `cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays`            | Feature exceeds limits notification timeout in days                | `2`                                                  |
 | `cognaioservice.env.endpointsManageDisabled`                                             | Disables endpoints management permissions                          | `false`                                              |
-| `cognaioservice.env.environmentNameForNotifications`                                     | Displayname of the notification service                            | `Cognaio IDP`                                        |
+| `cognaioservice.env.environmentNameForNotifications`                                     | Displayname of the notification service                            | `COGNAiO IDP`                                        |
 | `cognaioservice.env.logSeverity`                                                         | Log severity                                                       | `info`                                               |
-| `cognaioservice.resources`                                                               | Provide limit and request resource information                     | none                                                 |
+| `cognaioservice.resources`                                                               | Provide limit and request resource information                     | `limits: 1Gi / requests: 512Mi, 200m`               |
 | `emailservice.env.port`                                                                  | Port                                                               | `7171`                                               |
-| `emailservice.env.logSeverity`                                                           | Log severity                                                       | `info`                                               |
+| `emailservice.env.logSeverity`                                                           | Log severity                                                       | `error`                                              |
 | `emailservice.env.secret.name`                                                           | Secret name, details in `emailservice-env-secrets.yaml`            | `emailservice-env-secrets`                           |
 | `emailservice.env.secret.init`                                                           | Whether or not to create a secret                                  | `true`                                               |
-| `emailservice.resources`                                                                 | Provide limit and request resource information                     | none                                                 |
+| `emailservice.resources`                                                                 | Provide limit and request resource information                     | `limits: 512Mi / requests: 128Mi, 100m`             |
 | `cognaioflexsearchservice.env.port`                                                      | Port                                                               | `8688`                                               |
 | `cognaioflexsearchservice.env.extra_ca_certs`                                            | Add extra ca certs into image                                      | none                                                 |
 | `cognaioflexsearchservice.env.logSeverity`                                               | Log severity                                                       | `error`                                              |
 | `cognaioflexsearchservice.env.secret.name`                                               | Secret name, details in `cognaioflexsearchservice-env-secrets.yaml`| `cognaioflexsearchservice-env-secrets`               |
 | `cognaioflexsearchservice.env.secret.init`                                               | Whether or not to create a secret                                  | `true`                                               |
-| `cognaioflexsearchservice.resources`                                                     | Provide limit and request resource information                     | none                                                 |
-| `cognaioauditscleanup.env.port`                                                          | Port                                                               | `8688`                                               |
-| `cognaioauditscleanup.env.extra_ca_certs`                                                | Add extra ca certs into image                                      | none                                                 |
+| `cognaioflexsearchservice.resources`                                                     | Provide limit and request resource information                     | `limits: 2Gi / requests: 1Gi, 200m`                 |
+| `cognaioauditscleanup.env.port`                                                          | Port                                                               | `9789`                                               |
 | `cognaioauditscleanup.env.logSeverity`                                                   | Log severity                                                       | `error`                                              |
-| `cognaioauditscleanup.env.secret.name`                                                   | Secret name, details in `cognaioauditscleanup-env-secrets.yaml`    | `cognaioauditscleanup-env-secrets`                   | 
+| `cognaioauditscleanup.env.secret.name`                                                   | Secret name, details in `cognaioauditscleanup-env-secrets.yaml`    | `cognaioauditscleanup-env-secrets`                   |
 | `cognaioauditscleanup.env.secret.init`                                                   | Whether or not to create a secret                                  | `true`                                               |
-| `cognaioauditscleanup.resources`                                                         | Provide limit and request resource information                     | none                                                 |
+| `cognaioauditscleanup.resources`                                                         | Provide limit and request resource information                     | `limits: 512Mi / requests: 256Mi, 100m`             |
 | `imageprovider.env.port`                                                                 | Port                                                               | `3333`                                               |
-| `imageprovider.resources`                                                                | Provide limit and request resource information                     | `memory: 5120Mi/512Mi`                               |
+| `imageprovider.resources`                                                                | Provide limit and request resource information                     | `limits: 4Gi / requests: 1Gi, 200m`                 |
 | `objectdetectionprovider.env.port`                                                       | Port                                                               | `7337`                                               |
-| `objectdetectionprovider.resources`                                                      | Provide limit and request resource information                     | `memory: 5120Mi/512Mi`                               |
+| `objectdetectionprovider.resources`                                                      | Provide limit and request resource information                     | `limits: 5Gi / requests: 1Gi, 200m`                 |
+
+## Examples
+
+The `examples/` directory contains ready-to-use values overlay files for common configuration scenarios:
+
+| File | Description |
+|:-----|:------------|
+| [`values-dev-resources.yaml`](examples/values-dev-resources.yaml) | Example resource allocation for development and testing environments. Values should be monitored and adjusted based on observed usage during testing. |
+| [`values-prd-resources.yaml`](examples/values-prd-resources.yaml) | Example resource allocation for production environments. Values should be validated through load testing and continuously monitored to meet performance requirements. |
+| [`values-azure-auth.yaml`](examples/values-azure-auth.yaml) | Azure Entra ID authentication for PostgreSQL and Microsoft Graph email. Includes Service Principal and Workload Identity options. |
+| [`values-security.yaml`](examples/values-security.yaml) | Pod and container security hardening: non-root, read-only root filesystem, dropped capabilities, seccomp. Includes emptyDir volumes for writable paths. |
+
+Overlay files are merged on top of your base values:
+```sh
+helm upgrade cognaio-idp ./cce-core/ --install -n cce \
+  -f individual-values.yaml \
+  -f examples/values-dev-resources.yaml \
+  -f examples/values-security.yaml
+```
 
 ## Installing the Chart
-Adjust Values in values.yaml according environment or pass a dedicated values.yaml.  
+Adjust Values in values.yaml according environment or pass a dedicated values.yaml.
 
+```sh
+helm upgrade cognaio-idp ./cce-core/ --install --create-namespace -n cce -f individual-values.yaml
 ```
-helm upgrade cognaio-idp .\idp-core\ --install --create-namespace -n cce -f individual-values.yaml
+If something goes wrong with the helm upgrade command you can every time do an uninstall first because the whole services are stateless.
+```sh
+helm uninstall cognaio-idp -n cce
 ```
 
 Wait until all pods are ready and running
-```
+```sh
 kubectl get pods -n cce -w
 ```
 |NAME|READY|STATUS|
 |:----|:---|:---|
-|cognaiostudio-xxx              |1/1|     Running|
+|cognaioinsight-xxx             |1/1|     Running|
+|cognaioinsight-agentic-xxx     |1/1|     Running|
 |cce-user-manual-xxx            |1/1|     Running|
 |cognaioflexsearchservice-xxx   |1/1|     Running|
 |cognaioservice-xxx             |1/1|     Running|
+|cognaioauditscleanup-xxx       |1/1|     Running|
 |emailservice-xxx               |1/1|     Running|
 |imageprovider-xxx              |1/1|     Running|
 |nginx-xxx                      |1/1|     Running|
@@ -313,8 +523,8 @@ cognaio:
   url: cognaio.example.group
 ```
 
-Frontend: https://cognaio.example.group/cognaioanalyze
-Frontend-preview: https://cognaio.example.group/cognaioinsight
+Frontend: https://cognaio.example.group/cognaioinsight
+Frontend-agentic-preview: https://cognaio.example.group/cognaioinsight-agentic
 
 By default a temporary trial license will be active for a limited amount of time (14 days) and with a limited rate limitation of analyze request (250 requests/day). During this trial phase, it is expected to request and apply an official platform license.
 A Platform license describes the available features and their limits and an expiration date. A license can be requested in two modes:
@@ -326,7 +536,7 @@ A Platform license describes the available features and their limits and an expi
 In a dedicated environment only the offline method is recommended.
 
 ### Offline license activation
-1. enter to My Cognaio via Analyze My Cognaio Login https://cognaio.example.group/cognaioanalyze/mycognaio
+1. enter to My Cognaio via Insight My Cognaio Login https://cognaio.example.group/cognaioinsight/mycognaio
 2. enter your email address and request a one time password (OTP). The OTP will be send to the email address
 3. login using the OTP from the email
 4. activation steps as follows

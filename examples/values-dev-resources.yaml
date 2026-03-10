@@ -1,0 +1,160 @@
+# =============================================================================
+# COGNAiO Cloud Extract - Example Resource Configuration (Development)
+# =============================================================================
+# Minimal resource allocation suitable for development and testing
+# environments with low concurrency and limited document throughput.
+#
+# IMPORTANT: The values below are starting-point examples only. Actual
+# resource requirements depend on the number of concurrent users, document
+# volume, and which AI services are enabled during your tests. Monitor pod
+# resource consumption (e.g. via kubectl top pods, Prometheus, or Azure
+# Monitor) and adjust limits and requests based on observed usage.
+#
+# Services that are not required for your test scenario can be scaled
+# to zero replicas to conserve cluster resources.
+#
+# Merge with the base values:
+#   helm upgrade cognaio-idp ./cce-core/ --install -n cce \
+#     -f individual-values.yaml -f examples/values-dev-resources.yaml
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# nginx  –  reverse proxy / ingress gateway
+# ---------------------------------------------------------------------------
+nginx:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "256Mi"
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+
+# ---------------------------------------------------------------------------
+# usermanual  –  serves the official user documentation
+# ---------------------------------------------------------------------------
+usermanual:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "64Mi"
+    requests:
+      memory: "32Mi"
+      cpu: "50m"
+
+# ---------------------------------------------------------------------------
+# redis  –  in-memory cache for processing data (non-persistent)
+# ---------------------------------------------------------------------------
+redis:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "1024Mi"
+    requests:
+      memory: "512Mi"
+      cpu: "100m"
+
+# ---------------------------------------------------------------------------
+# cognaioinsight  –  primary web UI
+# ---------------------------------------------------------------------------
+cognaioinsight:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "256Mi"
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+
+# ---------------------------------------------------------------------------
+# cognaioinsightagentic  –  preview UI variant
+# ---------------------------------------------------------------------------
+cognaioinsightagentic:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "256Mi"
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+
+# ---------------------------------------------------------------------------
+# cognaioservice  –  core API and platform orchestrator
+# ---------------------------------------------------------------------------
+cognaioservice:
+  replicaCount: 1
+  init:
+    # Schema manager init container – runs once during pod startup
+    resources:
+      limits:
+        memory: "512Mi"
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+  resources:
+    limits:
+      memory: "1Gi"
+    requests:
+      memory: "512Mi"
+      cpu: "100m"
+
+# ---------------------------------------------------------------------------
+# emailservice  –  Graph API email ingestion (scale to 0 if not needed)
+# ---------------------------------------------------------------------------
+emailservice:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "256Mi"
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+
+# ---------------------------------------------------------------------------
+# cognaioflexsearchservice  –  repository data (scale to 0 if not needed)
+# ---------------------------------------------------------------------------
+cognaioflexsearchservice:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+
+# ---------------------------------------------------------------------------
+# imageprovider  –  document-to-image conversion and normalization
+# In development a single replica is usually sufficient.
+# ---------------------------------------------------------------------------
+imageprovider:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "2Gi"
+    requests:
+      memory: "1Gi"
+      cpu: "200m"
+
+# ---------------------------------------------------------------------------
+# cognaioauditscleanup  –  periodic audit record cleanup
+# ---------------------------------------------------------------------------
+cognaioauditscleanup:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+
+# ---------------------------------------------------------------------------
+# objectdetectionprovider  –  ML-based object detection (scale to 0 if not needed)
+# ---------------------------------------------------------------------------
+objectdetectionprovider:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "2Gi"
+    requests:
+      memory: "512Mi"
+      cpu: "200m"

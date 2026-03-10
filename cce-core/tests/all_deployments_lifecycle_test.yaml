@@ -1,0 +1,151 @@
+suite: Lifecycle hooks for all Deployments
+templates:
+  - "**/deployment.yaml"
+tests:
+  - it: should not render lifecycle when lifecycle is empty
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+
+  - it: should render preStop exec lifecycle hook for all deployments
+    set:
+      nginx:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      usermanual:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      redis:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      cognaioinsightagentic:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      cognaioinsight:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      cognaioservice:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      emailservice:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      cognaioflexsearchservice:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      imageprovider:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      cognaioauditscleanup:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      objectdetectionprovider:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value: ["/bin/sh", "-c", "sleep 10"]
+
+  - it: should render preStop httpGet lifecycle hook for nginx
+    template: nginx/deployment.yaml
+    set:
+      nginx:
+        lifecycle:
+          preStop:
+            httpGet:
+              path: /healthz
+              port: 8080
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.httpGet.path
+          value: /healthz
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.httpGet.port
+          value: 8080
+
+  - it: should render preStop lifecycle hook only for cognaioservice when only cognaioservice has it set
+    set:
+      cognaioservice:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 30"]
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: cognaio-service/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: nginx/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: redis/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: cognaio-insight/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: cognaio-insight-agentic/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: cognaio-email-service/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: cognaio-flexsearch/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: cognaio-image-provider/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: cognaio-audits-cleanup/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: cognaio-object-detection-provider/deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: cognaio-user-manual/deployment.yaml
+
+  - it: should allow different preStop commands per service
+    set:
+      nginx:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "nginx -s quit && sleep 5"]
+      cognaioservice:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 30"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value: ["/bin/sh", "-c", "nginx -s quit && sleep 5"]
+        template: nginx/deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle.preStop.exec.command
+          value: ["/bin/sh", "-c", "sleep 30"]
+        template: cognaio-service/deployment.yaml

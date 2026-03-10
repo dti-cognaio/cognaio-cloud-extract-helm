@@ -1,0 +1,260 @@
+suite: Test Volume and VolumeMounts
+tests:
+  - it: should render volumes and volumeMounts for cognaioservice init container and main container
+    template: cognaio-service/deployment.yaml
+    set:
+      cognaioservice:
+        additionalVolumes:
+          - name: volume-1-main
+            emptyDir: {}
+        additionalVolumeMounts:
+          - mountPath: /app/tmp
+            name: volume-1-main
+        init:
+          additionalVolumes:
+            - name: volume-1-init
+              emptyDir: {}
+          additionalVolumeMounts:
+            - mountPath: /app/tmp
+              name: volume-1-init
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: volume-1-main
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /app/tmp
+            name: volume-1-main
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: volume-1-init
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.initContainers[0].volumeMounts
+          content:
+            mountPath: /app/tmp
+            name: volume-1-init
+
+  - it: should render additional volumes and volumeMounts for cognaio-insight
+    template: cognaio-insight/deployment.yaml
+    set:
+      cognaioinsight:
+        additionalVolumeMounts:
+          - mountPath: /var/cache/nginx
+            name: cache-volume
+        additionalVolumes:
+          - name: cache-volume
+            emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: cache-volume
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /var/cache/nginx
+            name: cache-volume
+
+  - it: should render additional volumes and volumeMounts for cognaio-insight-agentic
+    template: cognaio-insight-agentic/deployment.yaml
+    set:
+      cognaioinsightagentic:
+        additionalVolumeMounts:
+          - mountPath: /var/cache/nginx
+            name: cache-volume
+        additionalVolumes:
+          - name: cache-volume
+            emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: cache-volume
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /var/cache/nginx
+            name: cache-volume
+
+  - it: should render additional volumes and volumeMounts for nginx
+    template: nginx/deployment.yaml
+    set:
+      nginx:
+        additionalVolumeMounts:
+          - mountPath: /var/cache/nginx
+            name: cache-volume
+        additionalVolumes:
+          - name: cache-volume
+            emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: cache-volume
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /var/cache/nginx
+            name: cache-volume
+
+  - it: should render additional volumes and volumeMounts for redis
+    template: redis/deployment.yaml
+    set:
+      redis:
+        additionalVolumeMounts:
+          - mountPath: /data
+            name: data-volume
+        additionalVolumes:
+          - name: data-volume
+            emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: data-volume
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /data
+            name: data-volume
+
+  - it: should render additional volumes and volumeMounts for usermanual
+    template: cognaio-user-manual/deployment.yaml
+    set:
+      usermanual:
+        additionalVolumeMounts:
+          - mountPath: /usr/share/nginx/html/assets
+            name: assets-volume
+        additionalVolumes:
+          - name: assets-volume
+            emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: assets-volume
+            emptyDir: {}
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /usr/share/nginx/html/assets
+            name: assets-volume
+
+  - it: should render volumes and volumeMounts for cognaio-object-detection-provider container
+    template: cognaio-object-detection-provider/deployment.yaml
+    set:
+      objectdetectionprovider:
+        additionalVolumeMounts:
+          - mountPath: /app/tmp
+            name: volume-1
+        additionalVolumes:
+          - name: volume-1
+            emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /app/tmp
+            name: volume-1
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: volume-1
+            emptyDir: {}
+
+  - it: should render additional volumes and volumeMounts for cognaio-flexsearch
+    template: cognaio-flexsearch/deployment.yaml
+    set:
+      cognaioflexsearchservice:
+        additionalVolumeMounts:
+          - mountPath: /app/tmp
+            name: flexsearch-volume
+        additionalVolumes:
+          - name: flexsearch-volume
+            emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /app/tmp
+            name: flexsearch-volume
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: flexsearch-volume
+            emptyDir: {}
+
+  - it: should render additional volumes and volumeMounts for emailservice
+    template: cognaio-email-service/deployment.yaml
+    set:
+      emailservice:
+        additionalVolumeMounts:
+          - mountPath: /app/tmp
+            name: email-volume
+        additionalVolumes:
+          - name: email-volume
+            emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /app/tmp
+            name: email-volume
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: email-volume
+            emptyDir: {}
+
+  - it: should render additional volumes and volumeMounts for audits-cleanup
+    template: cognaio-audits-cleanup/deployment.yaml
+    set:
+      cognaioauditscleanup:
+        additionalVolumeMounts:
+          - mountPath: /app/tmp
+            name: cleanup-volume
+        additionalVolumes:
+          - name: cleanup-volume
+            emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /app/tmp
+            name: cleanup-volume
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: cleanup-volume
+            emptyDir: {}
+
+  - it: should render additional volumes and volumeMounts for imageprovider
+    template: cognaio-image-provider/deployment.yaml
+    set:
+      imageprovider:
+        additionalVolumeMounts:
+          - mountPath: /app/tmp
+            name: image-volume
+        additionalVolumes:
+          - name: image-volume
+            emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            mountPath: /app/tmp
+            name: image-volume
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: image-volume
+            emptyDir: {}

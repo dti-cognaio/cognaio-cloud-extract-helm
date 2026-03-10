@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.cognaioflexsearchservice.service.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    app: cognaio-idp
+    name: {{ .Values.cognaioflexsearchservice.service.name }}
+spec:
+  ports:
+  - name: http
+    port: {{ .Values.cognaioflexsearchservice.service.port }}
+    protocol: TCP
+    targetPort: {{ .Values.cognaioflexsearchservice.env.port }}
+  selector:
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+      {{- with .Values.cognaioflexsearchservice.podSelectorLabels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+  type: {{ .Values.cognaioflexsearchservice.service.type }}

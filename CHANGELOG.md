@@ -1,4 +1,34 @@
 # Change Log
+## Version 2.6.0
+### Changes
+- New UI cognaioinsight-agentic
+- Removed cognaiostudio (/cognaioanalyze)
+- Updated to Helm v4
+- Restructure HelmCharts
+- Add Helm best practices
+- Add Helm unittest
+- Added configurable `restartPolicy` per service with global default fallback
+- Added configurable `lifecycle` hooks (e.g., preStop) per service for graceful shutdown
+
+### Versions
+|Repository|Version|
+|---|---|
+| ~~dtideregistry.azurecr.io/dti/idp/cognaiostudio~~         |2.5.1|
+|dtideregistry.azurecr.io/dti/idp/cognaioinsight             |2.6.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioinsight             |2.6.0-Agentic-Preview *|
+|dtideregistry.azurecr.io/dti/idp/cognaioservice             |2.6.0|
+|dtideregistry.azurecr.io/dti/idp/image                      |2.6.0|
+|dtideregistry.azurecr.io/dti/idp/emailservice               |2.6.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioflexsearchservice   |2.6.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioauditscleanup       |2.6.0|
+|dtideregistry.azurecr.io/dti/idp/objectdetectionprovider    |2.6.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioschemamanager       |2.6.0|
+|dtideregistry.azurecr.io/dti/idp/cce-user-manual            |2.6.0|
+|dtideregistry.azurecr.io/nginx/nginx                        |1.29.5-alpine-slim|
+|dtideregistry.azurecr.io/redis/redis                        |8.6.1-alpine|
+>\* = Added
+---
+
 ## Version 2.5.2
 ### Changes
 - Added connector for AiBooster support

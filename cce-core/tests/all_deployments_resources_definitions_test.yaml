@@ -1,0 +1,30 @@
+suite: Global Resources set on all deployments
+templates:
+  - "**/deployment.yaml" # Scannt alle Deployment-Files in allen Unterordnern
+tests:
+  - it: should have resource definitions for memory and cpu requests and only memory for limits
+    asserts:
+      - exists:
+          path: spec.template.spec.containers[0].resources
+      - exists:
+          path: spec.template.spec.containers[0].resources.limits.memory
+      - exists:
+          path: spec.template.spec.containers[0].resources.requests.memory
+      - exists:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+      - notExists:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+
+  - it: should have init container resources in cognaio-service
+    template: cognaio-service/deployment.yaml
+    asserts:
+      - exists:
+          path: spec.template.spec.initContainers[0].resources
+      - exists:
+          path: spec.template.spec.initContainers[0].resources.limits.memory
+      - exists:
+          path: spec.template.spec.initContainers[0].resources.requests.memory
+      - exists:
+          path: spec.template.spec.initContainers[0].resources.requests.cpu
+      - notExists:
+          path: spec.template.spec.initContainers[0].resources.limits.cpu

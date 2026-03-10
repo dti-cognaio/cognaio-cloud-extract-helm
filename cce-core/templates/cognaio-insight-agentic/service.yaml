@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.cognaioinsightagentic.service.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    app: cognaio-idp
+    name: {{ .Values.cognaioinsightagentic.service.name }}
+spec:
+  ports:
+  - name: http
+    port: {{ .Values.cognaioinsightagentic.service.port }}
+    protocol: TCP
+    targetPort: {{ .Values.cognaioinsightagentic.env.port }}
+  selector:
+    {{- include "cognaio.selectorLabels" . | nindent 4 }}
+    {{- with .Values.cognaioinsightagentic.podSelectorLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  type: {{ .Values.cognaioinsightagentic.service.type }}

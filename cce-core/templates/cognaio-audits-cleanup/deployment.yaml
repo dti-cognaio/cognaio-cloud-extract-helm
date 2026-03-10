@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.cognaioauditscleanup.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    {{- with .Values.cognaioauditscleanup.podLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not .Values.cognaioauditscleanup.autoscaling.enabled }}
+  replicas: {{ .Values.cognaioauditscleanup.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with (merge (.Values.cognaioauditscleanup.podAnnotations | default dict) (.Values.podAnnotations | default dict)) }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "cognaio.labels" . | nindent 8 }}
+        {{- with (merge (.Values.cognaioauditscleanup.podLabels | default dict) (.Values.podLabels | default dict)) }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.cognaioauditscleanup.serviceAccount.name }}
+      {{- with (default .Values.podSecurityContext .Values.cognaioauditscleanup.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ default .Values.image.restartPolicy .Values.cognaioauditscleanup.restartPolicy | default "Always" }}
+      containers:
+        - name: {{ .Values.cognaioauditscleanup.name }}
+          image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioauditscleanup.image.name }}:{{ .Values.cognaioauditscleanup.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with (default .Values.securityContext .Values.cognaioauditscleanup.securityContext ) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+          - name: http
+            containerPort: {{ .Values.cognaioauditscleanup.env.port }}
+            protocol: TCP
+          {{- with (default .Values.livenessProbe .Values.cognaioauditscleanup.livenessProbe) }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with (default .Values.readinessProbe .Values.cognaioauditscleanup.readinessProbe) }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+          - name: PORT
+            value: {{ .Values.cognaioauditscleanup.env.port | quote }}
+          {{- if .Values.cognaioauditscleanup.env.extra_ca_certs }}
+          - name: NODE_EXTRA_CA_CERTS
+            value: {{ .Values.cognaioauditscleanup.env.extra_ca_certs }}
+          {{- end }}
+          - name: PostgreSql_User
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cognaioauditscleanup.env.secret.name }}
+                key: postgreSqlUser
+          - name: PostgreSql_Pwd
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cognaioauditscleanup.env.secret.name }}
+                key: postgreSqlPwd
+          - name: PostgreSql_Db_Server
+            value: {{ .Values.cognaioauditscleanup.env.db.postgreSqlDbServer }}:{{ .Values.cognaioauditscleanup.env.db.postgreSqlDbPort }}
+          - name: PostgreSql_Schemas
+            value: {{ include "cognaio.dbSchemas" .Values.cognaioauditscleanup.env.db.schemas }}
+          - name: PostgreSql_Db_Name
+            value: {{ .Values.cognaioauditscleanup.env.db.postgreSqlDbName | quote }} 
+          - name: PostgreSql_Ssl_Required
+            value: {{ .Values.cognaioauditscleanup.env.db.postgreSqlSslRequired | quote }} 
+          - name: PostgreSql_Auth_Mode
+            value: {{ .Values.cognaioauditscleanup.env.db.postgreSqlAuthMode | quote }}
+          - name: LogSeverity
+            value: {{ .Values.cognaioauditscleanup.env.logSeverity }}
+          {{- with .Values.cognaioauditscleanup.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.cognaioauditscleanup.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.cognaioauditscleanup.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- with .Values.cognaioauditscleanup.additionalVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end}}
+      volumes:
+      {{- with .Values.cognaioauditscleanup.additionalVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
+      {{- with .Values.cognaioauditscleanup.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cognaioauditscleanup.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cognaioauditscleanup.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,16 @@
+suite: test deployment of redis
+templates:
+  - redis/deployment.yaml
+tests:
+  - it: should work
+    set:
+      redis.image.tag: 8.2.3-alpine
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: metadata.name
+          pattern: redis
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: dtideregistry.azurecr.io/redis/redis:8.2.3-alpine

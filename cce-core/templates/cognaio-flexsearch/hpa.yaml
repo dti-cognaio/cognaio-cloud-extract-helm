@@ -1,0 +1,32 @@
+{{- if .Values.cognaioflexsearchservice.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.cognaioflexsearchservice.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.cognaioflexsearchservice.name }}
+  minReplicas: {{ .Values.cognaioflexsearchservice.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.cognaioflexsearchservice.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.cognaioflexsearchservice.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.cognaioflexsearchservice.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.cognaioflexsearchservice.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.cognaioflexsearchservice.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

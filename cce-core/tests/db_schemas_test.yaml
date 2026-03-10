@@ -1,0 +1,30 @@
+suite: Test database schema variables
+templates:
+  - "cognaio-service/deployment.yaml"
+  - "cognaio-flexsearch/deployment.yaml"
+  - "cognaio-audits-cleanup/deployment.yaml"
+tests:
+  - it: should have correct database schema for cognaioservice
+    template: cognaio-service/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PostgreSql_Schemas
+            value: cognaio_extensions; cognaio_design; cognaio_audits
+  - it: should have correct database schema for cognaioflexsearchservice
+    template: cognaio-flexsearch/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PostgreSql_Schemas
+            value: cognaio_extensions; cognaio_repositories
+  - it: should have correct database schema for cognaioauditscleanup
+    template: cognaio-audits-cleanup/deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PostgreSql_Schemas
+            value: cognaio_design; cognaio_audits

@@ -1,0 +1,32 @@
+{{- if .Values.cognaioinsightagentic.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.cognaioinsightagentic.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.cognaioinsightagentic.name }}
+  minReplicas: {{ .Values.cognaioinsightagentic.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.cognaioinsightagentic.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.cognaioinsightagentic.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.cognaioinsightagentic.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.cognaioinsightagentic.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.cognaioinsightagentic.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

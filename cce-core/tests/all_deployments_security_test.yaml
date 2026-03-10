@@ -1,0 +1,18 @@
+suite: Global Security Context Check for all Deployments
+templates:
+  - "**/deployment.yaml" # Scannt alle Deployment-Files in allen Unterordnern
+tests:
+  - it: should apply the global podSecurityContext to every deployment
+    set:
+      podSecurityContext:
+        runAsUser: 1000
+        fsGroup: 2000
+    asserts:
+      - exists:
+          path: spec.template.spec.securityContext
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 2000

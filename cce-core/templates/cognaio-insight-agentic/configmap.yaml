@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cognaioinsight-agentic-configs
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+data:
+  configs.json: |
+    {
+        "general": {
+            "site": { "key": "BE8A9403-2079-3512-A46E-74253ED7F60F" },
+            "defaultPreferences": {
+                "language": "de"
+            },
+            "copyRight": "Copyright 2026 DTI",
+            "version": "2.6.0"
+        },
+        "endpoints": {
+            "analysis": "/extraction/api"
+        }
+    }
+  nginx.conf: |
+    worker_processes  1;
+
+    events {
+        worker_connections  1024;
+    }
+
+    http {
+        server {
+            port_in_redirect off;
+            listen {{ .Values.cognaioinsightagentic.env.port }};
+            server_name localhost;
+
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+            include /etc/nginx/mime.types;
+
+            gzip on;
+            gzip_min_length 1000;
+            gzip_proxied expired no-cache no-store private auth;
+            gzip_types text/plain text/css application/json application/javascript application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+
+            # Add Content-Security-Policy for frame-ancestors
+            add_header Content-Security-Policy "frame-ancestors 'self';";
+
+            location / {
+                try_files $uri $uri/ /index.html;
+            }
+
+            location /documentation/ {      
+                proxy_pass http://{{ .Values.nginx.service.name }}/extraction/api/app/usermanual/;
+                
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                
+                # Disable buffering for better performance with large files
+                proxy_buffering off;
+                proxy_request_buffering off;
+            }
+        }
+    }

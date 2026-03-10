@@ -1,0 +1,40 @@
+suite: Test PodSecurityContext Logic
+templates:
+  - cognaio-service/deployment.yaml
+tests:
+  - it: should use the GLOBAL podSecurityContext when no service-specific one is set
+    set:
+      podSecurityContext:
+        runAsUser: 1000
+        fsGroup: 2000
+      # Sicherstellen, dass der spezifische leer ist
+      cognaioservice.podSecurityContext: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1000
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 2000
+
+  - it: should OVERRIDE global context with service-specific context
+    set:
+      podSecurityContext:
+        runAsUser: 1000
+      cognaioservice.podSecurityContext:
+        runAsUser: 999
+        runAsGroup: 999
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 999
+      - equal:
+          path: spec.template.spec.securityContext.runAsGroup
+          value: 999
+
+  - it: should NOT render securityContext if both are empty
+    set:
+      podSecurityContext: null
+    asserts:
+      - isNull:
+          path: spec.template.spec.securityContext
