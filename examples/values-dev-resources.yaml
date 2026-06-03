@@ -55,19 +55,7 @@ redis:
       cpu: "100m"
 
 # ---------------------------------------------------------------------------
-# cognaioinsight  –  primary web UI
-# ---------------------------------------------------------------------------
-cognaioinsight:
-  replicaCount: 1
-  resources:
-    limits:
-      memory: "256Mi"
-    requests:
-      memory: "128Mi"
-      cpu: "100m"
-
-# ---------------------------------------------------------------------------
-# cognaioinsightagentic  –  preview UI variant
+# cognaioinsightagentic  –  primary web UI (agentic)
 # ---------------------------------------------------------------------------
 cognaioinsightagentic:
   replicaCount: 1

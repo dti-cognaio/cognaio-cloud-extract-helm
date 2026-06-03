@@ -39,28 +39,6 @@ tests:
             mountPath: /app/tmp
             name: volume-1-init
 
-  - it: should render additional volumes and volumeMounts for cognaio-insight
-    template: cognaio-insight/deployment.yaml
-    set:
-      cognaioinsight:
-        additionalVolumeMounts:
-          - mountPath: /var/cache/nginx
-            name: cache-volume
-        additionalVolumes:
-          - name: cache-volume
-            emptyDir: {}
-    asserts:
-      - contains:
-          path: spec.template.spec.volumes
-          content:
-            name: cache-volume
-            emptyDir: {}
-      - contains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            mountPath: /var/cache/nginx
-            name: cache-volume
-
   - it: should render additional volumes and volumeMounts for cognaio-insight-agentic
     template: cognaio-insight-agentic/deployment.yaml
     set:

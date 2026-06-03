@@ -1,0 +1,82 @@
+suite: Test cognaioservice feature flags and optional OIDC/permission env
+templates:
+  - "cognaio-service/deployment.yaml"
+tests:
+  - it: should map the feature.* block to the Cognaio_Feature_* env vars
+    set:
+      cognaioservice.env.feature.cerebralEdgeDisabled: true
+      cognaioservice.env.feature.awsServicesDisabled: true
+      cognaioservice.env.feature.appKeyUsageDisabled: true
+      cognaioservice.env.feature.pageRetentionDisabled: true
+      cognaioservice.env.feature.llmTemplatesSyncDisabled: true
+      cognaioservice.env.feature.endpointsManageDisabled: true
+      cognaioservice.env.feature.viewPlatformAuditsDisabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_Feature_Cerebral_Edge_Disabled
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_Feature_Aws_Services_Disabled
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_Feature_AppKeyUsage_Disabled
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_Feature_Page_Retention_Disabled
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_Feature_LlmTemplates_Sync_Disabled
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_Feature_Endpoints_Manage_Disabled
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_Feature_View_Platform_Audits_Disabled
+            value: "true"
+  - it: should render the optional OIDC/permission env vars with their defaults
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Oidc_ProviderTypes_Disabled
+            value: ""
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ServiceAccount_Permissions_To_Exclude
+            value: "{}"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NonAdministrationLayer_Permissions_To_Exclude
+            value: "{}"
+  - it: should allow overriding the optional OIDC/permission env vars
+    set:
+      cognaioservice.env.openID.oidcProviderTypesDisabled: "github,cognaio_otp"
+      cognaioservice.env.serviceAccountPermissionsToExclude: '{"scope":["action"]}'
+      cognaioservice.env.nonAdministrationLayerPermissionsToExclude: '{"scope":["action"]}'
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Oidc_ProviderTypes_Disabled
+            value: "github,cognaio_otp"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: ServiceAccount_Permissions_To_Exclude
+            value: '{"scope":["action"]}'

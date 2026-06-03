@@ -88,6 +88,10 @@ spec:
             value: {{ .Values.cognaioflexsearchservice.env.db.postgreSqlAuthMode | quote }}
           - name: LogSeverity
             value: {{ .Values.cognaioflexsearchservice.env.logSeverity }}
+          - name: Max_Content_Preview_Limit
+            value: {{ .Values.cognaioflexsearchservice.env.maxContentPreviewLimit | quote }}
+          - name: Content_Preview_Disabled
+            value: {{ .Values.cognaioflexsearchservice.env.contentPreviewDisabled | quote }}
           - name: PassPhrase_Repositories
             valueFrom:
               secretKeyRef:
@@ -113,6 +117,9 @@ spec:
           {{- with .Values.cognaioflexsearchservice.additionalVolumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end}}
+      {{- with .Values.cognaioflexsearchservice.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
       {{- with .Values.cognaioflexsearchservice.additionalVolumes }}
         {{- toYaml . | nindent 8 }}

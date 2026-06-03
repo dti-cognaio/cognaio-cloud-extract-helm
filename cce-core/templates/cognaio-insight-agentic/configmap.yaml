@@ -13,7 +13,7 @@ data:
                 "language": "de"
             },
             "copyRight": "Copyright 2026 DTI",
-            "version": "2.6.0"
+            "version": "3.0.0"
         },
         "endpoints": {
             "analysis": "/extraction/api"

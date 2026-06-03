@@ -13,17 +13,6 @@ tests:
       - isKind:
           of: ConfigMap
 
-  - it: should render cognaioinsight configmap with correct name
-    template: templates/cognaio-insight/configmap.yaml
-    asserts:
-      - hasDocuments:
-          count: 1
-      - equal:
-          path: metadata.name
-          value: cognaioinsight-configs
-      - isKind:
-          of: ConfigMap
-
   - it: should render cognaioinsight-agentic configmap with correct name
     template: templates/cognaio-insight-agentic/configmap.yaml
     asserts:
@@ -56,9 +45,6 @@ tests:
       cognaioauditscleanup:
         service:
           name: my-auditscleanup
-      cognaioinsight:
-        service:
-          name: my-insight
       cognaioinsightagentic:
         service:
           name: my-insight-agentic
@@ -90,10 +76,10 @@ tests:
           path: data["confd-nginx.conf"]
           pattern: "listen 9090;"
 
-  - it: should include cognaioinsight port in insight nginx config
-    template: templates/cognaio-insight/configmap.yaml
+  - it: should include cognaioinsight-agentic port in insight-agentic nginx config
+    template: templates/cognaio-insight-agentic/configmap.yaml
     set:
-      cognaioinsight:
+      cognaioinsightagentic:
         env:
           port: 8080
     asserts:

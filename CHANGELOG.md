@@ -1,4 +1,37 @@
 # Change Log
+## Version 3.0.0
+### Changes
+- cognaioinsight-agentic is now the main UI, served at `/cognaioinsight`
+- Removed legacy cognaioinsight service (configmap, deployment, HPA, service, serviceaccount)
+- `/cognaioinsight-agentic` is 301-redirected to `/cognaioinsight`
+- Root path (`/`) now 301-redirects directly to `/cognaioinsight/`; unmatched paths return 404 instead of redirecting to the external URL
+- New OIDC authentication stack for group / role / claims mapping: org-scoped providers, group-to-role mappings and service-token grants. **Developed and tested exclusively against Microsoft Entra ID — Entra ID is currently the only validated and supported provider.** The stack is implemented provider-generically, so other OIDC providers (Google, GitHub, Okta, Keycloak, AWS Cognito, generic OIDC) can technically be configured but are **not yet validated or supported**. Existing authentication, including the built-in COGNAiO email OTP and the Microsoft / Google / GitHub login providers, continues to work as in previous versions
+- New platform-level audit log; admin layer can browse and export audit artifacts via the agentic UI
+- **Breaking:** renamed `cognaioservice.env.featurePreview` to `cognaioservice.env.feature` in values.yaml — update your values file accordingly
+- **Breaking:** moved `cognaioservice.env.endpointsManageDisabled` into the `cognaioservice.env.feature` block
+- **Breaking:** removed `cognaioservice.env.featurePreview.uiAiChainCrafterDisabled` (feature is now generally available)
+- **Breaking:** new mandatory passphrase `cognaioservice.env.openID.passPhraseOidcSecrets` — used to encrypt OIDC client secrets in the database. Must be set before upgrade or the `cognaio_design` schema migration will fail with `pgcrypto` error `39000: Illegal argument to function`
+- New feature flags under `cognaioservice.env.feature`: `appKeyUsageDisabled`, `pageRetentionDisabled`, `llmTemplatesSyncDisabled`, `viewPlatformAuditsDisabled`
+- Added `<service>.extraContainers` extension point on every deployment, allowing customers to inject sidecar containers (e.g., authentication proxy) without modifying the chart
+- `cognaioservice.env.organization.users` entries are now plain emails — the legacy inner single-quote wrapping (`"'email@example.com'"`) is no longer required
+
+### Versions
+|Repository|Version|
+|---|---|
+| ~~dtideregistry.azurecr.io/dti/idp/cognaioinsight~~        |2.6.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioinsight-agentic     |3.0.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioservice             |3.0.0|
+|dtideregistry.azurecr.io/dti/idp/image                      |3.0.0|
+|dtideregistry.azurecr.io/dti/idp/emailservice               |3.0.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioflexsearchservice   |3.0.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioauditscleanup       |3.0.0|
+|dtideregistry.azurecr.io/dti/idp/objectdetectionprovider    |3.0.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioschemamanager       |3.0.0|
+|dtideregistry.azurecr.io/dti/idp/cce-user-manual            |3.0.0|
+|dtideregistry.azurecr.io/nginx/nginx                        |1.31.1-alpine-slim|
+|dtideregistry.azurecr.io/redis/redis                        |8.8.0-alpine|
+---
+
 ## Version 2.6.0
 ### Changes
 - New UI cognaioinsight-agentic

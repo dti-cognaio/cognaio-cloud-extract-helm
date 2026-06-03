@@ -29,11 +29,6 @@ tests:
           preStop:
             exec:
               command: ["/bin/sh", "-c", "sleep 10"]
-      cognaioinsight:
-        lifecycle:
-          preStop:
-            exec:
-              command: ["/bin/sh", "-c", "sleep 10"]
       cognaioservice:
         lifecycle:
           preStop:
@@ -103,9 +98,6 @@ tests:
       - notExists:
           path: spec.template.spec.containers[0].lifecycle
         template: redis/deployment.yaml
-      - notExists:
-          path: spec.template.spec.containers[0].lifecycle
-        template: cognaio-insight/deployment.yaml
       - notExists:
           path: spec.template.spec.containers[0].lifecycle
         template: cognaio-insight-agentic/deployment.yaml

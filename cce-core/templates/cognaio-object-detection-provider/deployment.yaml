@@ -75,6 +75,9 @@ spec:
           {{- with .Values.objectdetectionprovider.additionalVolumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end}}
+      {{- with .Values.objectdetectionprovider.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
       {{- with .Values.objectdetectionprovider.additionalVolumes }}
         {{- toYaml . | nindent 8 }}

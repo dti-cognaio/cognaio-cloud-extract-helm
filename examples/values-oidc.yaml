@@ -1,0 +1,42 @@
+# =============================================================================
+# COGNAiO Cloud Extract - OIDC Login (Microsoft Entra ID)
+# =============================================================================
+# Enables Microsoft Entra ID as an OpenID Connect login provider and sets the
+# mandatory passphrase used to encrypt OIDC provider client secrets in the DB.
+#
+# NOTE (3.0.0): The new OIDC stack (org-scoped providers, group-to-role / claims
+# mappings, service-token grants) is configured IN-APP (My COGNAiO admin UI,
+# stored in the database) - not via Helm values. The provider-generic stack was
+# developed and tested EXCLUSIVELY against Microsoft Entra ID; Entra ID is the
+# only validated and supported provider. Google / GitHub login settings still
+# work, but the group/role/claims features are not validated for them.
+#
+# Merge with the base values:
+#   helm upgrade cognaio-idp ./cce-core/ --install -n cce \
+#     -f individual-values.yaml -f examples/values-oidc.yaml
+# =============================================================================
+
+cognaioservice:
+  env:
+    openID:
+      # Mandatory from 3.0.0 - encrypts OIDC provider client secrets stored in
+      # the DB. Must be set BEFORE upgrade (otherwise the cognaio_design schema
+      # migration fails) and MUST stay stable across restarts, or stored OIDC
+      # secrets can no longer be decrypted. Treat it like a long-lived secret.
+      passPhraseOidcSecrets: "<change-me-stable-passphrase>"
+
+      # --- Microsoft Entra ID (the validated provider) ---
+      microsoftDisabled: false
+      microsoftClientId: "<your-entra-app-client-id>"
+      microsoftClientSecret: "<your-entra-app-client-secret>"
+      microsoftTenant: "<your-tenant-id>"           # or "common"
+      microsoftTenantsExpected: ""                  # optional domain allow-list
+      microsoftLayoutOrder: 1
+
+      # Optional: hide other provider types in the UI (comma-separated), e.g. to
+      # offer Entra ID only. Empty = all configured providers are shown.
+      # oidcProviderTypesDisabled: "google,github,cognaio_otp"
+
+    # Optional: disable the built-in email OTP if Entra ID should be the sole
+    # login method. Leave false to keep OTP as a fallback.
+    # otpDisabled: true

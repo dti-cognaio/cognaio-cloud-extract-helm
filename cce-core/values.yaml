@@ -62,7 +62,7 @@ nginx:
   securityContext: {}
   image:
     name: nginx/nginx
-    tag: 1.29.5-alpine-slim
+    tag: 1.31.1-alpine-slim
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -111,6 +111,9 @@ nginx:
   #     secretKeyRef:
   #       name: my-secret
   #       key: my-key
+  extraContainers: []
+  # - name: my-sidecar
+  #   image: my-registry/my-sidecar:1.0.0
 
 usermanual:
   name: cce-user-manual
@@ -135,7 +138,7 @@ usermanual:
   securityContext: {}
   image:
     name: dti/idp/cce-user-manual
-    tag: 2.6.0
+    tag: "develop"
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -183,6 +186,9 @@ usermanual:
   #     secretKeyRef:
   #       name: my-secret
   #       key: my-key
+  extraContainers: []
+  # - name: my-sidecar
+  #   image: my-registry/my-sidecar:1.0.0
 
 redis:
   name: redis
@@ -207,7 +213,7 @@ redis:
   securityContext: {}
   image:
     name: redis/redis
-    tag: 8.6.1-alpine
+    tag: 8.8.0-alpine
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -256,6 +262,9 @@ redis:
   #     secretKeyRef:
   #       name: my-secret
   #       key: my-key
+  extraContainers: []
+  # - name: my-sidecar
+  #   image: my-registry/my-sidecar:1.0.0
 
 cognaioinsightagentic:
   name: cognaioinsight-agentic
@@ -280,85 +289,12 @@ cognaioinsightagentic:
   securityContext: {}
   image:
     name: dti/idp/cognaioinsight-agentic
-    tag: 2.6.0-Agentic-Preview
+    tag: 3.0.0
   nodeSelector: {}
   tolerations: []
   affinity: {}
   service:
     name: cognaioinsight-agentic
-    port: 80
-    type: ClusterIP
-    urlpath: /cognaioinsight-agentic
-  env:
-    port: 8080
-  livenessProbe:
-    tcpSocket:
-      port: 8080
-    initialDelaySeconds: 15
-    periodSeconds: 10
-  readinessProbe:
-    tcpSocket:
-      port: 8080
-    initialDelaySeconds: 15
-    periodSeconds: 10
-  additionalVolumeMounts: []
-    # - mountPath: /var/cache/nginx
-    #   name: cache-volume
-    # - mountPath: /var/run
-    #   name: cache-volume-run
-  additionalVolumes: []
-    # - name: cache-volume
-    #   emptyDir: {}
-    # - name: cache-volume-run
-    #   emptyDir: {}
-  lifecycle: {}
-    # preStop:
-    #   exec:
-    #     command: ["/bin/sh", "-c", "sleep 10"]
-  resources:
-    limits:
-      memory: "512Mi"
-    requests:
-      memory: "256Mi"
-      cpu: "100m"
-  extraEnv: []
-  # - name: MY_EXTRA_VAR
-  #   value: "my-value"
-  # - name: MY_SECRET_VAR
-  #   valueFrom:
-  #     secretKeyRef:
-  #       name: my-secret
-  #       key: my-key
-
-cognaioinsight:
-  name: cognaioinsight
-  replicaCount: 1
-  autoscaling:
-    enabled: false
-    minReplicas: 1
-    maxReplicas: 100
-    targetCPUUtilizationPercentage: 80
-    targetMemoryUtilizationPercentage: 80
-  podLabels:
-    app.kubernetes.io/component: cognaioinsight
-    app.kubernetes.io/part-of: cce-core
-  podSelectorLabels:
-    app.kubernetes.io/component: cognaioinsight
-  serviceAccount:
-    create: false
-    annotations: {}
-    name: "default"
-    automount: false
-  podSecurityContext: {}
-  securityContext: {}
-  image:
-    name: dti/idp/cognaioinsight
-    tag: 2.6.0
-  nodeSelector: {}
-  tolerations: []
-  affinity: {}
-  service:
-    name: cognaioinsight
     port: 80
     type: ClusterIP
     urlpath: /cognaioinsight
@@ -402,6 +338,9 @@ cognaioinsight:
   #     secretKeyRef:
   #       name: my-secret
   #       key: my-key
+  extraContainers: []
+  # - name: my-sidecar
+  #   image: my-registry/my-sidecar:1.0.0
 
 cognaioservice:
   name: cognaioservice
@@ -426,7 +365,7 @@ cognaioservice:
   init:
     image:
       name: dti/idp/cognaioschemamanager
-      tag: 2.6.0
+      tag: 3.0.0
     securityContext: {}
     resources:
       limits:
@@ -450,7 +389,7 @@ cognaioservice:
     #       key: my-key
   image:
     name: dti/idp/cognaioservice
-    tag: 2.6.0
+    tag: 3.0.0
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -540,8 +479,8 @@ cognaioservice:
       notificationProvider: "smtp" # any other provider than 'graph' would lead to standard SMTP usage
     organization:
       users:
-        - "'email_1@example.com'"
-        - "'email_2@example.com'"
+        - "email_1@example.com"
+        - "email_2@example.com"
     cognitiveServices:
       computervision:
         maxRequestTimeoutInSec: 6
@@ -558,6 +497,7 @@ cognaioservice:
         maxRetriesWaitTimeoutInSec: 3
     openID:
       passPhraseUserInfo: ""
+      passPhraseOidcSecrets: ""
       microsoftDisabled: true
       microsoftClientId: ""
       microsoftClientSecret: ""
@@ -574,18 +514,24 @@ cognaioservice:
       githubClientSecret: ""
       githubTenantsExpected: ""
       githubLayoutOrder: 3
+      oidcProviderTypesDisabled: ""
     essentials:
       warningNotificationTimeoutInHours: 48
       featureExceedsLimitsNotificationTimeoutInDays: 2
       endpointsPrivateKey: ""
       endpointsPublicKey: ""
-    featurePreview:
-      uiAiChainCrafterDisabled: true
-      cerebralEdgeDisabled: true
+    feature:
+      cerebralEdgeDisabled: false
       awsServicesDisabled: true
+      appKeyUsageDisabled: false
+      pageRetentionDisabled: false
+      llmTemplatesSyncDisabled: false
+      endpointsManageDisabled: false
+      viewPlatformAuditsDisabled: false
     environmentNameForNotifications: "COGNAiO IDP"
-    endpointsManageDisabled: false
     otpDisabled: false
+    serviceAccountPermissionsToExclude: "{}"
+    nonAdministrationLayerPermissionsToExclude: "{}"
     logSeverity: "info"
   extraEnv: []
   # - name: MY_EXTRA_VAR
@@ -595,6 +541,14 @@ cognaioservice:
   #     secretKeyRef:
   #       name: my-secret
   #       key: my-key
+  extraContainers: []
+  # - name: authentication-proxy
+  #   image: myregistry/auth-proxy:1.0.0
+  #   ports:
+  #     - containerPort: 8081
+  #   env:
+  #     - name: UPSTREAM
+  #       value: "http://localhost:3000"
   livenessProbe:
     tcpSocket:
       port: 3000
@@ -645,7 +599,7 @@ emailservice:
   securityContext: {}
   image:
     name: dti/idp/emailservice
-    tag: 2.6.0
+    tag: 3.0.0
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -690,6 +644,9 @@ emailservice:
   #     secretKeyRef:
   #       name: my-secret
   #       key: my-key
+  extraContainers: []
+  # - name: my-sidecar
+  #   image: my-registry/my-sidecar:1.0.0
 
 cognaioflexsearchservice:
   name: cognaioflexsearchservice
@@ -714,7 +671,7 @@ cognaioflexsearchservice:
   securityContext: {}
   image:
     name: dti/idp/cognaioflexsearchservice
-    tag: 2.6.0
+    tag: 3.0.0
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -740,6 +697,8 @@ cognaioflexsearchservice:
       init: true
     logSeverity: "error"
     passPhrase_Repositories: ""
+    maxContentPreviewLimit: 100
+    contentPreviewDisabled: false
     # extra_ca_certs: /app/ca-certificates.crt
   livenessProbe:
     tcpSocket:
@@ -775,6 +734,9 @@ cognaioflexsearchservice:
   #     secretKeyRef:
   #       name: my-secret
   #       key: my-key
+  extraContainers: []
+  # - name: my-sidecar
+  #   image: my-registry/my-sidecar:1.0.0
 
 imageprovider:
   name: imageprovider
@@ -799,7 +761,7 @@ imageprovider:
   securityContext: {}
   image:
     name: dti/idp/image
-    tag: 2.6.0
+    tag: 3.0.0
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -839,6 +801,9 @@ imageprovider:
   #     secretKeyRef:
   #       name: my-secret
   #       key: my-key
+  extraContainers: []
+  # - name: my-sidecar
+  #   image: my-registry/my-sidecar:1.0.0
 
 cognaioauditscleanup:
   name: cognaioauditscleanup
@@ -863,7 +828,7 @@ cognaioauditscleanup:
   securityContext: {}
   image:
     name: dti/idp/cognaioauditscleanup
-    tag: 2.6.0
+    tag: 3.0.0
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -923,6 +888,9 @@ cognaioauditscleanup:
   #     secretKeyRef:
   #       name: my-secret
   #       key: my-key
+  extraContainers: []
+  # - name: my-sidecar
+  #   image: my-registry/my-sidecar:1.0.0
 
 objectdetectionprovider:
   name: objectdetectionprovider
@@ -947,7 +915,7 @@ objectdetectionprovider:
   securityContext: {}
   image:
     name: dti/idp/objectdetectionprovider
-    tag: 2.6.0
+    tag: 3.0.0
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -987,3 +955,6 @@ objectdetectionprovider:
   #     secretKeyRef:
   #       name: my-secret
   #       key: my-key
+  extraContainers: []
+  # - name: my-sidecar
+  #   image: my-registry/my-sidecar:1.0.0

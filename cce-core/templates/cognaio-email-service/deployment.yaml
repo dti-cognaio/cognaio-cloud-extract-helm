@@ -84,6 +84,9 @@ spec:
           {{- with .Values.emailservice.additionalVolumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end}}
+      {{- with .Values.emailservice.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
       {{- with .Values.emailservice.additionalVolumes }}
         {{- toYaml . | nindent 8 }}

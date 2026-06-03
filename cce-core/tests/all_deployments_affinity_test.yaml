@@ -16,9 +16,6 @@ tests:
       cognaioinsightagentic.affinity:
         podAffinity: {}
         podAntiAffinity: {}
-      cognaioinsight.affinity:
-        podAffinity: {}
-        podAntiAffinity: {}
       cognaioservice.affinity:
         podAffinity: {}
         podAntiAffinity: {}

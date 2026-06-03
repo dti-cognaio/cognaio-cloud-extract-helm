@@ -75,6 +75,9 @@ spec:
           {{- with .Values.imageprovider.additionalVolumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end}}
+      {{- with .Values.imageprovider.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
       {{- with .Values.imageprovider.additionalVolumes }}
         {{- toYaml . | nindent 8 }}

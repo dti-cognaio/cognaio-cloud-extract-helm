@@ -1,0 +1,31 @@
+suite: Test flexsearch content-preview env vars
+templates:
+  - "cognaio-flexsearch/deployment.yaml"
+tests:
+  - it: should render content-preview env vars with their defaults
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Max_Content_Preview_Limit
+            value: "100"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Content_Preview_Disabled
+            value: "false"
+  - it: should allow overriding the content-preview env vars
+    set:
+      cognaioflexsearchservice.env.maxContentPreviewLimit: 25
+      cognaioflexsearchservice.env.contentPreviewDisabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Max_Content_Preview_Limit
+            value: "25"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Content_Preview_Disabled
+            value: "true"

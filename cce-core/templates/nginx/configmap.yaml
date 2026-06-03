@@ -59,11 +59,6 @@ data:
         keepalive 32;
     }
 
-    upstream cognaioinsights {
-        server {{ .Values.cognaioinsight.service.name }};
-        keepalive 32;
-    }
-
     upstream cognaiodocumentation {
         server {{ .Values.usermanual.service.name }};
         keepalive 32;
@@ -123,7 +118,12 @@ data:
 
         # Redirect to /cognaioinsight/
         location ~ ^/cognaioanalyze(/.*)?$ {
-            return 301 $scheme://$host/cognaioinsight$1; 
+            return 301 $scheme://$host/cognaioinsight$1;
+        }
+
+        # Redirect /cognaioinsight-agentic to /cognaioinsight
+        location ~ ^/cognaioinsight-agentic(/.*)?$ {
+            return 301 $scheme://$host/cognaioinsight$1;
         }
 
         # Proxying the connections
@@ -148,27 +148,15 @@ data:
         }
         
         # Proxying the connections
-        location /cognaioinsight-agentic/ {
-            proxy_set_header  Host $host;
-            proxy_set_header  X-Real-IP $remote_addr;
-            proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header  X-Forwarded-Host $host;
-            client_max_body_size 150M;
-            client_body_buffer_size 150M; 
-            proxy_buffering off;
-            proxy_pass http://cognaioinsight-agentics/;
-        }
-
-        # Proxying the connections
         location /cognaioinsight/ {
             proxy_set_header  Host $host;
             proxy_set_header  X-Real-IP $remote_addr;
             proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header  X-Forwarded-Host $host;
             client_max_body_size 150M;
-            client_body_buffer_size 150M; 
+            client_body_buffer_size 150M;
             proxy_buffering off;
-            proxy_pass http://cognaioinsights/;
+            proxy_pass http://cognaioinsight-agentics/;
         }
 
         # Proxying the connections
@@ -189,7 +177,13 @@ data:
             proxy_pass http://serviceproviderauditcleanup/;
         }
 
+        # Redirect root to /cognaioinsight/
+        location = / {
+            return 301 /cognaioinsight/;
+        }
+
+        # 404 for anything else
         location / {
-            return 301 {{ .Values.cognaio.protocol }}://{{ .Values.cognaio.url }}$request_uri;
+            return 404;
         }
     }

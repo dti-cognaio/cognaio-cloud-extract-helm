@@ -57,21 +57,6 @@ usermanual:
       emptyDir: {}
 
 # ---------------------------------------------------------------------------
-# cognaioinsight
-# ---------------------------------------------------------------------------
-cognaioinsight:
-  additionalVolumeMounts:
-    - mountPath: /var/cache/nginx
-      name: cache-volume
-    - mountPath: /var/run
-      name: cache-volume-run
-  additionalVolumes:
-    - name: cache-volume
-      emptyDir: {}
-    - name: cache-volume-run
-      emptyDir: {}
-
-# ---------------------------------------------------------------------------
 # cognaioinsightagentic
 # ---------------------------------------------------------------------------
 cognaioinsightagentic:

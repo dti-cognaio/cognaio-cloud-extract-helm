@@ -49,11 +49,11 @@ Connects to external Microsoft Exchange mailboxes via the Microsoft Graph API to
 **cognaioflexsearchservice**
 Manages repository data, providing storage and retrieval capabilities for indexed document content. If the repository feature is not required, this service can safely be scaled to zero replicas.
 
-**cognaioinsight**
-Primary web-based user interface for interacting with the COGNAiO Cloud Extract platform. Provides access to document processing workflows, project configuration, administration, and result review.
+**cognaioinsightagentic**
+Primary web-based user interface (agentic experience) for interacting with the COGNAiO Cloud Extract platform. Provides access to document processing workflows, project configuration, administration, and result review.
 
 **usermanual**
-Serves the official user documentation, accessible directly from the cognaioinsight UI.
+Serves the official user documentation, accessible directly from the cognaioinsight-agentic UI.
 
 **cognaioauditscleanup**
 Runs periodic cleanup jobs to remove expired audit records and temporary data from the database, ensuring long-term storage efficiency.
@@ -136,6 +136,28 @@ Each service supports the following common parameters. Replace `<service>` with 
 | `<service>.restartPolicy`                                                                | Restart policy for the pod (overrides global `image.restartPolicy`) | `Always`                                            |
 | `<service>.lifecycle`                                                                    | Container lifecycle hooks (e.g., preStop for graceful shutdown)    | `{}`                                                 |
 | `<service>.extraEnv`                                                                     | Additional environment variables as array                          | `[]`                                                 |
+| `<service>.extraContainers`                                                              | Additional sidecar containers to inject into the pod (free-form)   | `[]`                                                 |
+
+### Extra Containers (Sidecars)
+Every service deployment exposes an `extraContainers` extension point that lets you inject additional sidecar containers into the pod without modifying the chart. The list is rendered verbatim into `spec.template.spec.containers`, so any valid Kubernetes container spec is accepted (image, env, ports, volumeMounts, resources, etc.).
+
+A typical use case is running an authentication proxy in front of `cognaioservice`:
+
+```yaml
+cognaioservice:
+  extraContainers:
+    - name: authentication-proxy
+      image: myregistry/auth-proxy:1.0.0
+      ports:
+        - containerPort: 8081
+      env:
+        - name: UPSTREAM
+          value: "http://localhost:3000"
+```
+
+The same field is available on every service (`nginx`, `usermanual`, `redis`, `cognaioinsightagentic`, `cognaioservice`, `emailservice`, `cognaioflexsearchservice`, `imageprovider`, `cognaioauditscleanup`, `objectdetectionprovider`). When `extraContainers` is left empty (the default), no additional containers are added.
+
+> ℹ️ Sidecars share the pod's network namespace, so they can reach the main container at `localhost:<containerPort>`. If a sidecar needs its own writable filesystem, add the corresponding entries via `<service>.additionalVolumes` and reference them through the sidecar's `volumeMounts`.
 
 ### Cognitive Service Endpoints
 Our application integrates with multiple Azure resources, which are detailed in our [infrastructure](https://github.com/dti-cognaio/cognaio-cloud-extract-iac) GitHub repository. However, certain configuration details for deploying COGNAiO® Cloud Extract must be retrieved directly from the Azure portal. Please navigate to each relevant resource and locate the required endpoint information.
@@ -270,9 +292,12 @@ One-time password (OTP) authentication can be disabled if an OpenID provider is 
 ### OpenID
 Instead of retrieving an one time password (otp) via eMail you can connect an OpenID provider. Supported providers are Azure Entra ID, Google and GitHub.
 To set up the corresponding OpenID providers, please consult the relevant provider documentation.
+
+> ⚠️ **From version 3.0.0** a new OIDC authentication stack was added on top of the provider settings below: org-scoped providers, group-to-role / claims mappings and service-token grants. These are configured in-app (stored in the database, not via Helm values) — the only new Helm value is the mandatory `cognaioservice.env.openID.passPhraseOidcSecrets` below. The new group/role/claims stack is implemented provider-generically but was **developed and tested exclusively against Microsoft Entra ID — Entra ID is currently the only validated and supported provider**. Other OIDC providers can technically be configured but are not yet validated or supported. The classic Microsoft / Google / GitHub login settings below, and the built-in COGNAiO email OTP, continue to work as in previous versions.
 | Name                                                                                  | Description                                               | Default                                              |
 |:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
 | `cognaioservice.env.openID.passPhraseUserInfo`                                        | Encrypts user information retrieved form provider in db   | `""`                                                 |
+| `cognaioservice.env.openID.passPhraseOidcSecrets`                                     | Encrypts OIDC provider client secrets in db (mandatory from 3.0.0; must not be changed after install) | `""`                       |
 | `cognaioservice.env.openID.microsoftDisabled`                                         | Enables Microsoft open id connection                      | `true`                                               |
 | `cognaioservice.env.openID.microsoftClientId`                                         | Client ID from Microsoft App registration                 | `""`                                                 |
 | `cognaioservice.env.openID.microsoftClientSecret`                                     | Client secret from Microsoft App registration             | `""`                                                 |
@@ -289,6 +314,7 @@ To set up the corresponding OpenID providers, please consult the relevant provid
 | `cognaioservice.env.openID.githubClientSecret`                                        | Client secret from GitHub registration                    | `""`                                                 |
 | `cognaioservice.env.openID.githubTenantsExpected`                                     | Internal filter to allow only certain domains             | `""`                                                 |
 | `cognaioservice.env.openID.githubLayoutOrder`                                         | Order if multiple provides are configured in UI           | `3`                                                  |
+| `cognaioservice.env.openID.oidcProviderTypesDisabled`                                 | Comma-separated OIDC provider types to hide in the UI (e.g. `github,cognaio_otp`); empty = all enabled | `""`             |
 
 ### Database
 Some microservices require a PostgreSQL database to persist certain data. The following parameters are described for this purpose. For Entra ID authentication, see the [Azure Authentication](#azure-authentication-entra-id) section below.
@@ -409,22 +435,26 @@ Some microservices require a Redis cache for caching certain data. Persistence i
 | `redis.secret.providerUrl`                                                            | Redis provider url                                        | `redis://:changeme@redis:6379`                       |
 | `redis.maxmemory`                                                                     | Maximum memory for Redis                                  | `1gb`                                                |
 
-### Feature Preview
-> ⚠️ From version 2.6 onwards
+### Features
+> ⚠️ From version 2.6 onwards (block `featurePreview`)
+> ⚠️ **Breaking from version 3.0.0:** the block was renamed from `cognaioservice.env.featurePreview` to `cognaioservice.env.feature`, `endpointsManageDisabled` was moved into it, and `uiAiChainCrafterDisabled` was removed (the feature is now generally available). Update your values file accordingly.
 
-Feature preview flags allow enabling or disabling preview features in the application.
+Feature flags allow enabling or disabling features in the application.
 | Name                                                                                     | Description                                                        | Default                                              |
 |:-----------------------------------------------------------------------------------------|:-------------------------------------------------------------------|:-----------------------------------------------------|
-| `cognaioservice.env.featurePreview.uiAiChainCrafterDisabled`                             | Disable AI Chain Crafter UI feature preview                        | `true`                                               |
-| `cognaioservice.env.featurePreview.cerebralEdgeDisabled`                                 | Disable Cerebral Edge feature preview                              | `true`                                               |
-| `cognaioservice.env.featurePreview.awsServicesDisabled`                                  | Disable AWS services feature preview                               | `true`                                               |
+| `cognaioservice.env.feature.cerebralEdgeDisabled`                                        | Disable Cerebral Edge feature                                      | `false`                                              |
+| `cognaioservice.env.feature.awsServicesDisabled`                                         | Disable AWS services (Textract / Bedrock) feature                 | `true`                                               |
+| `cognaioservice.env.feature.appKeyUsageDisabled`                                         | Disable application key (app key) usage                            | `false`                                              |
+| `cognaioservice.env.feature.pageRetentionDisabled`                                       | Disable page retention feature                                     | `false`                                              |
+| `cognaioservice.env.feature.llmTemplatesSyncDisabled`                                    | Disable automatic LLM template store synchronization              | `false`                                              |
+| `cognaioservice.env.feature.endpointsManageDisabled`                                     | Disables endpoints management permissions                         | `false`                                              |
+| `cognaioservice.env.feature.viewPlatformAuditsDisabled`                                  | Disable the platform audit log admin feature (browse / export audit artifacts) | `false`                                 |
 
 ### Additional Parameters
 The following table lists additional configurable parameters of the COGNAiO cloud extract chart and their default values. All other parameters can be taken from values.yaml
 | Name                                                                                     | Description                                                        | Default                                              |
 |:-----------------------------------------------------------------------------------------|:-------------------------------------------------------------------|:-----------------------------------------------------|
-| `cognaioinsight.service.urlpath`                                                         | Url path for the cognaioinsight service                            | `/cognaioinsight`                                    |
-| `cognaioinsightagentic.service.urlpath`                                                  | Url path for the agentic preview UI                                | `/cognaioinsight-agentic`                            |
+| `cognaioinsightagentic.service.urlpath`                                                  | Url path for the main UI (served by the agentic service)           | `/cognaioinsight`                                    |
 | `cognaioservice.service.urlpath`                                                         | Url path for the service                                           | `/extraction/api`                                    |
 | `cognaioservice.env.port`                                                                | Port                                                               | `3000`                                               |
 | `cognaioservice.env.extra_ca_certs`                                                      | Add extra ca certs into image                                      | none                                                 |
@@ -442,8 +472,9 @@ The following table lists additional configurable parameters of the COGNAiO clou
 | `cognaioservice.env.cognitiveServices.awsTextract.maxRetriesWaitTimeoutInSec`            | Max retries wait timeouts in seconds                               | `3`                                                  |
 | `cognaioservice.env.essentials.warningNotificationTimeoutInHours`                        | Warning notification timeouts in hours                             | `48`                                                 |
 | `cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays`            | Feature exceeds limits notification timeout in days                | `2`                                                  |
-| `cognaioservice.env.endpointsManageDisabled`                                             | Disables endpoints management permissions                          | `false`                                              |
 | `cognaioservice.env.environmentNameForNotifications`                                     | Displayname of the notification service                            | `COGNAiO IDP`                                        |
+| `cognaioservice.env.serviceAccountPermissionsToExclude`                                  | JSON map of scope→actions removed from what service-account tokens may do | `{}`                                         |
+| `cognaioservice.env.nonAdministrationLayerPermissionsToExclude`                          | JSON map gating permissions so non-admin organizations don't see them | `{}`                                            |
 | `cognaioservice.env.logSeverity`                                                         | Log severity                                                       | `info`                                               |
 | `cognaioservice.resources`                                                               | Provide limit and request resource information                     | `limits: 1Gi / requests: 512Mi, 200m`               |
 | `emailservice.env.port`                                                                  | Port                                                               | `7171`                                               |
@@ -454,6 +485,8 @@ The following table lists additional configurable parameters of the COGNAiO clou
 | `cognaioflexsearchservice.env.port`                                                      | Port                                                               | `8688`                                               |
 | `cognaioflexsearchservice.env.extra_ca_certs`                                            | Add extra ca certs into image                                      | none                                                 |
 | `cognaioflexsearchservice.env.logSeverity`                                               | Log severity                                                       | `error`                                              |
+| `cognaioflexsearchservice.env.maxContentPreviewLimit`                                    | Max records returned per content-preview request                  | `100`                                                |
+| `cognaioflexsearchservice.env.contentPreviewDisabled`                                    | Disable the content-preview API                                   | `false`                                              |
 | `cognaioflexsearchservice.env.secret.name`                                               | Secret name, details in `cognaioflexsearchservice-env-secrets.yaml`| `cognaioflexsearchservice-env-secrets`               |
 | `cognaioflexsearchservice.env.secret.init`                                               | Whether or not to create a secret                                  | `true`                                               |
 | `cognaioflexsearchservice.resources`                                                     | Provide limit and request resource information                     | `limits: 2Gi / requests: 1Gi, 200m`                 |
@@ -476,6 +509,7 @@ The `examples/` directory contains ready-to-use values overlay files for common 
 | [`values-dev-resources.yaml`](examples/values-dev-resources.yaml) | Example resource allocation for development and testing environments. Values should be monitored and adjusted based on observed usage during testing. |
 | [`values-prd-resources.yaml`](examples/values-prd-resources.yaml) | Example resource allocation for production environments. Values should be validated through load testing and continuously monitored to meet performance requirements. |
 | [`values-azure-auth.yaml`](examples/values-azure-auth.yaml) | Azure Entra ID authentication for PostgreSQL and Microsoft Graph email. Includes Service Principal and Workload Identity options. |
+| [`values-oidc.yaml`](examples/values-oidc.yaml) | OIDC login via Microsoft Entra ID: enables the provider and sets the mandatory `passPhraseOidcSecrets`. Group/role/claims mapping is configured in-app; Entra ID is the only validated provider. |
 | [`values-security.yaml`](examples/values-security.yaml) | Pod and container security hardening: non-root, read-only root filesystem, dropped capabilities, seccomp. Includes emptyDir volumes for writable paths. |
 
 Overlay files are merged on top of your base values:
@@ -503,7 +537,6 @@ kubectl get pods -n cce -w
 ```
 |NAME|READY|STATUS|
 |:----|:---|:---|
-|cognaioinsight-xxx             |1/1|     Running|
 |cognaioinsight-agentic-xxx     |1/1|     Running|
 |cce-user-manual-xxx            |1/1|     Running|
 |cognaioflexsearchservice-xxx   |1/1|     Running|
@@ -524,7 +557,6 @@ cognaio:
 ```
 
 Frontend: https://cognaio.example.group/cognaioinsight
-Frontend-agentic-preview: https://cognaio.example.group/cognaioinsight-agentic
 
 By default a temporary trial license will be active for a limited amount of time (14 days) and with a limited rate limitation of analyze request (250 requests/day). During this trial phase, it is expected to request and apply an official platform license.
 A Platform license describes the available features and their limits and an expiration date. A license can be requested in two modes:
