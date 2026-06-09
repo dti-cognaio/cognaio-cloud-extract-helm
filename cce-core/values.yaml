@@ -138,7 +138,7 @@ usermanual:
   securityContext: {}
   image:
     name: dti/idp/cce-user-manual
-    tag: "develop"
+    tag: 3.0.0
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -530,8 +530,8 @@ cognaioservice:
       viewPlatformAuditsDisabled: false
     environmentNameForNotifications: "COGNAiO IDP"
     otpDisabled: false
-    serviceAccountPermissionsToExclude: "{}"
-    nonAdministrationLayerPermissionsToExclude: "{}"
+    serviceAccountPermissionsToExclude: '{"teamMembers": ["all"], "appkey": ["all"], "audits": ["can_download_artifacts_sensitive_info"], "endpoints": ["all"], "adminRuntime": ["all"], "designer": ["can_manage_llm_templates", "can_sync_llm_templates"], "oidc": ["all"]}'
+    nonAdministrationLayerPermissionsToExclude: '{"endpoints": ["all"], "adminRuntime": ["all"], "designer": ["can_manage_llm_templates", "can_sync_llm_templates"], "oidc": ["all"]}'
     logSeverity: "info"
   extraEnv: []
   # - name: MY_EXTRA_VAR
