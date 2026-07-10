@@ -62,7 +62,7 @@ nginx:
   securityContext: {}
   image:
     name: nginx/nginx
-    tag: 1.31.1-alpine-slim
+    tag: 1.31.2-alpine-slim
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -138,7 +138,7 @@ usermanual:
   securityContext: {}
   image:
     name: dti/idp/cce-user-manual
-    tag: 3.0.0
+    tag: 3.0.1
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -289,7 +289,7 @@ cognaioinsightagentic:
   securityContext: {}
   image:
     name: dti/idp/cognaioinsight-agentic
-    tag: 3.0.0
+    tag: 3.0.1
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -365,7 +365,7 @@ cognaioservice:
   init:
     image:
       name: dti/idp/cognaioschemamanager
-      tag: 3.0.0
+      tag: 3.0.1
     securityContext: {}
     resources:
       limits:
@@ -389,7 +389,7 @@ cognaioservice:
     #       key: my-key
   image:
     name: dti/idp/cognaioservice
-    tag: 3.0.0
+    tag: 3.0.1
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -599,7 +599,7 @@ emailservice:
   securityContext: {}
   image:
     name: dti/idp/emailservice
-    tag: 3.0.0
+    tag: 3.0.1
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -671,7 +671,7 @@ cognaioflexsearchservice:
   securityContext: {}
   image:
     name: dti/idp/cognaioflexsearchservice
-    tag: 3.0.0
+    tag: 3.0.1
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -761,7 +761,7 @@ imageprovider:
   securityContext: {}
   image:
     name: dti/idp/image
-    tag: 3.0.0
+    tag: 3.0.1
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -828,7 +828,7 @@ cognaioauditscleanup:
   securityContext: {}
   image:
     name: dti/idp/cognaioauditscleanup
-    tag: 3.0.0
+    tag: 3.0.1
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -915,7 +915,7 @@ objectdetectionprovider:
   securityContext: {}
   image:
     name: dti/idp/objectdetectionprovider
-    tag: 3.0.0
+    tag: 3.0.1
   nodeSelector: {}
   tolerations: []
   affinity: {}

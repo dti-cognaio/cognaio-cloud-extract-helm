@@ -1,4 +1,26 @@
 # Change Log
+## Version 3.0.1
+### Changes
+- Updates to third-party dependencies for all of the services
+- Used up to date base images for each service
+- Small bug fixes and minor user experience improvements
+
+### Versions
+|Repository|Version|
+|---|---|
+|dtideregistry.azurecr.io/dti/idp/cognaioinsight-agentic     |3.0.1|
+|dtideregistry.azurecr.io/dti/idp/cognaioservice             |3.0.1|
+|dtideregistry.azurecr.io/dti/idp/image                      |3.0.1|
+|dtideregistry.azurecr.io/dti/idp/emailservice               |3.0.1|
+|dtideregistry.azurecr.io/dti/idp/cognaioflexsearchservice   |3.0.1|
+|dtideregistry.azurecr.io/dti/idp/cognaioauditscleanup       |3.0.1|
+|dtideregistry.azurecr.io/dti/idp/objectdetectionprovider    |3.0.1|
+|dtideregistry.azurecr.io/dti/idp/cognaioschemamanager       |3.0.1|
+|dtideregistry.azurecr.io/dti/idp/cce-user-manual            |3.0.1|
+|dtideregistry.azurecr.io/nginx/nginx                        |1.31.2-alpine-slim|
+|dtideregistry.azurecr.io/redis/redis                        |8.8.0-alpine|
+---
+
 ## Version 3.0.0
 ### Changes
 - cognaioinsight-agentic is now the main UI, served at `/cognaioinsight`
