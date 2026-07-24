@@ -80,7 +80,7 @@ az login
 az account set --subscription <Subscription>
 ```
 ```sh
-az aks get-credentials --resource-group <RessourceGroup> --name <AKS-Name>
+az aks get-credentials --resource-group <ResourceGroup> --name <AKS-Name>
 ```
 
 ## Configuration and installation details
@@ -290,7 +290,7 @@ One-time password (OTP) authentication can be disabled if an OpenID provider is 
 | `cognaioservice.env.otpDisabled`                                                         | Disable OTP authentication                             | `false`                                              |
 
 ### OpenID
-Instead of retrieving an one time password (otp) via eMail you can connect an OpenID provider. Supported providers are Azure Entra ID, Google and GitHub.
+Instead of retrieving a one-time password (otp) via eMail you can connect an OpenID provider. Supported providers are Azure Entra ID, Google and GitHub.
 To set up the corresponding OpenID providers, please consult the relevant provider documentation.
 
 > ⚠️ **From version 3.0.0** a new OIDC authentication stack was added on top of the provider settings below: org-scoped providers, group-to-role / claims mappings and service-token grants. These are configured in-app (stored in the database, not via Helm values) — the only new Helm value is the mandatory `cognaioservice.env.openID.passPhraseOidcSecrets` below. The new group/role/claims stack is implemented provider-generically but was **developed and tested exclusively against Microsoft Entra ID — Entra ID is currently the only validated and supported provider**. Other OIDC providers can technically be configured but are not yet validated or supported. The classic Microsoft / Google / GitHub login settings below, and the built-in COGNAiO email OTP, continue to work as in previous versions.
@@ -298,22 +298,22 @@ To set up the corresponding OpenID providers, please consult the relevant provid
 |:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
 | `cognaioservice.env.openID.passPhraseUserInfo`                                        | Encrypts user information retrieved form provider in db   | `""`                                                 |
 | `cognaioservice.env.openID.passPhraseOidcSecrets`                                     | Encrypts OIDC provider client secrets in db (mandatory from 3.0.0; must not be changed after install) | `""`                       |
-| `cognaioservice.env.openID.microsoftDisabled`                                         | Enables Microsoft open id connection                      | `true`                                               |
+| `cognaioservice.env.openID.microsoftDisabled`                                         | Disable Microsoft open id connection                      | `true`                                               |
 | `cognaioservice.env.openID.microsoftClientId`                                         | Client ID from Microsoft App registration                 | `""`                                                 |
 | `cognaioservice.env.openID.microsoftClientSecret`                                     | Client secret from Microsoft App registration             | `""`                                                 |
 | `cognaioservice.env.openID.microsoftTenant`                                           | Tenant ID from Microsoft App registration                 | `common`                                             |
 | `cognaioservice.env.openID.microsoftTenantsExpected`                                  | Internal filter to allow only certain domains             | `""`                                                 |
-| `cognaioservice.env.openID.microsoftLayoutOrder`                                      | Order if multiple provides are configured in UI           | `1`                                                  |
-| `cognaioservice.env.openID.googleDisabled`                                            | Enables Google open id connection                         | `true`                                               |
+| `cognaioservice.env.openID.microsoftLayoutOrder`                                      | Order if multiple providers are configured in UI           | `1`                                                  |
+| `cognaioservice.env.openID.googleDisabled`                                            | Disable Google open id connection                         | `true`                                               |
 | `cognaioservice.env.openID.googleClientId`                                            | Client ID from Google registration                        | `""`                                                 |
 | `cognaioservice.env.openID.googleClientSecret`                                        | Client secret from Google registration                    | `""`                                                 |
 | `cognaioservice.env.openID.googleTenantsExpected`                                     | Internal filter to allow only certain domains             | `""`                                                 |
-| `cognaioservice.env.openID.googleLayoutOrder`                                         | Order if multiple provides are configured in UI           | `2`                                                  |
-| `cognaioservice.env.openID.githubDisabled`                                            | Enables GitHub open id connection                         | `true`                                               |
+| `cognaioservice.env.openID.googleLayoutOrder`                                         | Order if multiple providers are configured in UI           | `2`                                                  |
+| `cognaioservice.env.openID.githubDisabled`                                            | Disable GitHub open id connection                         | `true`                                               |
 | `cognaioservice.env.openID.githubClientId`                                            | Client ID from GitHub registration                        | `""`                                                 |
 | `cognaioservice.env.openID.githubClientSecret`                                        | Client secret from GitHub registration                    | `""`                                                 |
 | `cognaioservice.env.openID.githubTenantsExpected`                                     | Internal filter to allow only certain domains             | `""`                                                 |
-| `cognaioservice.env.openID.githubLayoutOrder`                                         | Order if multiple provides are configured in UI           | `3`                                                  |
+| `cognaioservice.env.openID.githubLayoutOrder`                                         | Order if multiple providers are configured in UI           | `3`                                                  |
 | `cognaioservice.env.openID.oidcProviderTypesDisabled`                                 | Comma-separated OIDC provider types to hide in the UI (e.g. `github,cognaio_otp`); empty = all enabled | `""`             |
 
 ### Database

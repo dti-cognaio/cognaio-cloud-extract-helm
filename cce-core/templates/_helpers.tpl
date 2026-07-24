@@ -65,7 +65,7 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-Create correctly quoteted organization users list like: "'email_1@example.com','email_2@example.com'"
+Create correctly quoted organization users list like: "'email_1@example.com','email_2@example.com'"
 */}}
 {{- define "cognaio.organizationUsers" -}}
 {{- $users := .Values.cognaioservice.env.organization.users }}

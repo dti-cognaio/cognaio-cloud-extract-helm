@@ -58,12 +58,12 @@ tests:
           path: spec.template.spec.containers[0].env
           content:
             name: ServiceAccount_Permissions_To_Exclude
-            value: "{}"
+            value: '{"teamMembers": ["all"], "appkey": ["all"], "audits": ["can_download_artifacts_sensitive_info"], "endpoints": ["all"], "adminRuntime": ["all"], "designer": ["can_manage_llm_templates", "can_sync_llm_templates"], "oidc": ["all"]}'
       - contains:
           path: spec.template.spec.containers[0].env
           content:
             name: NonAdministrationLayer_Permissions_To_Exclude
-            value: "{}"
+            value: '{"endpoints": ["all"], "adminRuntime": ["all"], "designer": ["can_manage_llm_templates", "can_sync_llm_templates"], "oidc": ["all"]}'
   - it: should allow overriding the optional OIDC/permission env vars
     set:
       cognaioservice.env.openID.oidcProviderTypesDisabled: "github,cognaio_otp"
