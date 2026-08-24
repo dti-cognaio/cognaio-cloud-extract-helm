@@ -1,0 +1,13 @@
+suite: Test OpenTelemetry endpoint guard
+# Dedicated suite with exactly one template: only then does helm-unittest
+# attribute the render error to the test.
+templates:
+  - "cognaio-email-service/deployment.yaml"
+tests:
+  # A misconfiguration surfaces at render time, not in the cluster
+  - it: should fail when telemetry is enabled without any endpoint
+    set:
+      otel.enabled: true
+    asserts:
+      - failedTemplate:
+          errorPattern: "otel.enabled is true but no OTLP endpoint is configured for 'emailservice'"

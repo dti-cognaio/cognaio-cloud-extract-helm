@@ -102,6 +102,10 @@ spec:
               secretKeyRef:
                 name: {{ .Values.redis.secret.name }}
                 key: providerUrl
+          {{- with (include "cognaio.otelEnv" (dict "root" $ "svc" .Values.cognaioflexsearchservice "serviceName" "cognaioflexsearchservice")) }}
+  # OpenTelemetry (global: .Values.otel, overrides: cognaioflexsearchservice.otel)
+          {{- . | nindent 10 }}
+          {{- end }}
           {{- with .Values.cognaioflexsearchservice.extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

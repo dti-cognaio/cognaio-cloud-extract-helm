@@ -59,9 +59,16 @@ spec:
           readinessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.objectdetectionprovider.extraEnv }}
+          {{- $otelEnv := include "cognaio.otelEnv" (dict "root" $ "svc" .Values.objectdetectionprovider "serviceName" "objectdetectionprovider") }}
+          {{- if or $otelEnv .Values.objectdetectionprovider.extraEnv }}
           env:
+          {{- with $otelEnv }}
+  # OpenTelemetry (global: .Values.otel, overrides: objectdetectionprovider.otel)
+          {{- . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.objectdetectionprovider.extraEnv }}
           {{- toYaml . | nindent 10 }}
+          {{- end }}
           {{- end }}
           {{- with .Values.objectdetectionprovider.lifecycle }}
           lifecycle:

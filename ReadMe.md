@@ -140,6 +140,7 @@ Each service supports the following common parameters. Replace `<service>` with 
 | `<service>.lifecycle`                                                                    | Container lifecycle hooks (e.g., preStop for graceful shutdown)    | `{}`                                                 |
 | `<service>.extraEnv`                                                                     | Additional environment variables as array                          | `[]`                                                 |
 | `<service>.extraContainers`                                                              | Additional sidecar containers to inject into the pod (free-form)   | `[]`                                                 |
+| `<service>.otel`                                                                         | Per-service OpenTelemetry overrides (`enabled`, `serviceName`, `endpoint`, `captureHeaders`), see [OpenTelemetry](#opentelemetry-observability) | `{}`   |
 
 ### Extra Containers (Sidecars)
 Every service deployment exposes an `extraContainers` extension point that lets you inject additional sidecar containers into the pod without modifying the chart. The list is rendered verbatim into `spec.template.spec.containers`, so any valid Kubernetes container spec is accepted (image, env, ports, volumeMounts, resources, etc.).
@@ -459,7 +460,6 @@ Some microservices require a Redis cache for caching certain data. Persistence i
 | `pageidentityservice.env.nodeEnv`                                                     | Node runtime mode (`NODE_ENV`)                            | `production`                                         |
 | `pageidentityservice.env.extra_ca_certs`                                              | Add extra ca certs into image                             | none                                                 |
 | `pageidentityservice.env.logSeverity`                                                 | Log severity                                              | `info`                                               |
-| `pageidentityservice.env.corsOriginsAllowed`                                          | `;`-separated list of allowed origins, `*` allows all     | `*`                                                  |
 | `pageidentityservice.env.pageIdentityAdminToken`                                      | Root admin token protecting `/admin/tenants/*` (tenant create / rotate / delete / usage). While empty, every admin request fails closed with `503` | `""` |
 | `pageidentityservice.env.secret.name`                                                 | Secret name, details in `pageidentityservice-env-secrets.yaml` | `pageidentityservice-env-secrets`               |
 | `pageidentityservice.env.secret.init`                                                 | Whether or not to create a secret                         | `true`                                               |
@@ -485,6 +485,50 @@ Feature flags allow enabling or disabling features in the application.
 | `cognaioservice.env.feature.llmTemplatesSyncDisabled`                                    | Disable automatic LLM template store synchronization              | `false`                                              |
 | `cognaioservice.env.feature.endpointsManageDisabled`                                     | Disables endpoints management permissions                         | `false`                                              |
 | `cognaioservice.env.feature.viewPlatformAuditsDisabled`                                  | Disable the platform audit log admin feature (browse / export audit artifacts) | `false`                                 |
+
+### OpenTelemetry (Observability)
+OpenTelemetry is **disabled by default**. While `otel.enabled` is `false` the chart renders no `OTEL_*` variables at all, so the deployment is identical to an installation without observability.
+
+Once enabled, every instrumented service exports **traces, metrics and logs** via OTLP to one collector, which forwards them to your backends (e.g. Tempo, Prometheus/Mimir, Loki). The configuration is **global** - no per-service settings are required:
+
+```yaml
+otel:
+  enabled: true
+  endpoint: "http://otel-collector.observability.svc.cluster.local:4318"
+  endpointGrpc: "http://otel-collector.observability.svc.cluster.local:4317"
+  resourceAttributes:
+    deployment.environment: "production"
+```
+
+See [`values-otel.yaml`](examples/values-otel.yaml) for a complete, commented overlay.
+
+Two prerequisites in the cluster:
+1. an OTLP collector reachable from the pods, accepting **OTLP/HTTP on `:4318`** *and* **OTLP/gRPC on `:4317`** - the .NET containers (`imageprovider`, the `cognaioschemamanager` init container) export via gRPC, the Node/Python services via HTTP. That is why there are two endpoints; the chart picks the matching one per service.
+Both endpoints have no default - a guessed hostname would silently export into the void, so the chart makes you name your collector (and fails the render if you don't).
+
+2. the instrumented images - they are built separately (`*.otel.dockerfile`) and published under their own tag. Set that tag on `<service>.image.tag` yourself; the chart never rewrites an image reference.
+
+Instrumented services: `cognaioservice`, `cognaioflexsearchservice`, `emailservice`, `cognaioauditscleanup`, `imageprovider`, `objectdetectionprovider`, `pageidentityservice` and the `cognaioschemamanager` init container. `nginx`, `redis`, `cognaioinsightagentic` and `usermanual` are not instrumented and stay untouched.
+
+| Name                                                                                     | Description                                                        | Default                                              |
+|:-----------------------------------------------------------------------------------------|:-------------------------------------------------------------------|:-----------------------------------------------------|
+| `otel.enabled`                                                                           | Enable OpenTelemetry for all instrumented services                 | `false`                                              |
+| `otel.endpoint`                                                                          | OTLP/HTTP endpoint (Node / Python services), **required**           | `""`                                                 |
+| `otel.endpointGrpc`                                                                      | OTLP/gRPC endpoint (.NET services), **required**                    | `""`                                                 |
+| `otel.propagators`                                                                       | Trace context formats (`OTEL_PROPAGATORS`)                         | `tracecontext,baggage,b3`                            |
+| `otel.captureHeaders`                                                                    | Allowlist of incoming headers copied onto the server span as `http.request.header.<name>`; empty = none | `x-tenant`      |
+| `otel.resourceAttributes`                                                                | Resource attributes as key/value map (`OTEL_RESOURCE_ATTRIBUTES`), e.g. `deployment.environment` | `{}`                |
+| `otel.extraEnv`                                                                          | Additional env variables for all instrumented containers (sampling, `OTEL_LOG_LEVEL`, ...) | `[]`                         |
+| `<service>.otel.enabled`                                                                 | Enable / disable telemetry for a single service                    | (inherits `otel.enabled`)                            |
+| `<service>.otel.serviceName`                                                             | `OTEL_SERVICE_NAME` of the service                                 | (service-specific)                                   |
+| `<service>.otel.endpoint`                                                                | OTLP endpoint of this service only                                 | (inherits global)                                    |
+| `<service>.otel.captureHeaders`                                                          | Header allowlist of this service only                              | (inherits global)                                    |
+
+**Notes**
+- Enabling telemetry without any endpoint is a configuration error: the chart fails at render time instead of letting the pods spam export errors.
+- Logs only arrive if the service actually logs - check `<service>.env.logSeverity`. Several services default to `error`, which keeps the log bridge silent during normal operation.
+- Database statements can show up in the `db.statement` span attribute. Redact them in the collector before storing traces if they may carry customer data.
+- Resource attributes become Prometheus labels: keep the cardinality low, use your own prefix and never put personal data in them.
 
 ### Additional Parameters
 The following table lists additional configurable parameters of the COGNAiO cloud extract chart and their default values. All other parameters can be taken from values.yaml
@@ -547,6 +591,7 @@ The `examples/` directory contains ready-to-use values overlay files for common 
 | [`values-azure-auth.yaml`](examples/values-azure-auth.yaml) | Azure Entra ID authentication for PostgreSQL and Microsoft Graph email. Includes Service Principal and Workload Identity options. |
 | [`values-oidc.yaml`](examples/values-oidc.yaml) | OIDC login via Microsoft Entra ID: enables the provider and sets the mandatory `passPhraseOidcSecrets`. Group/role/claims mapping is configured in-app; Entra ID is the only validated provider. |
 | [`values-security.yaml`](examples/values-security.yaml) | Pod and container security hardening: non-root, read-only root filesystem, dropped capabilities, seccomp. Includes emptyDir volumes for writable paths. |
+| [`values-otel.yaml`](examples/values-otel.yaml) | OpenTelemetry for all instrumented services: OTLP endpoints, propagators, header allowlist, resource attributes. |
 
 Overlay files are merged on top of your base values:
 ```sh

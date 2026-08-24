@@ -1,0 +1,265 @@
+suite: Test OpenTelemetry configuration
+templates:
+  - "cognaio-service/deployment.yaml"
+  - "cognaio-email-service/deployment.yaml"
+  - "cognaio-flexsearch/deployment.yaml"
+  - "cognaio-audits-cleanup/deployment.yaml"
+  - "cognaio-image-provider/deployment.yaml"
+  - "cognaio-object-detection-provider/deployment.yaml"
+  - "cognaio-page-identity/deployment.yaml"
+tests:
+  # Default: OTel is off, the manifest must not contain any trace of it
+  - it: should not render any OTEL env vars by default
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_SDK_DISABLED
+            value: "false"
+        not: true
+        template: "cognaio-service/deployment.yaml"
+      - notExists:
+          path: spec.template.spec.containers[0].env
+        template: "cognaio-image-provider/deployment.yaml"
+      - notExists:
+          path: spec.template.spec.containers[0].env
+        template: "cognaio-object-detection-provider/deployment.yaml"
+  # Enabled: the global values apply to every service
+  - it: should enable telemetry on every instrumented service
+    set:
+      otel.enabled: true
+      otel.endpoint: http://collector.observability.svc.cluster.local:4318
+      otel.endpointGrpc: http://collector.observability.svc.cluster.local:4317
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_SDK_DISABLED
+            value: "false"
+
+  - it: should send node and python services to the OTLP/HTTP endpoint
+    set:
+      otel.enabled: true
+      otel.endpoint: http://collector.observability.svc.cluster.local:4318
+      otel.endpointGrpc: http://collector.observability.svc.cluster.local:4317
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: "http://collector.observability.svc.cluster.local:4318"
+        template: "cognaio-service/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_SERVICE_NAME
+            value: "cognaioservice"
+        template: "cognaio-service/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_PROPAGATORS
+            value: "tracecontext,baggage,b3"
+        template: "cognaio-service/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_CAPTURE_HEADERS
+            value: "x-tenant"
+        template: "cognaio-service/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_SERVICE_NAME
+            value: "emailservice"
+        template: "cognaio-email-service/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_SERVICE_NAME
+            value: "cognaioflexsearchservice"
+        template: "cognaio-flexsearch/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_SERVICE_NAME
+            value: "cognaioauditscleanup"
+        template: "cognaio-audits-cleanup/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_SERVICE_NAME
+            value: "objectdetectionprovider"
+        template: "cognaio-object-detection-provider/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_SERVICE_NAME
+            value: "cognaiopageidentity"
+        template: "cognaio-page-identity/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: "http://collector.observability.svc.cluster.local:4318"
+        template: "cognaio-page-identity/deployment.yaml"
+
+  - it: should send dotnet services to the OTLP/gRPC endpoint
+    set:
+      otel.enabled: true
+      otel.endpoint: http://collector.observability.svc.cluster.local:4318
+      otel.endpointGrpc: http://collector.observability.svc.cluster.local:4317
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: "http://collector.observability.svc.cluster.local:4317"
+        template: "cognaio-image-provider/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_SERVICE_NAME
+            value: "imageprovider"
+        template: "cognaio-image-provider/deployment.yaml"
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: "http://collector.observability.svc.cluster.local:4317"
+        template: "cognaio-service/deployment.yaml"
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: OTEL_SERVICE_NAME
+            value: "cognaioschemamanager"
+        template: "cognaio-service/deployment.yaml"
+
+  # The SchemaManager is a worker: no HTTP server, no caller context
+  - it: should not set header capture or propagators for the schema manager init container
+    set:
+      otel.enabled: true
+      otel.endpoint: http://collector.observability.svc.cluster.local:4318
+      otel.endpointGrpc: http://collector.observability.svc.cluster.local:4317
+    template: "cognaio-service/deployment.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: OTEL_CAPTURE_HEADERS
+            value: "x-tenant"
+        not: true
+      - contains:
+          path: spec.template.spec.initContainers[0].env
+          content:
+            name: OTEL_PROPAGATORS
+            value: "tracecontext,baggage,b3"
+        not: true
+
+  # Resource attributes: sorted, comma separated
+  - it: should render the resource attributes sorted
+    set:
+      otel.enabled: true
+      otel.endpoint: http://collector.observability.svc.cluster.local:4318
+      otel.endpointGrpc: http://collector.observability.svc.cluster.local:4317
+      otel.resourceAttributes:
+        cce.installation: acme-prod
+        deployment.environment: ecspdev02
+    template: "cognaio-service/deployment.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_RESOURCE_ATTRIBUTES
+            value: "cce.installation=acme-prod,deployment.environment=ecspdev02"
+
+  # Per service overrides
+  - it: should allow a single service to opt out
+    set:
+      otel.enabled: true
+      otel.endpoint: http://collector.observability.svc.cluster.local:4318
+      otel.endpointGrpc: http://collector.observability.svc.cluster.local:4317
+      imageprovider.otel.enabled: false
+    template: "cognaio-image-provider/deployment.yaml"
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].env
+
+  - it: should allow per service endpoint and service name overrides
+    set:
+      otel.enabled: true
+      otel.endpoint: http://collector.observability.svc.cluster.local:4318
+      otel.endpointGrpc: http://collector.observability.svc.cluster.local:4317
+      emailservice.otel.serviceName: emailservice-eu
+      emailservice.otel.endpoint: http://otel-agent.cce.svc.cluster.local:4318
+      emailservice.otel.captureHeaders: x-tenant,x-source
+    template: "cognaio-email-service/deployment.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_SERVICE_NAME
+            value: "emailservice-eu"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: "http://otel-agent.cce.svc.cluster.local:4318"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_CAPTURE_HEADERS
+            value: "x-tenant,x-source"
+
+  # An empty allowlist / empty propagators drop the variable
+  - it: should omit optional variables when they are configured empty
+    set:
+      otel.enabled: true
+      otel.endpoint: http://collector.observability.svc.cluster.local:4318
+      otel.endpointGrpc: http://collector.observability.svc.cluster.local:4317
+      otel.captureHeaders: ""
+      otel.propagators: ""
+    template: "cognaio-flexsearch/deployment.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_CAPTURE_HEADERS
+            value: "x-tenant"
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_PROPAGATORS
+            value: "tracecontext,baggage,b3"
+        not: true
+
+  # Additional variables for all instrumented containers
+  - it: should append global extra env
+    set:
+      otel.enabled: true
+      otel.endpoint: http://collector.observability.svc.cluster.local:4318
+      otel.endpointGrpc: http://collector.observability.svc.cluster.local:4317
+      otel.extraEnv:
+        - name: OTEL_TRACES_SAMPLER
+          value: parentbased_traceidratio
+        - name: OTEL_TRACES_SAMPLER_ARG
+          value: "0.1"
+        - name: OTEL_LOG_LEVEL
+          value: debug
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_LOG_LEVEL
+            value: "debug"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_TRACES_SAMPLER
+            value: "parentbased_traceidratio"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_TRACES_SAMPLER_ARG
+            value: "0.1"

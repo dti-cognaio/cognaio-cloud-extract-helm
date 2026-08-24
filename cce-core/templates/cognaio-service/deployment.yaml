@@ -218,6 +218,11 @@ spec:
                 key: secretAccessKeyAwsBedrock
           - name: COGNAIOENVIRONMENTVARIABLES__REGIONAWSBEDROCK
             value: {{ .Values.cognaioservice.env.aws.regionAwsBedrock | quote }}
+          {{- with (include "cognaio.otelEnv" (dict "root" $ "svc" .Values.cognaioservice.init "serviceName" "cognaioschemamanager" "protocol" "grpc" "noCapture" true "noPropagate" true)) }}
+  # OpenTelemetry (the SchemaManager exports via OTLP/gRPC; it is a worker
+  # without HTTP server -> no header attribution, no propagators)
+          {{- . | nindent 10 }}
+          {{- end }}
           {{- with .Values.cognaioservice.init.extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -499,6 +504,10 @@ spec:
             value: {{ .Values.cognaioservice.env.serviceAccountPermissionsToExclude | quote }}
           - name: NonAdministrationLayer_Permissions_To_Exclude
             value: {{ .Values.cognaioservice.env.nonAdministrationLayerPermissionsToExclude | quote }}
+          {{- with (include "cognaio.otelEnv" (dict "root" $ "svc" .Values.cognaioservice "serviceName" "cognaioservice")) }}
+  # OpenTelemetry (global: .Values.otel, overrides: cognaioservice.otel)
+          {{- . | nindent 10 }}
+          {{- end }}
           {{- with .Values.cognaioservice.extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

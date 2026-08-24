@@ -85,6 +85,10 @@ spec:
             value: {{ .Values.cognaioauditscleanup.env.db.postgreSqlAuthMode | quote }}
           - name: LogSeverity
             value: {{ .Values.cognaioauditscleanup.env.logSeverity }}
+          {{- with (include "cognaio.otelEnv" (dict "root" $ "svc" .Values.cognaioauditscleanup "serviceName" "cognaioauditscleanup")) }}
+  # OpenTelemetry (global: .Values.otel, overrides: cognaioauditscleanup.otel)
+          {{- . | nindent 10 }}
+          {{- end }}
           {{- with .Values.cognaioauditscleanup.extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

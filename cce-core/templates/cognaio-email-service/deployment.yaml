@@ -69,6 +69,10 @@ spec:
               secretKeyRef:
                 name: {{ .Values.emailservice.env.secret.name }}
                 key: passPhraseCryptoSymetricAppKey
+          {{- with (include "cognaio.otelEnv" (dict "root" $ "svc" .Values.emailservice "serviceName" "emailservice")) }}
+  # OpenTelemetry (global: .Values.otel, overrides: emailservice.otel)
+          {{- . | nindent 10 }}
+          {{- end }}
           {{- with .Values.emailservice.extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

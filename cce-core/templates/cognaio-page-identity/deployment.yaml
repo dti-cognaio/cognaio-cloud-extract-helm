@@ -90,8 +90,6 @@ spec:
             value: {{ .Values.pageidentityservice.env.db.postgreSqlAuthMode | quote }}
           - name: LogSeverity
             value: {{ .Values.pageidentityservice.env.logSeverity }}
-          - name: CorsOriginsAllowed
-            value: {{ .Values.pageidentityservice.env.corsOriginsAllowed | quote }}
           - name: RedisProviderUrl
             valueFrom:
               secretKeyRef:
@@ -102,6 +100,10 @@ spec:
               secretKeyRef:
                 name: {{ .Values.pageidentityservice.env.secret.name }}
                 key: pageIdentityAdminToken
+          {{- with (include "cognaio.otelEnv" (dict "root" $ "svc" .Values.pageidentityservice "serviceName" "cognaiopageidentity")) }}
+  # OpenTelemetry (global: .Values.otel, overrides: pageidentityservice.otel)
+          {{- . | nindent 10 }}
+          {{- end }}
           {{- with .Values.pageidentityservice.extraEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

@@ -23,6 +23,22 @@ image:
   containerRegistry: "dtideregistry.azurecr.io"
   restartPolicy: "Always"
 
+# OpenTelemetry (global, applies to all instrumented services)
+otel:
+  enabled: false
+  endpoint: ""
+  endpointGrpc: ""
+  propagators: "tracecontext,baggage,b3"
+  captureHeaders: "x-tenant"
+  resourceAttributes: {}
+  extraEnv: []
+  # - name: OTEL_TRACES_SAMPLER
+  #   value: "parentbased_traceidratio"
+  # - name: OTEL_TRACES_SAMPLER_ARG
+  #   value: "0.1"
+  # - name: OTEL_LOG_LEVEL          # SDK self diagnostics, troubleshooting only
+  #   value: "debug"
+
 # COGNAiO specific values
 cognaio:
   namespace: cognaio-idp
@@ -366,6 +382,12 @@ cognaioservice:
     image:
       name: dti/idp/cognaioschemamanager
       tag: "develop"
+    # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the SchemaManager init container (OTLP/gRPC); empty = global .Values.otel.
+    otel: {}
+      # enabled: true
+      # serviceName: "cognaioschemamanager"
+      # endpoint: ""
+      # captureHeaders: ""
     securityContext: {}
     resources:
       limits:
@@ -390,6 +412,12 @@ cognaioservice:
   image:
     name: dti/idp/cognaioservice
     tag: "develop"
+  # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for CognaioService (OTLP/HTTP); empty = global .Values.otel.
+  otel: {}
+    # enabled: true
+    # serviceName: "cognaioservice"
+    # endpoint: ""
+    # captureHeaders: ""
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -600,6 +628,12 @@ emailservice:
   image:
     name: dti/idp/emailservice
     tag: "develop"
+  # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the EmailService (OTLP/HTTP); empty = global .Values.otel.
+  otel: {}
+    # enabled: true
+    # serviceName: "emailservice"
+    # endpoint: ""
+    # captureHeaders: ""
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -672,6 +706,12 @@ cognaioflexsearchservice:
   image:
     name: dti/idp/cognaioflexsearchservice
     tag: "develop"
+  # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for FlexSearch (OTLP/HTTP); empty = global .Values.otel.
+  otel: {}
+    # enabled: true
+    # serviceName: "cognaioflexsearchservice"
+    # endpoint: ""
+    # captureHeaders: ""
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -762,6 +802,12 @@ imageprovider:
   image:
     name: dti/idp/image
     tag: "develop"
+  # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the ImageProvider (OTLP/gRPC); empty = global .Values.otel.
+  otel: {}
+    # enabled: true
+    # serviceName: "imageprovider"
+    # endpoint: ""
+    # captureHeaders: ""
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -829,6 +875,12 @@ cognaioauditscleanup:
   image:
     name: dti/idp/cognaioauditscleanup
     tag: "develop"
+  # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for AuditsCleanup (OTLP/HTTP); empty = global .Values.otel.
+  otel: {}
+    # enabled: true
+    # serviceName: "cognaioauditscleanup"
+    # endpoint: ""
+    # captureHeaders: ""
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -916,6 +968,12 @@ objectdetectionprovider:
   image:
     name: dti/idp/objectdetectionprovider
     tag: "develop"
+  # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the ObjectDetectionProvider (OTLP/HTTP); empty = global .Values.otel.
+  otel: {}
+    # enabled: true
+    # serviceName: "objectdetectionprovider"
+    # endpoint: ""
+    # captureHeaders: ""
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -983,6 +1041,12 @@ pageidentityservice:
   image:
     name: dti/idp/cognaiopageidentity
     tag: "develop"
+  # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the PageIdentityService (OTLP/HTTP); empty = global .Values.otel.
+  otel: {}
+    # enabled: true
+    # serviceName: "cognaiopageidentity"
+    # endpoint: ""
+    # captureHeaders: ""
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -1005,13 +1069,10 @@ pageidentityservice:
       postgreSqlDbName: "cognaio_idp"
       postgreSqlSslRequired: true
       # any other mode than entra would lead to standard username/password usage
-      postgreSqlAuthMode: "password"
+      postgreSqlAuthMode: "sql"
       schemas:
         - cognaio_page_identity
     logSeverity: "info"
-    # ';'-separated list of allowed origins, '*' allows all
-    corsOriginsAllowed: "*"
-    # Shared secret with cognaioservice.env.pageIdentity.adminToken
     pageIdentityAdminToken: ""
   livenessProbe:
     tcpSocket:
@@ -1029,10 +1090,10 @@ pageidentityservice:
     #     command: ["/bin/sh", "-c", "sleep 10"]
   resources:
     limits:
-      memory: "512Mi"
+      memory: "4Gi"
     requests:
-      memory: "256Mi"
-      cpu: "100m"
+      memory: "3Gi"
+      cpu: "200m"
   additionalVolumeMounts: []
   #   - mountPath: /app
   #     name: extra-ca-cert

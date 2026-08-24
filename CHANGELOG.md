@@ -2,6 +2,12 @@
 ## Version 3.1.0
 ### Changes
 - New service `pageidentityservice` (Page Identity, image `dti/idp/cognaiopageidentity`, port 18080, schema `cognaio_page_identity`): values block, `deployment.yaml`, `service.yaml` and `secrets.yaml` (postgreSqlUser / postgreSqlPwd / pageIdentityAdminToken, controlled by `env.secret.init`). The existing suites (affinity, lifecycle, secrets) cover the service as well. Still open: nginx route (`/pageidentityservice`), the `BaseCognaioPageIdentityServiceUrl` / `Cognaio_PageIdentity_Admin_Token` wiring on `cognaioservice`, `hpa.yaml` / `serviceaccount.yaml`
+- New global `otel` block in values.yaml: OpenTelemetry (traces, metrics and logs via OTLP) can be switched on for all instrumented services from one place - `otel.enabled: true` plus the two OTLP endpoints. `enabled`, `serviceName`, `endpoint` and `captureHeaders` can be overridden per service under `<service>.otel`
+- Instrumented services: `cognaioservice`, `cognaioflexsearchservice`, `emailservice`, `cognaioauditscleanup`, `imageprovider`, `objectdetectionprovider`, `pageidentityservice` and the `cognaioschemamanager` init container. `nginx`, `redis`, `cognaioinsightagentic` and `usermanual` are unchanged
+- Two endpoints, because the protocols differ: `otel.endpointGrpc` (`:4317`) is used for the .NET containers, `otel.endpoint` (`:4318`) for the Node / Python services. Both are required - there is deliberately no default hostname, since a wrong one would export into the void without any visible error
+- `otel.captureHeaders` (default `x-tenant`) is an allowlist of incoming headers that are copied onto the server span; `otel.resourceAttributes` stamps all three signals of the installation (e.g. `deployment.environment`); `otel.extraEnv` passes anything else the SDKs read from the environment (sampling, `OTEL_LOG_LEVEL`)
+- **Not a breaking change:** OpenTelemetry is off by default. With `otel.enabled: false` the rendered manifests are identical to the previous version - no `OTEL_*` variables
+- New example overlay `examples/values-otel.yaml` and a new `OpenTelemetry (Observability)` section in the ReadMe
 
 ### Versions
 |Repository|Version|

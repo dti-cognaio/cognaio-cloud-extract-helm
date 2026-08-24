@@ -1,0 +1,83 @@
+# =============================================================================
+# COGNAiO Cloud Extract - OpenTelemetry (traces, metrics, logs)
+# =============================================================================
+# Turns on OpenTelemetry for all instrumented services. Every service then
+# exports traces, metrics and logs via OTLP to one collector, which forwards
+# them to your backends (e.g. Tempo, Prometheus/Mimir, Loki).
+#
+# The whole configuration is GLOBAL - the services do not need individual
+# settings. The `<service>.otel` blocks at the bottom are only needed if a
+# single service has to deviate.
+#
+# Two things are required in the cluster:
+#   1. an OTLP collector reachable from the pods, accepting OTLP/HTTP on :4318
+#      AND OTLP/gRPC on :4317 (the .NET services speak gRPC, the Node/Python
+#      services speak HTTP)
+#   2. the instrumented images (built separately as *.otel.dockerfile) set as
+#      <service>.image.tag
+#
+# Merge with the base values:
+#   helm upgrade cognaio-idp ./cce-core/ --install -n cce \
+#     -f individual-values.yaml -f examples/values-otel.yaml
+# =============================================================================
+
+otel:
+  enabled: true
+
+  # Your collector - REPLACE the namespace with the one it actually runs in.
+  # Both are needed, the chart picks the matching one per service; they may also
+  # point at a per-node agent instead of a central collector. A wrong hostname
+  # is silent: OTLP is push-based, the services keep running and the dashboards
+  # stay empty. Check it with:
+  #   kubectl -n <cce-namespace> exec deploy/cognaioservice --   #     getent hosts otel-collector-opentelemetry-collector.<namespace>.svc.cluster.local
+  endpoint: "http://otel-collector-opentelemetry-collector.CHANGE-ME.svc.cluster.local:4318"
+  endpointGrpc: "http://otel-collector-opentelemetry-collector.CHANGE-ME.svc.cluster.local:4317"
+
+  # Trace context headers accepted and emitted by the services. Keep B3 in the
+  # list as long as any caller only speaks B3.
+  propagators: "tracecontext,baggage,b3"
+
+  # Incoming headers copied onto the server span as http.request.header.<name>.
+  # Allowlist only - never capture all headers. Set to "" to switch it off.
+  captureHeaders: "x-tenant"
+
+  # Stamps every trace, metric and log of this installation. Useful to tell
+  # environments and installations apart in a shared backend.
+  resourceAttributes:
+    deployment.environment: "production"
+    cce.installation: "acme-prod"
+
+  # Anything the OTel SDKs read from the environment, for all instrumented
+  # containers - e.g. head sampling to cut trace volume, or SDK diagnostics:
+  # extraEnv:
+  #   - name: OTEL_TRACES_SAMPLER
+  #     value: "parentbased_traceidratio"
+  #   - name: OTEL_TRACES_SAMPLER_ARG
+  #     value: "0.1"
+  #   - name: OTEL_LOG_LEVEL
+  #     value: "debug"
+
+# --- Per-service deviations (all optional) -----------------------------------
+# Keep one service out of the telemetry:
+# objectdetectionprovider:
+#   otel:
+#     enabled: false
+
+# Different service name, own endpoint and an extra allowlisted header:
+# emailservice:
+#   otel:
+#     serviceName: "emailservice-eu"
+#     endpoint: "http://otel-agent.cce.svc.cluster.local:4318"
+#     captureHeaders: "x-tenant,x-source"
+
+# --- Important notes ---------------------------------------------------------
+# * Logs only reach the backend if the service actually logs: check
+#   `<service>.env.logSeverity` (several services default to `error`, which
+#   keeps the log bridge silent during normal operation - `info` is the usual
+#   choice when you want request logs correlated with traces).
+# * Database statements can appear in the `db.statement` span attribute. Strip
+#   or redact them in the collector before storing traces if they may carry
+#   customer data.
+# * Resource attributes become Prometheus labels: keep the cardinality low
+#   (constant per process), use your own prefix and never put personal data in
+#   them.
