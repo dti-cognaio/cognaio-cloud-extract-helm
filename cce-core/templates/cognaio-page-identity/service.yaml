@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.pageidentityservice.service.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    app: cognaio-idp
+    name: {{ .Values.pageidentityservice.service.name }}
+spec:
+  ports:
+  - name: http
+    port: {{ .Values.pageidentityservice.service.port }}
+    protocol: TCP
+    targetPort: {{ .Values.pageidentityservice.env.port }}
+  selector:
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+      {{- with .Values.pageidentityservice.podSelectorLabels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+  type: {{ .Values.pageidentityservice.service.type }}

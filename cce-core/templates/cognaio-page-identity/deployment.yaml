@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.pageidentityservice.name }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    {{- with .Values.pageidentityservice.podLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not .Values.pageidentityservice.autoscaling.enabled }}
+  replicas: {{ .Values.pageidentityservice.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+      {{- with .Values.pageidentityservice.podSelectorLabels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+  template:
+    metadata:
+      {{- with (merge (.Values.pageidentityservice.podAnnotations | default dict) (.Values.podAnnotations | default dict)) }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "cognaio.labels" . | nindent 8 }}
+        {{- with (merge (.Values.pageidentityservice.podLabels | default dict) (.Values.podLabels | default dict)) }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.pageidentityservice.serviceAccount.name }}
+      {{- with (default .Values.podSecurityContext .Values.pageidentityservice.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ default .Values.image.restartPolicy .Values.pageidentityservice.restartPolicy | default "Always" }}
+      containers:
+        - name: {{ .Values.pageidentityservice.name }}
+          image: {{ .Values.image.containerRegistry }}/{{ .Values.pageidentityservice.image.name }}:{{ .Values.pageidentityservice.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with (default .Values.securityContext .Values.pageidentityservice.securityContext ) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+          - name: http
+            containerPort: {{ .Values.pageidentityservice.env.port }}
+            protocol: TCP
+          {{- with .Values.pageidentityservice.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.pageidentityservice.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+          - name: PORT
+            value: {{ .Values.pageidentityservice.env.port | quote }}
+          - name: NODE_ENV
+            value: {{ .Values.pageidentityservice.env.nodeEnv | default "production" | quote }}
+          {{- if .Values.pageidentityservice.env.extra_ca_certs }}
+          - name: NODE_EXTRA_CA_CERTS
+            value: {{ .Values.pageidentityservice.env.extra_ca_certs }}
+          {{- end }}
+          - name: PostgreSql_User
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.pageidentityservice.env.secret.name }}
+                key: postgreSqlUser
+          - name: PostgreSql_Pwd
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.pageidentityservice.env.secret.name }}
+                key: postgreSqlPwd
+          - name: PostgreSql_Db_Server
+            value: {{ .Values.pageidentityservice.env.db.postgreSqlDbServer }}:{{ .Values.pageidentityservice.env.db.postgreSqlDbPort }}
+          - name: PostgreSql_Schemas
+            value: {{ include "cognaio.dbSchemas" .Values.pageidentityservice.env.db.schemas }}
+          - name: PostgreSql_Db_Name
+            value: {{ .Values.pageidentityservice.env.db.postgreSqlDbName | quote }}
+          - name: PostgreSql_Ssl_Required
+            value: {{ .Values.pageidentityservice.env.db.postgreSqlSslRequired | quote }}
+          - name: PostgreSql_Auth_Mode
+            value: {{ .Values.pageidentityservice.env.db.postgreSqlAuthMode | quote }}
+          - name: LogSeverity
+            value: {{ .Values.pageidentityservice.env.logSeverity }}
+          - name: CorsOriginsAllowed
+            value: {{ .Values.pageidentityservice.env.corsOriginsAllowed | quote }}
+          - name: RedisProviderUrl
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.redis.secret.name }}
+                key: providerUrl
+          - name: Cognaio_PageIdentity_Admin_Token
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.pageidentityservice.env.secret.name }}
+                key: pageIdentityAdminToken
+          {{- with .Values.pageidentityservice.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.pageidentityservice.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.pageidentityservice.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- with .Values.pageidentityservice.additionalVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end}}
+      {{- with .Values.pageidentityservice.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- with .Values.pageidentityservice.additionalVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
+      {{- with .Values.pageidentityservice.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pageidentityservice.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pageidentityservice.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

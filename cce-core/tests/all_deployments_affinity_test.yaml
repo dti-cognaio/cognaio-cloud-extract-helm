@@ -34,6 +34,9 @@ tests:
       objectdetectionprovider.affinity:
         podAffinity: {}
         podAntiAffinity: {}
+      pageidentityservice.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
     asserts:
       - exists:
           path: spec.template.spec.affinity

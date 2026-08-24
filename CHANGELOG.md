@@ -1,4 +1,10 @@
 # Change Log
+## Unreleased
+### Changes
+- New service `pageidentityservice` (Page Identity, image `dti/idp/cognaiopageidentity`, port 18080, schema `cognaio_page_identity`): values block, `deployment.yaml`, `service.yaml` and `secrets.yaml` (postgreSqlUser / postgreSqlPwd / pageIdentityAdminToken, controlled by `env.secret.init`). The existing suites (affinity, lifecycle, secrets) cover the service as well. Still open: nginx route (`/pageidentityservice`), the `BaseCognaioPageIdentityServiceUrl` / `Cognaio_PageIdentity_Admin_Token` wiring on `cognaioservice`, `hpa.yaml` / `serviceaccount.yaml` and its ReadMe entry
+
+---
+
 ## Version 3.0.1
 ### Changes
 - Updates to third-party dependencies for all of the services
