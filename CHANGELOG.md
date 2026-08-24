@@ -1,8 +1,24 @@
 # Change Log
-## Unreleased
+## Version 3.1.0
 ### Changes
-- New service `pageidentityservice` (Page Identity, image `dti/idp/cognaiopageidentity`, port 18080, schema `cognaio_page_identity`): values block, `deployment.yaml`, `service.yaml` and `secrets.yaml` (postgreSqlUser / postgreSqlPwd / pageIdentityAdminToken, controlled by `env.secret.init`). The existing suites (affinity, lifecycle, secrets) cover the service as well. Still open: nginx route (`/pageidentityservice`), the `BaseCognaioPageIdentityServiceUrl` / `Cognaio_PageIdentity_Admin_Token` wiring on `cognaioservice`, `hpa.yaml` / `serviceaccount.yaml` and its ReadMe entry
+- New service `pageidentityservice` (Page Identity, image `dti/idp/cognaiopageidentity`, port 18080, schema `cognaio_page_identity`): values block, `deployment.yaml`, `service.yaml` and `secrets.yaml` (postgreSqlUser / postgreSqlPwd / pageIdentityAdminToken, controlled by `env.secret.init`). The existing suites (affinity, lifecycle, secrets) cover the service as well. Still open: nginx route (`/pageidentityservice`), the `BaseCognaioPageIdentityServiceUrl` / `Cognaio_PageIdentity_Admin_Token` wiring on `cognaioservice`, `hpa.yaml` / `serviceaccount.yaml`
 
+### Versions
+|Repository|Version|
+|---|---|
+|dtideregistry.azurecr.io/dti/idp/cognaioinsight-agentic     |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioservice             |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/image                      |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/emailservice               |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioflexsearchservice   |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioauditscleanup       |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/objectdetectionprovider    |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioschemamanager       |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cce-user-manual            |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/pageidentityservice        |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cryptoprovider             |#TODO|
+|dtideregistry.azurecr.io/nginx/nginx                        |1.31.2-alpine-slim|
+|dtideregistry.azurecr.io/redis/redis                        |8.8.0-alpine|
 ---
 
 ## Version 3.0.1

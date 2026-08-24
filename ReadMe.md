@@ -58,6 +58,9 @@ Serves the official user documentation, accessible directly from the cognaioinsi
 **cognaioauditscleanup**
 Runs periodic cleanup jobs to remove expired audit records and temporary data from the database, ensuring long-term storage efficiency.
 
+**pageidentityservice**
+Stores visual page fingerprints (page identities) sent by `cognaioservice` and answers distinct-page count reports on demand. It owns its own PostgreSQL schema (`cognaio_page_identity`) and uses the shared Redis for caching and cross-instance locking.
+
 **redis**
 In-memory cache used for temporary data storage during document processing operations. Data is non-persistent and is not backed up.
 
@@ -155,7 +158,7 @@ cognaioservice:
           value: "http://localhost:3000"
 ```
 
-The same field is available on every service (`nginx`, `usermanual`, `redis`, `cognaioinsightagentic`, `cognaioservice`, `emailservice`, `cognaioflexsearchservice`, `imageprovider`, `cognaioauditscleanup`, `objectdetectionprovider`). When `extraContainers` is left empty (the default), no additional containers are added.
+The same field is available on every service (`nginx`, `usermanual`, `redis`, `cognaioinsightagentic`, `cognaioservice`, `emailservice`, `cognaioflexsearchservice`, `imageprovider`, `cognaioauditscleanup`, `objectdetectionprovider`, `pageidentityservice`). When `extraContainers` is left empty (the default), no additional containers are added.
 
 > ℹ️ Sidecars share the pod's network namespace, so they can reach the main container at `localhost:<containerPort>`. If a sidecar needs its own writable filesystem, add the corresponding entries via `<service>.additionalVolumes` and reference them through the sidecar's `volumeMounts`.
 
@@ -356,6 +359,18 @@ Some microservices require a PostgreSQL database to persist certain data. The fo
 | `cognaioauditscleanup.env.db.schemas`                                                 | postgreSQL schemas as a array                             | `[cognaio_design, cognaio_audits]`                   |
 | `cognaioauditscleanup.env.db.postgreSqlAuthMode`                                      | Authentication mode (`sql` or `entra`)                    | `sql`                                                |
 
+#### pageidentityservice
+| Name                                                                                  | Description                                               | Default                                              |
+|:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
+| `pageidentityservice.env.db.postgreSqlUser`                                           | postgreSQL username                                       | `""`                                                 |
+| `pageidentityservice.env.db.postgreSqlPwd`                                            | postgreSQL password                                       | `""`                                                 |
+| `pageidentityservice.env.db.postgreSqlDbServer`                                       | postgreSQL server                                         | `""`                                                 |
+| `pageidentityservice.env.db.postgreSqlDbPort`                                         | postgreSQL port                                           | `5432`                                               |
+| `pageidentityservice.env.db.postgreSqlSslRequired`                                    | postgreSQL ssl required flag                              | `true`                                               |
+| `pageidentityservice.env.db.postgreSqlDbName`                                         | postgreSQL database name                                  | `cognaio_idp`                                        |
+| `pageidentityservice.env.db.schemas`                                                  | postgreSQL schemas as a array                             | `[cognaio_page_identity]`                            |
+| `pageidentityservice.env.db.postgreSqlAuthMode`                                       | Authentication mode (`password` or `entra`)               | `password`                                           |
+
 The `schemas` field accepts a YAML list.
 ```yaml
 cognaioservice:
@@ -368,7 +383,7 @@ cognaioservice:
 ```
 
 ### Azure Authentication (Entra ID)
-The database services (`cognaioservice`, `cognaioflexsearchservice`, `cognaioauditscleanup`) and the Graph API notification provider (`cognaioservice`) support Azure Entra ID authentication. Instead of hardcoding Entra credentials in the chart values, use one of the following standard approaches via `extraEnv` or Workload Identity.
+The database services (`cognaioservice`, `cognaioflexsearchservice`, `cognaioauditscleanup`, `pageidentityservice`) and the Graph API notification provider (`cognaioservice`) support Azure Entra ID authentication. Instead of hardcoding Entra credentials in the chart values, use one of the following standard approaches via `extraEnv` or Workload Identity.
 
 #### Service Principal via extraEnv
 Provide the standard Azure SDK environment variables through the `extraEnv` field of each service that needs Entra authentication:
@@ -434,6 +449,27 @@ Some microservices require a Redis cache for caching certain data. Persistence i
 | `redis.secret.password`                                                               | Password for redis                                        | `changeme`                                           |
 | `redis.secret.providerUrl`                                                            | Redis provider url                                        | `redis://:changeme@redis:6379`                       |
 | `redis.maxmemory`                                                                     | Maximum memory for Redis                                  | `1gb`                                                |
+
+### Page Identity
+`pageidentityservice` stores the page fingerprints computed by `cognaioservice` and serves distinct-page reports. It needs a PostgreSQL schema (see [Database](#pageidentityservice)) and reuses the chart's Redis (`RedisProviderUrl` is injected from `redis.secret`).
+
+| Name                                                                                  | Description                                               | Default                                              |
+|:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
+| `pageidentityservice.env.port`                                                        | Port                                                      | `18080`                                              |
+| `pageidentityservice.env.nodeEnv`                                                     | Node runtime mode (`NODE_ENV`)                            | `production`                                         |
+| `pageidentityservice.env.extra_ca_certs`                                              | Add extra ca certs into image                             | none                                                 |
+| `pageidentityservice.env.logSeverity`                                                 | Log severity                                              | `info`                                               |
+| `pageidentityservice.env.corsOriginsAllowed`                                          | `;`-separated list of allowed origins, `*` allows all     | `*`                                                  |
+| `pageidentityservice.env.pageIdentityAdminToken`                                      | Root admin token protecting `/admin/tenants/*` (tenant create / rotate / delete / usage). While empty, every admin request fails closed with `503` | `""` |
+| `pageidentityservice.env.secret.name`                                                 | Secret name, details in `pageidentityservice-env-secrets.yaml` | `pageidentityservice-env-secrets`               |
+| `pageidentityservice.env.secret.init`                                                 | Whether or not to create a secret                         | `true`                                               |
+| `pageidentityservice.resources`                                                       | Provide limit and request resource information            | `limits: 512Mi / requests: 256Mi, 100m`             |
+
+The secret holds `postgreSqlUser`, `postgreSqlPwd` and `pageIdentityAdminToken`. Tenants themselves are not configured through the chart - they are created at runtime over the admin API, which hands out the `pi_<prefix>_<secret>` bearer key that a COGNAiO deployment uses to push identities and request reports.
+
+> ℹ️ The service is reachable inside the cluster only (`http://pageidentityservice`, no nginx route and no ingress). Additional runtime knobs of the image (retention sweep, reporting compute fleet, request body limits) are not exposed as chart values - set them through `pageidentityservice.extraEnv` when needed.
+
+> ⚠️ `pageidentityservice.autoscaling` only switches off the static `replicaCount`; no `HorizontalPodAutoscaler` and no dedicated `ServiceAccount` are rendered for this service yet.
 
 ### Features
 > ⚠️ From version 2.6 onwards (block `featurePreview`)
