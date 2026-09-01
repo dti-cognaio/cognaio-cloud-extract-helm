@@ -39,6 +39,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       restartPolicy: {{ default .Values.image.restartPolicy .Values.cognaioflexsearchservice.restartPolicy | default "Always" }}
+# Wait for the SchemaManager Job (crypto provider -> Job -> this service), so this container
+# never reaches a half-migrated database. See _helpers.tpl.
+      {{- include "cognaio.schemaManagerGate" $ | nindent 6 }}
       containers:
         - name: {{ .Values.cognaioflexsearchservice.name }}
           image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioflexsearchservice.image.name }}:{{ .Values.cognaioflexsearchservice.image.tag }}
@@ -92,11 +95,16 @@ spec:
             value: {{ .Values.cognaioflexsearchservice.env.maxContentPreviewLimit | quote }}
           - name: Content_Preview_Disabled
             value: {{ .Values.cognaioflexsearchservice.env.contentPreviewDisabled | quote }}
-          - name: PassPhrase_Repositories
+  # Remote KEK custody - the crypto provider (mandatory since 3.1.0). PassPhrase_Repositories is
+  # gone: this process holds no key material at all any more and takes the bytes from the key row
+  # the SchemaManager seeded. The URL stays http:// - mTLS on this hop comes from the mesh.
+          - name: Crypto_Service_Url
+            value: http://{{ .Values.cryptoprovider.service.name }}
+          - name: Crypto_Service_Token
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.cognaioflexsearchservice.env.secret.name }}
-                key: passPhrase
+                name: {{ .Values.cryptoprovider.env.secret.name }}
+                key: cryptoServiceToken
           - name: RedisProviderUrl
             valueFrom:
               secretKeyRef:

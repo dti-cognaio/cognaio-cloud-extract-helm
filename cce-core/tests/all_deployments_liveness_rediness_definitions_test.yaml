@@ -18,8 +18,6 @@ tests:
       - exists:
           path: spec.template.spec.containers[0].readinessProbe
       - exists:
-          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
-      - exists:
           path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
       - exists:
           path: spec.template.spec.containers[0].readinessProbe.periodSeconds

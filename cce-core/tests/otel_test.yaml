@@ -7,6 +7,7 @@ templates:
   - "cognaio-image-provider/deployment.yaml"
   - "cognaio-object-detection-provider/deployment.yaml"
   - "cognaio-page-identity/deployment.yaml"
+  - "cognaio-schema-manager/job.yaml"
 tests:
   # Default: OTel is off, the manifest must not contain any trace of it
   - it: should not render any OTEL env vars by default
@@ -123,34 +124,34 @@ tests:
             value: "imageprovider"
         template: "cognaio-image-provider/deployment.yaml"
       - contains:
-          path: spec.template.spec.initContainers[0].env
+          path: spec.template.spec.containers[0].env
           content:
             name: OTEL_EXPORTER_OTLP_ENDPOINT
             value: "http://collector.observability.svc.cluster.local:4317"
-        template: "cognaio-service/deployment.yaml"
+        template: "cognaio-schema-manager/job.yaml"
       - contains:
-          path: spec.template.spec.initContainers[0].env
+          path: spec.template.spec.containers[0].env
           content:
             name: OTEL_SERVICE_NAME
             value: "cognaioschemamanager"
-        template: "cognaio-service/deployment.yaml"
+        template: "cognaio-schema-manager/job.yaml"
 
   # The SchemaManager is a worker: no HTTP server, no caller context
-  - it: should not set header capture or propagators for the schema manager init container
+  - it: should not set header capture or propagators for the schema manager job
     set:
       otel.enabled: true
       otel.endpoint: http://collector.observability.svc.cluster.local:4318
       otel.endpointGrpc: http://collector.observability.svc.cluster.local:4317
-    template: "cognaio-service/deployment.yaml"
+    template: "cognaio-schema-manager/job.yaml"
     asserts:
       - contains:
-          path: spec.template.spec.initContainers[0].env
+          path: spec.template.spec.containers[0].env
           content:
             name: OTEL_CAPTURE_HEADERS
             value: "x-tenant"
         not: true
       - contains:
-          path: spec.template.spec.initContainers[0].env
+          path: spec.template.spec.containers[0].env
           content:
             name: OTEL_PROPAGATORS
             value: "tracecontext,baggage,b3"

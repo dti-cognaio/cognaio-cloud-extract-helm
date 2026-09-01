@@ -37,6 +37,9 @@ tests:
       pageidentityservice.affinity:
         podAffinity: {}
         podAntiAffinity: {}
+      cryptoprovider.affinity:
+        podAffinity: {}
+        podAntiAffinity: {}
     asserts:
       - exists:
           path: spec.template.spec.affinity

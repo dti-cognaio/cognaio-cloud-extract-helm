@@ -2,51 +2,147 @@ suite: Test cognaioservice feature flags and optional OIDC/permission env
 templates:
   - "cognaio-service/deployment.yaml"
 tests:
-  - it: should map the feature.* block to the Cognaio_Feature_* env vars
+  # Every entry of the catalogue is wired, and inverting it in values reaches the env var.
+  - it: should map the whole feature and ui catalogue to env vars
     set:
       cognaioservice.env.feature.cerebralEdgeDisabled: true
-      cognaioservice.env.feature.awsServicesDisabled: true
+      cognaioservice.env.feature.awsServicesDisabled: false
+      cognaioservice.env.feature.vodafoneAiBoosterDisabled: false
       cognaioservice.env.feature.appKeyUsageDisabled: true
       cognaioservice.env.feature.pageRetentionDisabled: true
       cognaioservice.env.feature.llmTemplatesSyncDisabled: true
       cognaioservice.env.feature.endpointsManageDisabled: true
       cognaioservice.env.feature.viewPlatformAuditsDisabled: true
+      cognaioservice.env.feature.reportingPageIdentityDisabled: false
+      cognaioservice.env.feature.dataReencryptionDisabled: false
+      cognaioservice.env.feature.orgCustodySelfServiceDisabled: false
+      cognaioservice.env.feature.custodyByokDisabled: false
+      cognaioservice.env.feature.custodyHyokDisabled: false
+      cognaioservice.env.feature.reportingEmptyPagesDisabled: false
+      cognaioservice.env.ui.loginAnalysisShowAvailablePlatformDefaults: false
+      cognaioservice.env.ui.loginMyCognaioShowAvailablePlatformDefaults: false
+      cognaioservice.env.ui.loginAnalysisShowAppKey: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Cerebral_Edge_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Aws_Services_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Vodafone_Ai_Booster_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_AppKeyUsage_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Page_Retention_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_LlmTemplates_Sync_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Endpoints_Manage_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_View_Platform_Audits_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Reporting_PageIdentity_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Data_Reencryption_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Org_Custody_SelfService_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Custody_BYOK_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Custody_HYOK_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Reporting_Empty_Pages_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_UI_Login_Analysis_Show_Available_Platform_Defaults, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_UI_Login_My_Cognaio_Show_Available_Platform_Defaults, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_UI_Login_Analysis_Show_AppKey, value: "false"}
+
+  # Guards the shipped defaults against drift. They follow the image config (config-azure.env)
+  # except for four that this chart has always offered and keeps offering - flipping them would
+  # take capabilities away from every deployment that relies on the chart default:
+  # cerebralEdge, llmTemplatesSync, endpointsManage, viewPlatformAudits.
+  - it: should keep the documented default for every flag
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Cerebral_Edge_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Aws_Services_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Vodafone_Ai_Booster_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_AppKeyUsage_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Page_Retention_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_LlmTemplates_Sync_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Endpoints_Manage_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_View_Platform_Audits_Disabled, value: "false"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Reporting_PageIdentity_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Data_Reencryption_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Org_Custody_SelfService_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Custody_BYOK_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Custody_HYOK_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Reporting_Empty_Pages_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_UI_Login_Analysis_Show_Available_Platform_Defaults, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_UI_Login_My_Cognaio_Show_Available_Platform_Defaults, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_UI_Login_Analysis_Show_AppKey, value: "true"}
+
+  # Deliberately not exposed: the flag is on its way out of the image.
+  - it: should not carry the retired mailboxes flag
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: Cognaio_Feature_Cerebral_Edge_Disabled
-            value: "true"
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: Cognaio_Feature_Aws_Services_Disabled
-            value: "true"
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: Cognaio_Feature_AppKeyUsage_Disabled
-            value: "true"
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: Cognaio_Feature_Page_Retention_Disabled
-            value: "true"
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: Cognaio_Feature_LlmTemplates_Sync_Disabled
-            value: "true"
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: Cognaio_Feature_Endpoints_Manage_Disabled
-            value: "true"
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: Cognaio_Feature_View_Platform_Audits_Disabled
-            value: "true"
+            name: Cognaio_Feature_Mailboxes_Manage_Disabled
+          any: true
+        not: true
+
   - it: should render the optional OIDC/permission env vars with their defaults
     asserts:
       - contains:
@@ -80,3 +176,59 @@ tests:
           content:
             name: ServiceAccount_Permissions_To_Exclude
             value: '{"scope":["action"]}'
+
+  # The image falls back to an nginx route for the Page Identity service that this chart does
+  # not render, so the address has to come from here. Without the admin token every
+  # /admin/tenants/* call fails closed with 503, which is what makes the service look broken on
+  # a fresh deployment - so it is read from the pageidentityservice secret, not copied.
+  - it: should wire cognaioservice to the page identity service
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: BaseCognaioPageIdentityServiceUrl
+            value: http://pageidentityservice
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_PageIdentity_Admin_Token
+            valueFrom:
+              secretKeyRef:
+                name: pageidentityservice-env-secrets
+                key: pageIdentityAdminToken
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_PageIdentity_Deployment_Mode
+            value: "internal"
+      # Optional - the image has its own default
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_PageIdentity_Initial_Retention_Months
+          any: true
+        not: true
+
+  - it: should pass the retention through when it is set
+    set:
+      cognaioservice.env.pageIdentity.initialRetentionMonths: 24
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_PageIdentity_Initial_Retention_Months
+            value: "24"
+
+  # The admin token has to be identical on both sides - there is no useful "different value"
+  # case. What is configurable is which secret OBJECT cognaioservice reads it from, so a
+  # deployment whose secrets are owned by different pipelines does not have to cross that line.
+  - it: should read the page identity admin token from the pageidentity secret by default
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Cognaio_PageIdentity_Admin_Token
+            valueFrom:
+              secretKeyRef:
+                name: pageidentityservice-env-secrets
+                key: pageIdentityAdminToken

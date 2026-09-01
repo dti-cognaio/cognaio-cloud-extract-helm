@@ -1,6 +1,6 @@
 suite: Test Volume and VolumeMounts
 tests:
-  - it: should render volumes and volumeMounts for cognaioservice init container and main container
+  - it: should render volumes and volumeMounts for cognaioservice
     template: cognaio-service/deployment.yaml
     set:
       cognaioservice:
@@ -10,13 +10,6 @@ tests:
         additionalVolumeMounts:
           - mountPath: /app/tmp
             name: volume-1-main
-        init:
-          additionalVolumes:
-            - name: volume-1-init
-              emptyDir: {}
-          additionalVolumeMounts:
-            - mountPath: /app/tmp
-              name: volume-1-init
     asserts:
       - contains:
           path: spec.template.spec.volumes
@@ -28,16 +21,29 @@ tests:
           content:
             mountPath: /app/tmp
             name: volume-1-main
+
+  # The SchemaManager took its volumes with it when it left the cognaioservice pod
+  - it: should render volumes and volumeMounts for the schema manager job
+    template: cognaio-schema-manager/job.yaml
+    set:
+      cognaioschemamanager:
+        additionalVolumes:
+          - name: volume-1-migrator
+            emptyDir: {}
+        additionalVolumeMounts:
+          - mountPath: /app/tmp
+            name: volume-1-migrator
+    asserts:
       - contains:
           path: spec.template.spec.volumes
           content:
-            name: volume-1-init
+            name: volume-1-migrator
             emptyDir: {}
       - contains:
-          path: spec.template.spec.initContainers[0].volumeMounts
+          path: spec.template.spec.containers[0].volumeMounts
           content:
             mountPath: /app/tmp
-            name: volume-1-init
+            name: volume-1-migrator
 
   - it: should render additional volumes and volumeMounts for cognaio-insight-agentic
     template: cognaio-insight-agentic/deployment.yaml

@@ -1,0 +1,210 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.cryptoprovider.name }}
+  {{- with .Values.cryptoprovider.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    {{- with .Values.cryptoprovider.podLabels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if not .Values.cryptoprovider.autoscaling.enabled }}
+  replicas: {{ .Values.cryptoprovider.replicaCount }}
+  {{- end }}
+  {{- with .Values.cryptoprovider.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+      {{- with .Values.cryptoprovider.podSelectorLabels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+  template:
+    metadata:
+      {{- with (merge (.Values.cryptoprovider.podAnnotations | default dict) (.Values.podAnnotations | default dict)) }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "cognaio.labels" . | nindent 8 }}
+        {{- with (merge (.Values.cryptoprovider.podLabels | default dict) (.Values.podLabels | default dict)) }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.cryptoprovider.serviceAccount.name }}
+      {{- with (default .Values.podSecurityContext .Values.cryptoprovider.podSecurityContext) }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ default .Values.image.restartPolicy .Values.cryptoprovider.restartPolicy | default "Always" }}
+      containers:
+        - name: {{ .Values.cryptoprovider.name }}
+          image: {{ .Values.image.containerRegistry }}/{{ .Values.cryptoprovider.image.name }}:{{ .Values.cryptoprovider.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with (default .Values.securityContext .Values.cryptoprovider.securityContext ) }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+          - name: http
+            containerPort: {{ .Values.cryptoprovider.env.port }}
+            protocol: TCP
+          {{- with .Values.cryptoprovider.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.cryptoprovider.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+          - name: PORT
+            value: {{ .Values.cryptoprovider.env.port | quote }}
+          - name: NODE_ENV
+            value: {{ .Values.cryptoprovider.env.nodeEnv | default "production" | quote }}
+          {{- if .Values.cryptoprovider.env.extra_ca_certs }}
+          - name: NODE_EXTRA_CA_CERTS
+            value: {{ .Values.cryptoprovider.env.extra_ca_certs }}
+          {{- end }}
+  # Caller auth - the bearer floor. The three callers reference this very secret, so the value
+  # cannot drift apart between the four workloads.
+          - name: Crypto_Service_Token
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cryptoprovider.env.secret.name }}
+                key: cryptoServiceToken
+          {{- if .Values.cryptoprovider.env.cryptoServiceTokenPrevious }}
+          - name: Crypto_Service_Token_Previous
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cryptoprovider.env.secret.name }}
+                key: cryptoServiceTokenPrevious
+          {{- end }}
+  # Per-organization custody. The voucher key lives HERE and nowhere else - no database-reading
+  # workload may mount it, or the two locks collapse into one.
+          {{- if .Values.cryptoprovider.env.cryptoVoucherKeyB64 }}
+          - name: Crypto_Voucher_Key_B64
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cryptoprovider.env.secret.name }}
+                key: cryptoVoucherKeyB64
+          {{- end }}
+          {{- if .Values.cryptoprovider.env.cryptoVoucherKeyPreviousB64 }}
+          - name: Crypto_Voucher_Key_Previous_B64
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cryptoprovider.env.secret.name }}
+                key: cryptoVoucherKeyPreviousB64
+          {{- end }}
+  # KEK custody. Every setting that carries a value is rendered, not only the one matching
+  # KEK_PROVIDER: during a custody switch the outgoing custody stays configured on purpose and
+  # is auto-detected as read side, so existing rows keep unwrapping while the sweep re-wraps
+  # them. Emptying those lines too early is what blocks a deploy.
+          {{- $kek := .Values.cryptoprovider.env.kek }}
+          - name: KEK_PROVIDER
+            value: {{ $kek.provider | quote }}
+          {{- with $kek.azureKeyvaultKeyUri }}
+          - name: AZURE_KEYVAULT_KEY_URI
+            value: {{ . | quote }}
+          {{- end }}
+          {{- with $kek.awsKmsKeyArn }}
+          - name: AWS_KMS_KEY_ARN
+            value: {{ . | quote }}
+          {{- end }}
+          {{- with $kek.awsRegion }}
+          - name: AWS_REGION
+            value: {{ . | quote }}
+          {{- end }}
+          {{- with $kek.gcpKmsKeyName }}
+          - name: GCP_KMS_KEY_NAME
+            value: {{ . | quote }}
+          {{- end }}
+          {{- with $kek.keyfilePath }}
+          - name: KEK_KEYFILE_PATH
+            value: {{ . | quote }}
+          {{- end }}
+          {{- with $kek.keyfilePrevious }}
+          - name: KEK_KEYFILE_PREVIOUS
+            value: {{ . | quote }}
+          {{- end }}
+          {{- if $kek.materialB64 }}
+          - name: KEK_MATERIAL_B64
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cryptoprovider.env.secret.name }}
+                key: kekMaterialB64
+          {{- end }}
+          {{- with $kek.kid }}
+          - name: KEK_KID
+            value: {{ . | quote }}
+          {{- end }}
+          {{- if $kek.materialPrevious }}
+          - name: KEK_MATERIAL_PREVIOUS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cryptoprovider.env.secret.name }}
+                key: kekMaterialPrevious
+          {{- end }}
+          {{- if $kek.insecureCustodyAck }}
+  # Acknowledges that the main key sits in an environment variable. Only for a stack that
+  # deliberately holds nothing worth protecting.
+          - name: Crypto_Insecure_Custody_Ack
+            value: "true"
+          {{- end }}
+          {{- if $kek.pepperB64 }}
+          - name: KEK_PEPPER_B64
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cryptoprovider.env.secret.name }}
+                key: kekPepperB64
+          {{- end }}
+          {{- if $kek.requireRealPepper }}
+  # Refuse to boot on the public DEV_PEPPER rather than bind to it silently.
+          - name: Crypto_Require_Real_Pepper
+            value: "true"
+          {{- end }}
+  # No OpenTelemetry block: the crypto provider ships no OTel SDK.
+          {{- with .Values.cryptoprovider.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- with .Values.cryptoprovider.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.cryptoprovider.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+          {{- with .Values.cryptoprovider.additionalVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end}}
+      {{- with .Values.cryptoprovider.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      {{- with .Values.cryptoprovider.additionalVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
+      {{- with .Values.cryptoprovider.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cryptoprovider.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cryptoprovider.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

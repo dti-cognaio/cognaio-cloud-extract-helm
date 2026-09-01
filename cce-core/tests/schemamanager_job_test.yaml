@@ -1,0 +1,270 @@
+suite: Test the schema manager job and the gate it closes
+templates:
+  - "cognaio-schema-manager/job.yaml"
+  - "cognaio-schema-manager/rbac.yaml"
+  - "cognaio-service/deployment.yaml"
+  - "cognaio-flexsearch/deployment.yaml"
+  - "cognaio-audits-cleanup/deployment.yaml"
+  - "cognaio-page-identity/deployment.yaml"
+tests:
+  # The migrator left the cognaioservice pod. If it is still in there, the crypto -> migrator
+  # order cannot be enforced and this whole arrangement is pointless.
+  - it: should no longer run the migrator inside the cognaioservice pod
+    template: "cognaio-service/deployment.yaml"
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.initContainers
+          count: 1
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-schema-manager
+
+  # Not optional. The migrator throws when the crypto provider is unreachable, but that exception
+  # escapes ExecuteAsync and the host ends the process with exit code 0 - the Job would count as
+  # succeeded, never retry, and the migration would silently never run.
+  - it: should wait for the crypto provider before migrating
+    template: "cognaio-schema-manager/job.yaml"
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-cryptoprovider
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: "http://cryptoprovider/readyz"
+
+  - it: should keep waiting for crypto even with the service gate switched off
+    template: "cognaio-schema-manager/job.yaml"
+    set:
+      cognaioschemamanager.gate.enabled: false
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-cryptoprovider
+
+  - it: should run the migrator as a job that retries while crypto comes up
+    template: "cognaio-schema-manager/job.yaml"
+    asserts:
+      - isKind:
+          of: Job
+      - equal:
+          path: spec.template.spec.restartPolicy
+          value: Never
+      - equal:
+          path: spec.backoffLimit
+          value: 30
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: cognaioschemamanager
+
+  # Mandatory since 3.1.0 - without these two the migrator fails loud before it touches the
+  # database, and it seals the passphrases below through that very service.
+  - it: should point the migrator at the crypto provider
+    template: "cognaio-schema-manager/job.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__CRYPTOSERVICEURL
+            value: http://cryptoprovider
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__CRYPTOSERVICETOKEN
+            valueFrom:
+              secretKeyRef:
+                name: cryptoprovider-env-secrets
+                key: cryptoServiceToken
+
+  # Every name below has a matching line in the migrator's scripts/placeholders.map. A missing
+  # one aborts the run before it looks at a single schema version - on every rollout, not just
+  # the first - so the whole set has to be here.
+  - it: should carry every passphrase the migrator seeds
+    template: "cognaio-schema-manager/job.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASETEMPLATES
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEDEFINITIONS
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEAPPKEYJWTKEY
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEACCESSTOKENJWTKEY
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEREFRESHTOKENJWTKEY
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEOTPTOKENJWTKEY
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEENVELOPESTOKENJWTKEY
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEMAILBOXESTOKENJWTKEY
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEUNSUBSCRIBETOKENJWTKEY
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEREGISTERTOKENJWTKEY
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEANALYZERESPONSEDOWNLOADJWTKEY
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASECRYPTOSYMETRICAPPKEY
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASECRYPTOSYMETRIC
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEAUDITARTIFACTS
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__OPENIDPASSPHRASEUSERINFO
+          any: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASECRYPTOASYMETRIC
+          any: true
+
+  # The repositories passphrase lives in the flexsearch secret - referenced across secrets
+  # rather than duplicated, so the two values can never drift apart.
+  - it: should read the repositories passphrase from the flexsearch secret
+    template: "cognaio-schema-manager/job.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEREPOSITORIES
+            valueFrom:
+              secretKeyRef:
+                name: cognaioflexsearchservice-env-secrets
+                key: passPhrase
+
+  # Every service that reads a schema the migrator owns has to wait for it, or it reaches a
+  # half-migrated database.
+  - it: should gate every database service on the job
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-schema-manager
+        template: "cognaio-service/deployment.yaml"
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-schema-manager
+        template: "cognaio-flexsearch/deployment.yaml"
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-schema-manager
+        template: "cognaio-audits-cleanup/deployment.yaml"
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: wait-for-schema-manager
+        template: "cognaio-page-identity/deployment.yaml"
+
+  # The gate polls the job by name, and the name carries the release revision so every upgrade
+  # gets its own job (a completed one is immutable). The flip side is intended: every upgrade
+  # changes the gate spec, so the gated services roll and re-gate on the fresh migration.
+  - it: should poll the job of the current revision
+    template: "cognaio-service/deployment.yaml"
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: "JOB=cognaioschemamanager-r[0-9]+"
+
+  # A finished Job is immutable. With the default the revision in the name is what makes plain
+  # `helm upgrade` recreate it; with a stable name the delivery tool has to delete it first.
+  - it: should keep a stable job name when the delivery tool recreates it
+    set:
+      cognaioschemamanager.jobNamePerRevision: false
+      cognaioschemamanager.annotations:
+        argocd.argoproj.io/hook: Sync
+        argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    asserts:
+      - equal:
+          path: metadata.name
+          value: cognaioschemamanager
+        template: "cognaio-schema-manager/job.yaml"
+      - equal:
+          path: metadata.annotations["argocd.argoproj.io/hook-delete-policy"]
+          value: BeforeHookCreation
+        template: "cognaio-schema-manager/job.yaml"
+      # ... and the gate follows the name, or it would poll an object that never appears
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: "(?m)^\s*JOB=cognaioschemamanager$"
+        template: "cognaio-service/deployment.yaml"
+
+  # The gate polls this Job by name, so the object has to outlive the rollout: a pod that
+  # restarts hours later (node drain, eviction, scale-up) polls it again, and a TTL-collected
+  # Job answers 404 - the pod would wait in Init forever instead of coming back.
+  - it: should not garbage collect the job out from under the gate
+    template: "cognaio-schema-manager/job.yaml"
+    asserts:
+      - notExists:
+          path: spec.ttlSecondsAfterFinished
+
+  - it: should grant the gate read access to jobs and nothing else
+    template: "cognaio-schema-manager/rbac.yaml"
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: rules[0].verbs
+          value: ["get"]
+        documentIndex: 0
+      - equal:
+          path: rules[0].resources
+          value: ["jobs"]
+        documentIndex: 0
+
+  # Turning the gate off is the RBAC-free fallback: the services then fail loud and
+  # CrashLoopBackOff until the migration is through.
+  - it: should drop gate and RBAC together when the gate is switched off
+    set:
+      cognaioschemamanager.gate.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: "cognaio-schema-manager/rbac.yaml"
+      - notExists:
+          path: spec.template.spec.initContainers
+        template: "cognaio-service/deployment.yaml"
+      - notExists:
+          path: spec.template.spec.initContainers
+        template: "cognaio-flexsearch/deployment.yaml"

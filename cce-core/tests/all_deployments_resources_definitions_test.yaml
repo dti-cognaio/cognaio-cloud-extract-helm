@@ -15,7 +15,7 @@ tests:
       - notExists:
           path: spec.template.spec.containers[0].resources.limits.cpu
 
-  - it: should have init container resources in cognaio-service
+  - it: should have gate init container resources in cognaio-service
     template: cognaio-service/deployment.yaml
     asserts:
       - exists:

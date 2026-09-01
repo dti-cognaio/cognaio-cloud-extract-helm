@@ -74,16 +74,34 @@ cognaioinsightagentic:
 # cognaioservice  –  core API and platform orchestrator
 # Consider increasing replicas based on concurrent user load.
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# cognaioschemamanager – schemas, migrations and key maintenance
+# Its own Job since 3.1.0 (was cognaioservice.init). Runs once per rollout and
+# gates every database service.
+# ---------------------------------------------------------------------------
+cognaioschemamanager:
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+
+# ---------------------------------------------------------------------------
+# cryptoprovider – KEK custody. A tiny workload, but the same availability class
+# as the database: if it is down, decryption stops once the caches drain.
+# ---------------------------------------------------------------------------
+cryptoprovider:
+  replicaCount: 2
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+
 cognaioservice:
   replicaCount: 3
-  init:
-    # Schema manager init container – runs once during pod startup
-    resources:
-      limits:
-        memory: "512Mi"
-      requests:
-        memory: "256Mi"
-        cpu: "100m"
   resources:
     limits:
       memory: "2Gi"
@@ -151,4 +169,18 @@ objectdetectionprovider:
       memory: "5Gi"
     requests:
       memory: "2Gi"
+      cpu: "200m"
+
+# ---------------------------------------------------------------------------
+# pageidentityservice  –  page fingerprints and distinct-page reports
+# Memory is driven by the distinct-page reports, not by the ingest: a report over
+# a long period holds a lot at once. Watch it after the first month-end run.
+# ---------------------------------------------------------------------------
+pageidentityservice:
+  replicaCount: 1
+  resources:
+    limits:
+      memory: "4Gi"
+    requests:
+      memory: "3Gi"
       cpu: "200m"

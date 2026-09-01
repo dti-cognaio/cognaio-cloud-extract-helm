@@ -1,0 +1,41 @@
+{{- if .Values.cryptoprovider.networkPolicy.enabled -}}
+{{/*
+Defence layer two. The crypto hop is the one place in the platform where plaintext data keys
+cross the wire, so who may even open a socket to it is worth restricting: exactly the three
+callers, nobody else. The mesh answers the other question - who the service is actually talking
+to - and the bearer token is the floor under both. Three complementary layers, keep all three.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.cryptoprovider.name }}-ingress-allowlist
+  {{- with .Values.cryptoprovider.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- toYaml .Values.cryptoprovider.podSelectorLabels | nindent 6 }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- toYaml .Values.cognaioservice.podSelectorLabels | nindent 14 }}
+        - podSelector:
+            matchLabels:
+              {{- toYaml .Values.cognaioflexsearchservice.podSelectorLabels | nindent 14 }}
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: {{ .Values.cognaioschemamanager.name }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.cryptoprovider.env.port }}
+    {{- with .Values.cryptoprovider.networkPolicy.extraIngress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}
