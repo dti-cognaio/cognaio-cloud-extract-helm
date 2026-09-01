@@ -163,6 +163,7 @@ tests:
               secretKeyRef:
                 name: cryptoprovider-env-secrets
                 key: cryptoVoucherKeyB64
+                optional: true
         not: true
 
   - it: should wire the voucher key when it is configured
@@ -178,6 +179,35 @@ tests:
               secretKeyRef:
                 name: cryptoprovider-env-secrets
                 key: cryptoVoucherKeyB64
+                optional: true
+
+  # An externally managed secret carries the key without it ever passing through values, so the
+  # reference has to be there regardless - optional, so a secret without the key does not block
+  # the pod.
+  - it: should wire the voucher key from an externally managed secret
+    template: "cognaio-crypto-provider/deployment.yaml"
+    set:
+      cryptoprovider.env.secret.init: false
+      cryptoprovider.env.secret.name: byo-crypto-secrets
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Voucher_Key_B64
+            valueFrom:
+              secretKeyRef:
+                name: byo-crypto-secrets
+                key: cryptoVoucherKeyB64
+                optional: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Voucher_Key_Previous_B64
+            valueFrom:
+              secretKeyRef:
+                name: byo-crypto-secrets
+                key: cryptoVoucherKeyPreviousB64
+                optional: true
 
   # Defence layer two: only the three callers may open a socket to the crypto port.
   - it: should allow exactly the three callers into the crypto port

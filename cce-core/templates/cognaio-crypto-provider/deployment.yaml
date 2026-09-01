@@ -92,19 +92,26 @@ spec:
           {{- end }}
   # Per-organization custody. The voucher key lives HERE and nowhere else - no database-reading
   # workload may mount it, or the two locks collapse into one.
-          {{- if .Values.cryptoprovider.env.cryptoVoucherKeyB64 }}
+  #
+  # With an externally managed secret (secret.init: false) the key never passes through values,
+  # so there is nothing to gate on - the reference is rendered either way and marked optional.
+  # A secret without the key then simply leaves per-org custody off instead of blocking the pod.
+          {{- $byoSecret := not .Values.cryptoprovider.env.secret.init }}
+          {{- if or .Values.cryptoprovider.env.cryptoVoucherKeyB64 $byoSecret }}
           - name: Crypto_Voucher_Key_B64
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.cryptoprovider.env.secret.name }}
                 key: cryptoVoucherKeyB64
+                optional: true
           {{- end }}
-          {{- if .Values.cryptoprovider.env.cryptoVoucherKeyPreviousB64 }}
+          {{- if or .Values.cryptoprovider.env.cryptoVoucherKeyPreviousB64 $byoSecret }}
           - name: Crypto_Voucher_Key_Previous_B64
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.cryptoprovider.env.secret.name }}
                 key: cryptoVoucherKeyPreviousB64
+                optional: true
           {{- end }}
   # KEK custody. Every setting that carries a value is rendered, not only the one matching
   # KEK_PROVIDER: during a custody switch the outgoing custody stays configured on purpose and
