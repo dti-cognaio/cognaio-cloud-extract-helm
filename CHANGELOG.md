@@ -1,4 +1,5 @@
 # Change Log
+
 ## Version 3.1.0
 ### Changes
 - New service `cryptoprovider` — the only holder of the platform main key. `cognaioservice`, `cognaioflexsearchservice` and the SchemaManager send it a locked data key and get the usable one back; it sees no documents, no customer data and no database. Cluster-internal only (no ingress, no nginx upstream), with a `NetworkPolicy` that admits exactly those three callers
@@ -12,6 +13,7 @@
 - The complete feature catalogue is now configurable under `cognaioservice.env.feature`, with the defaults the image ships with. New: `vodafoneAiBoosterDisabled`, `reportingPageIdentityDisabled`, `reportingEmptyPagesDisabled`, the four custody flags (`custodyByokDisabled`, `custodyHyokDisabled`, `dataReencryptionDisabled`, `orgCustodySelfServiceDisabled`) and the login-screen toggles under `cognaioservice.env.ui`
 - New global `otel` block: OpenTelemetry traces, metrics and logs via OTLP for all instrumented services from one place (`otel.enabled: true` plus `otel.endpoint` for the Node / Python services and `otel.endpointGrpc` for the .NET containers). Off by default — with `otel.enabled: false` the rendered manifests are identical to the previous version
 - New example overlays `examples/values-crypto-azurekv.yaml`, `examples/values-otel.yaml` and `examples/values-argocd.yaml`, plus `Crypto Provider (KEK Custody)`, `Rollout Order` and `OpenTelemetry (Observability)` sections in the ReadMe
+- New per-component `<service>.topologySpreadConstraints`
 
 ### Versions
 |Repository|Version|

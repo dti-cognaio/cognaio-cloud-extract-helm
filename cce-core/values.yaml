@@ -82,6 +82,17 @@ nginx:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: nginx
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: nginx
     port: 80
@@ -158,6 +169,17 @@ usermanual:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cce-user-manual
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: cce-user-manual
     port: 80
@@ -233,6 +255,17 @@ redis:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: redis
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: redis
     port: 6379
@@ -309,6 +342,17 @@ cognaioinsightagentic:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cognaioinsight-agentic
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: cognaioinsight-agentic
     port: 80
@@ -393,6 +437,17 @@ cognaioservice:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cognaioservice
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: cognaioservice
     port: 80
@@ -676,6 +731,17 @@ emailservice:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: emailservice
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: emailservice
     port: 80
@@ -754,6 +820,17 @@ cognaioflexsearchservice:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cognaioflexsearchservice
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: cognaioflexsearchservice
     port: 80
@@ -850,6 +927,17 @@ imageprovider:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: imageprovider
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: imageprovider
     port: 80
@@ -923,6 +1011,17 @@ cognaioauditscleanup:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cognaioauditscleanup
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: cognaioauditscleanup
     port: 80
@@ -1016,6 +1115,17 @@ objectdetectionprovider:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: objectdetectionprovider
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: objectdetectionprovider
     port: 80
@@ -1089,6 +1199,17 @@ pageidentityservice:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: pageidentityservice
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: pageidentityservice
     port: 80
@@ -1207,6 +1328,17 @@ cryptoprovider:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cryptoprovider
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: cryptoprovider
     port: 80
