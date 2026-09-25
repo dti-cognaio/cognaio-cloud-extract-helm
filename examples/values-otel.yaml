@@ -72,9 +72,9 @@ otel:
 
 # --- Important notes ---------------------------------------------------------
 # * Logs only reach the backend if the service actually logs: check
-#   `<service>.env.logSeverity` (several services default to `error`, which
-#   keeps the log bridge silent during normal operation - `info` is the usual
-#   choice when you want request logs correlated with traces).
+#   `<service>.env.logSeverity` (default `info`, which is what you want for
+#   request logs correlated with traces - `error` keeps the log bridge silent
+#   during normal operation).
 # * Database statements can appear in the `db.statement` span attribute. Strip
 #   or redact them in the collector before storing traces if they may carry
 #   customer data.

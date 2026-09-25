@@ -748,7 +748,7 @@ emailservice:
     type: ClusterIP
   env:
     port: 7171
-    logSeverity: "error"
+    logSeverity: "info"
     secret:
       name: emailservice-env-secrets
       init: true
@@ -851,7 +851,7 @@ cognaioflexsearchservice:
     secret:
       name: cognaioflexsearchservice-env-secrets
       init: true
-    logSeverity: "error"
+    logSeverity: "info"
     passPhrase_Repositories: ""
     maxContentPreviewLimit: 100
     contentPreviewDisabled: false
@@ -1042,7 +1042,7 @@ cognaioauditscleanup:
     secret:
       name: cognaioauditscleanup-env-secrets
       init: true
-    logSeverity: "error"
+    logSeverity: "info"
     # extra_ca_certs: /app/ca-certificates.crt
   livenessProbe:
     tcpSocket:

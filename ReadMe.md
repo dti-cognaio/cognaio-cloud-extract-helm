@@ -677,7 +677,7 @@ Instrumented services: `cognaioservice`, `cognaioflexsearchservice`, `emailservi
 
 **Notes**
 - Enabling telemetry without any endpoint is a configuration error: the chart fails at render time instead of letting the pods spam export errors.
-- Logs only arrive if the service actually logs - check `<service>.env.logSeverity`. Several services default to `error`, which keeps the log bridge silent during normal operation.
+- Logs only arrive if the service actually logs - check `<service>.env.logSeverity`. The default is `info`; setting it to `error` keeps the log bridge silent during normal operation.
 - Database statements can show up in the `db.statement` span attribute. Redact them in the collector before storing traces if they may carry customer data.
 - Resource attributes become Prometheus labels: keep the cardinality low, use your own prefix and never put personal data in them.
 
@@ -711,20 +711,20 @@ The following table lists additional configurable parameters of the COGNAiO clou
 | `cognaioservice.env.logSeverity`                                                         | Log severity                                                       | `info`                                               |
 | `cognaioservice.resources`                                                               | Provide limit and request resource information                     | `limits: 1Gi / requests: 512Mi, 200m`               |
 | `emailservice.env.port`                                                                  | Port                                                               | `7171`                                               |
-| `emailservice.env.logSeverity`                                                           | Log severity                                                       | `error`                                              |
+| `emailservice.env.logSeverity`                                                           | Log severity                                                       | `info`                                               |
 | `emailservice.env.secret.name`                                                           | Secret name, details in `emailservice-env-secrets.yaml`            | `emailservice-env-secrets`                           |
 | `emailservice.env.secret.init`                                                           | Whether or not to create a secret                                  | `true`                                               |
 | `emailservice.resources`                                                                 | Provide limit and request resource information                     | `limits: 512Mi / requests: 128Mi, 100m`             |
 | `cognaioflexsearchservice.env.port`                                                      | Port                                                               | `8688`                                               |
 | `cognaioflexsearchservice.env.extra_ca_certs`                                            | Add extra ca certs into image                                      | none                                                 |
-| `cognaioflexsearchservice.env.logSeverity`                                               | Log severity                                                       | `error`                                              |
+| `cognaioflexsearchservice.env.logSeverity`                                               | Log severity                                                       | `info`                                               |
 | `cognaioflexsearchservice.env.maxContentPreviewLimit`                                    | Max records returned per content-preview request                  | `100`                                                |
 | `cognaioflexsearchservice.env.contentPreviewDisabled`                                    | Disable the content-preview API                                   | `false`                                              |
 | `cognaioflexsearchservice.env.secret.name`                                               | Secret name, details in `cognaioflexsearchservice-env-secrets.yaml`| `cognaioflexsearchservice-env-secrets`               |
 | `cognaioflexsearchservice.env.secret.init`                                               | Whether or not to create a secret                                  | `true`                                               |
 | `cognaioflexsearchservice.resources`                                                     | Provide limit and request resource information                     | `limits: 2Gi / requests: 1Gi, 200m`                 |
 | `cognaioauditscleanup.env.port`                                                          | Port                                                               | `9789`                                               |
-| `cognaioauditscleanup.env.logSeverity`                                                   | Log severity                                                       | `error`                                              |
+| `cognaioauditscleanup.env.logSeverity`                                                   | Log severity                                                       | `info`                                               |
 | `cognaioauditscleanup.env.secret.name`                                                   | Secret name, details in `cognaioauditscleanup-env-secrets.yaml`    | `cognaioauditscleanup-env-secrets`                   |
 | `cognaioauditscleanup.env.secret.init`                                                   | Whether or not to create a secret                                  | `true`                                               |
 | `cognaioauditscleanup.resources`                                                         | Provide limit and request resource information                     | `limits: 512Mi / requests: 256Mi, 100m`             |
