@@ -25,11 +25,11 @@ spec:
       {{- end }}
       labels:
         {{- include "cognaio.labels" . | nindent 8 }}
-        {{- with (merge (.Values.cognaioservice.podLabels | default dict) (.Values.podLabels | default dict)) }}
+        {{- /* podSelectorLabels first and into a fresh dict: the pod MUST carry the labels the
+             selector above matches on, and merging (rather than emitting a second block) keeps
+             a key that appears in both from being written twice. */ -}}
+        {{- with (merge (dict) (.Values.cognaioservice.podSelectorLabels | default dict) (.Values.cognaioservice.podLabels | default dict) (.Values.podLabels | default dict)) }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.cognaioservice.podSelectorLabels }}
-          {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}

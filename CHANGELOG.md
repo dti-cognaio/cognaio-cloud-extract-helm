@@ -14,6 +14,7 @@
 - New global `otel` block: OpenTelemetry traces, metrics and logs via OTLP for all instrumented services from one place (`otel.enabled: true` plus `otel.endpoint` for the Node / Python services and `otel.endpointGrpc` for the .NET containers). Off by default — with `otel.enabled: false` the rendered manifests are identical to the previous version
 - New example overlays `examples/values-crypto-azurekv.yaml`, `examples/values-otel.yaml` and `examples/values-argocd.yaml`, plus `Crypto Provider (KEK Custody)`, `Rollout Order` and `OpenTelemetry (Observability)` sections in the ReadMe
 - New per-component `<service>.topologySpreadConstraints`
+- The default `logSeverity` of `emailservice`, `cognaioflexsearchservice` and `cognaioauditscleanup` changed from `error` to `info`, so all services now share the same default. Expect more log volume than on 3.0.x — set it back to `error` per service if that matters
 
 ### Versions
 |Repository|Version|
@@ -27,10 +28,10 @@
 |dtideregistry.azurecr.io/dti/idp/objectdetectionprovider    |3.1.0|
 |dtideregistry.azurecr.io/dti/idp/cognaioschemamanager       |3.1.0|
 |dtideregistry.azurecr.io/dti/idp/cce-user-manual            |3.1.0|
-|dtideregistry.azurecr.io/dti/idp/pageidentityservice        |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cognaiopageidentity         |3.1.0|
 |dtideregistry.azurecr.io/dti/idp/cryptoprovider             |3.1.0|
-|dtideregistry.azurecr.io/nginx/nginx                        |1.31.4-alpine-slim|
-|dtideregistry.azurecr.io/redis/redis                        |8.10.1-alpine|
+|dtideregistry.azurecr.io/nginx/nginx                        |1.31.6-alpine-slim|
+|dtideregistry.azurecr.io/redis/redis                        |8.10.2-alpine|
 ---
 
 ## Version 3.0.1

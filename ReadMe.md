@@ -17,9 +17,15 @@ Our team actively maintains this repository, providing updates to Helm charts an
 
 Our application images are fully stateless, with all persistent data stored exclusively in the database. This design ensures that ongoing updates and new deployments are seamless, as no data is stored within the application containers themselves. Because of this stateless architecture, customers can confidently update to new versions without disrupting application functionality or data integrity.
 
-The data stored in the database is limited to statistical data, license information, and application configuration; no customer data is stored. For customers updating to a new version, our setup includes a migration init pod that handles all necessary database migrations. This process ensures a smooth transition to the latest version without manual intervention.
+The data stored in the database is limited to statistical data, license information, and application configuration; no customer data is stored. For customers updating to a new version, the `cognaioschemamanager` Job handles all necessary database migrations. This process ensures a smooth transition to the latest version without manual intervention. Up to 3.0.x that job ran as an init container inside the `cognaioservice` pod; since 3.1.0 it is a standalone Job that runs on every rollout - see [Rollout Order](#rollout-order).
 
-The database is the only component requiring a backup, as no other data storage is used in this setup. We strongly recommend backing up the database before any update to safeguard against data loss during the migration process.
+We strongly recommend backing up the database before any update to safeguard against data loss during the migration process. Back up **all** schemas from the same run, `cognaio_extensions` included: that is where the key rows live that every encrypted value depends on, so a newer data backup restored onto an older key backup points at keys that do not exist.
+
+> ⚠️ **Since 3.1.0 the database is no longer the only thing to back up.** Two pieces of key material live outside it and cannot be recovered from a database dump:
+> - the **platform main key (KEK)** - in your Azure Key Vault / AWS KMS / GCP KMS when `cryptoprovider.env.kek.provider` points at a vault, and in your values file when it does not. It is the vault's own backup that covers the first case; nothing covers the second but you.
+> - the **voucher key** (`cryptoprovider.env.cryptoVoucherKeyB64`) - never in the database, and its loss makes the data of every organization with its own key permanently unreadable. No recovery path, no back door.
+>
+> Back both up the way you back up the database, and try the restore once. See [Crypto Provider (KEK Custody)](#crypto-provider-kek-custody).
 
 To ensure all updates work as expected, we recommend testing deployments in a **staging environment** prior to deploying to production. This allows you to verify the functionality and compatibility of the new version in a controlled setting.
 
@@ -62,7 +68,7 @@ Runs periodic cleanup jobs to remove expired audit records and temporary data fr
 Stores visual page fingerprints (page identities) sent by `cognaioservice` and answers distinct-page count reports on demand. It owns its own PostgreSQL schema (`cognaio_page_identity`) and uses the shared Redis for caching and cross-instance locking.
 
 **cryptoprovider**
-Holds the platform main key and does nothing else: it locks and unlocks the data keys that `cognaioservice`, `cognaioflexsearchservice` and `cognaioschemamanager` send it. It sees no documents, no customer data and no database - only short key values and the request to lock or unlock them. The point is that nobody holds both halves: whoever reaches the database finds encrypted data keys, worthless without the main key, and whoever holds the main key has no database access. New since 3.1.0 and mandatory - the three callers refuse to start without it.
+Sole holder of the platform main key: it locks and unlocks the data keys that `cognaioservice`, `cognaioflexsearchservice` and `cognaioschemamanager` send it, and does nothing else. It sees no documents, no customer data and no database - only short key values. This keeps the two halves apart: whoever reaches the database finds encrypted data keys, worthless without the main key, and whoever holds the main key has no database access. New and mandatory since 3.1.0 - its three callers refuse to start without it. Reachable in-cluster only, never through nginx or an ingress.
 
 **cognaioschemamanager**
 Creates and migrates the PostgreSQL schemas, and since 3.1.0 also checks on every start that every key row still opens under the currently configured main key, moving the stale ones over. Runs as a Job on every rollout and exits; the services that read its schemas wait for it. Up to 3.0.x it was an init container inside the `cognaioservice` pod.
@@ -395,7 +401,7 @@ Some microservices require a PostgreSQL database to persist certain data. The fo
 | `pageidentityservice.env.db.postgreSqlSslRequired`                                    | postgreSQL ssl required flag                              | `true`                                               |
 | `pageidentityservice.env.db.postgreSqlDbName`                                         | postgreSQL database name                                  | `cognaio_idp`                                        |
 | `pageidentityservice.env.db.schemas`                                                  | postgreSQL schemas as a array                             | `[cognaio_page_identity]`                            |
-| `pageidentityservice.env.db.postgreSqlAuthMode`                                       | Authentication mode (`password` or `entra`)               | `password`                                           |
+| `pageidentityservice.env.db.postgreSqlAuthMode`                                       | Authentication mode (`sql` or `entra`)                    | `sql`                                                |
 
 The `schemas` field accepts a YAML list.
 ```yaml
@@ -446,7 +452,7 @@ cognaioflexsearchservice:
       value: "<your-client-secret>"
 ```
 
-For the schema manager init container of `cognaioservice`, use `cognaioservice.init.extraEnv` with the same variables.
+The `cognaioschemamanager` Job needs the same variables - it authenticates against the database in its own pod. Put them on `cognaioschemamanager.extraEnv`; `cryptoprovider.extraEnv` takes the ones for the vault. See [`values-azure-auth.yaml`](examples/values-azure-auth.yaml) for the complete overlay.
 
 #### Workload Identity
 If your cluster supports Azure Workload Identity, configure the service account and pod labels instead:
@@ -503,8 +509,6 @@ The secret holds `postgreSqlUser`, `postgreSqlPwd` and `pageIdentityAdminToken`.
 
 > ℹ️ The service is reachable inside the cluster only (`http://pageidentityservice`, no nginx route and no ingress). The chart therefore sets `BaseCognaioPageIdentityServiceUrl` explicitly - the fallback baked into the image points at an nginx route that does not exist here. Additional runtime knobs of the image (retention sweep, reporting compute fleet, request body limits) are not exposed as chart values - set them through `pageidentityservice.extraEnv` when needed.
 
-> ⚠️ `pageidentityservice.autoscaling` only switches off the static `replicaCount`; no `HorizontalPodAutoscaler` and no dedicated `ServiceAccount` are rendered for this service yet.
-
 ### Crypto Provider (KEK Custody)
 `cryptoprovider` is the one holder of the platform main key. The three callers send it a locked data key and get the usable one back; they never see key material and hold no vault credentials. **New and mandatory since 3.1.0** - `cognaioservice`, `cognaioflexsearchservice` and the `cognaioschemamanager` Job all fail loud at startup without it.
 
@@ -525,8 +529,6 @@ The secret holds `postgreSqlUser`, `postgreSqlPwd` and `pageIdentityAdminToken`.
 | `cryptoprovider.env.kek.insecureCustodyAck`                                           | Required on top of `provider: env` under `NODE_ENV=production`, or the service refuses to boot | `false`              |
 | `cryptoprovider.env.kek.pepperB64`                                                    | App-binding pepper; unset falls back to the public dev constant | `""`                                           |
 | `cryptoprovider.env.kek.requireRealPepper`                                            | Refuse to boot on the public dev pepper instead of binding to it silently | `false`                              |
-| `cryptoprovider.env.kek.readProviders`                                                | Explicit read-side custody list during a custody switch    | `""`                                                 |
-| `cryptoprovider.env.kek.vaultKeyRefreshMs`                                            | How often the vault's current key version is re-read      | `300000` (image default)                             |
 | `cryptoprovider.env.secret.name`                                                      | Secret name                                               | `cryptoprovider-env-secrets`                         |
 | `cryptoprovider.env.secret.init`                                                      | Whether or not to create a secret                         | `true`                                               |
 | `cryptoprovider.annotations`                                                          | Annotations on every crypto resource (GitOps sync waves)   | `{}`                                                 |
@@ -535,7 +537,7 @@ The secret holds `postgreSqlUser`, `postgreSqlPwd` and `pageIdentityAdminToken`.
 | `cryptoprovider.replicaCount`                                                         | Same availability class as the database                    | `2`                                                  |
 | `cryptoprovider.strategy`                                                             | Never replace all replicas at once                         | `maxUnavailable: 0`, `maxSurge: 1`                   |
 | `cryptoprovider.serviceAccount`                                                        | Its own cloud identity for vault access (Workload Identity / IRSA) | `create: false`, `name: default`            |
-| `cryptoprovider.resources`                                                            | Provide limit and request resource information             | `limits: 512Mi / requests: 256Mi, 100m`              |
+| `cryptoprovider.resources`                                                            | Provide limit and request resource information             | `limits: 1Gi / requests: 512Mi, 200m`                |
 
 > ⚠️ **A lost voucher key cannot be recovered.** If `cryptoVoucherKeyB64` is lost, the data of **every** organization with its own key is permanently unreadable - no recovery path, no back door, no support case. You can *replace* it whenever you like, but rotation works by opening the vouchers with the old key and resealing them with the new one, so it needs the old key to still be there. It changes a key; it never recovers one. Back it up like the main key, and try the restore once - a sentence in a runbook is not a backup. It also belongs to this service and to nothing else: never put it into a secret that a database-reading workload mounts.
 
@@ -551,7 +553,7 @@ The secret holds `postgreSqlUser`, `postgreSqlPwd` and `pageIdentityAdminToken`.
 
 > ⚠️ **Never behind nginx or an ingress, and no published port.** The callers reach it over the in-cluster service name (`http://cryptoprovider`). A reverse proxy would soften exactly the boundary the service exists for, so the chart renders no nginx upstream and no ingress route for it.
 
-> ℹ️ **mTLS on this hop is expected from the service mesh** (Istio or equivalent), which is why the callers get an `http://` URL - the sidecar makes it mutual. The image can also do TLS and client-certificate verification itself (`Crypto_Service_Tls_Cert`, `_Tls_Key`, `Crypto_Service_Client_Ca`); the chart does not template those, so wire them through `cryptoprovider.extraEnv` plus `additionalVolumes` if you ever need it without a mesh.
+> ℹ️ **mTLS on this hop is expected from the service mesh** (Istio or equivalent), which is why the callers get an `http://` URL - the sidecar makes it mutual. The image can also do TLS and client-certificate verification itself (`Crypto_Service_Tls_Cert`, `_Tls_Key`, `Crypto_Service_Client_Ca`); the chart does not template those, so wire them through `cryptoprovider.extraEnv` plus `additionalVolumes` if you ever need it without a mesh. The same goes for the two remaining custody knobs: an explicit read-side list during a custody switch (`KEK_READ_PROVIDERS` - normally auto-detected, so you rarely need it) and how often the vault's current key version is re-read (`Crypto_Vault_Key_Refresh_Ms`, default `300000`). Both have working defaults and are set through `cryptoprovider.extraEnv`, not through chart values.
 
 > ℹ️ The readiness probe is `httpGet /readyz`, not a TCP check: `/readyz` runs a real wrap/unwrap against the configured main key and therefore answers *can actually do its job*. A wrong vault key or a missing permission then surfaces during the rollout instead of when someone opens a record. `/healthz` only says the process is alive.
 
@@ -574,13 +576,13 @@ The `cognaioschemamanager` Job fails loud while the crypto provider is not answe
 
 | Name                                                                                  | Description                                               | Default                                              |
 |:--------------------------------------------------------------------------------------|:----------------------------------------------------------|:-----------------------------------------------------|
-| `cognaioschemamanager.image.name` / `.tag`                                             | Migrator image (was `cognaioservice.init.image`)           | `dti/idp/cognaioschemamanager`, `develop`             |
+| `cognaioschemamanager.image.name` / `.tag`                                             | Migrator image (was `cognaioservice.init.image`)           | `dti/idp/cognaioschemamanager`, `3.1.0`               |
 | `cognaioschemamanager.backoffLimit`                                                   | Job retries while the crypto provider comes up            | `30`                                                 |
 | `cognaioschemamanager.jobNamePerRevision`                                             | Put the release revision in the Job name so `helm upgrade` recreates it. Set to `false` only when the delivery tool deletes before it creates | `true` |
 | `cognaioschemamanager.annotations`                                                    | Annotations on the Job resource (GitOps hooks, sync waves) | `{}`                                                |
 | `cognaioschemamanager.ttlSecondsAfterFinished`                                        | How long a finished Job is kept. Empty on purpose, see below | `""`                                              |
 | `cognaioschemamanager.gate.enabled`                                                   | Render the wait-for-migrator init container and its RBAC   | `true`                                               |
-| `cognaioschemamanager.gate.image.name` / `.tag`                                        | Any image with a busybox `wget`                            | `nginx/nginx`, `1.31.3-alpine-slim`                   |
+| `cognaioschemamanager.gate.image.name` / `.tag`                                        | Any image with a busybox `wget`                            | `nginx/nginx`, `1.31.6-alpine-slim`                   |
 | `cognaioschemamanager.gate.pollSeconds`                                               | Poll interval                                             | `5`                                                  |
 | `cognaioschemamanager.resources`                                                      | Provide limit and request resource information            | `limits: 512Mi / requests: 256Mi, 100m`              |
 
@@ -735,7 +737,7 @@ The following table lists additional configurable parameters of the COGNAiO clou
 | `cryptoprovider.env.port`                                                                | Port                                                               | `3000`                                               |
 | `cryptoprovider.env.secret.name`                                                         | Secret name, details in `cryptoprovider-env-secrets.yaml`          | `cryptoprovider-env-secrets`                         |
 | `cryptoprovider.env.secret.init`                                                         | Whether or not to create a secret                                  | `true`                                               |
-| `cryptoprovider.resources`                                                               | Provide limit and request resource information                     | `limits: 512Mi / requests: 256Mi, 100m`             |
+| `cryptoprovider.resources`                                                               | Provide limit and request resource information                     | `limits: 1Gi / requests: 512Mi, 200m`               |
 | `cognaioschemamanager.resources`                                                         | Provide limit and request resource information                     | `limits: 512Mi / requests: 256Mi, 100m`             |
 | `cognaioschemamanager.gate.resources`                                                    | Resources of the wait-for-migrator init container                  | `limits: 64Mi / requests: 32Mi, 10m`                |
 
@@ -779,16 +781,21 @@ kubectl get pods -n cce -w
 ```
 |NAME|READY|STATUS|
 |:----|:---|:---|
+|cryptoprovider-xxx             |1/1|     Running|
+|cognaioschemamanager-rN-xxx    |0/1|     Completed|
 |cognaioinsight-agentic-xxx     |1/1|     Running|
 |cce-user-manual-xxx            |1/1|     Running|
 |cognaioflexsearchservice-xxx   |1/1|     Running|
 |cognaioservice-xxx             |1/1|     Running|
 |cognaioauditscleanup-xxx       |1/1|     Running|
+|pageidentityservice-xxx        |1/1|     Running|
 |emailservice-xxx               |1/1|     Running|
 |imageprovider-xxx              |1/1|     Running|
 |nginx-xxx                      |1/1|     Running|
 |objectdetectionprovider-xxx    |1/1|     Running|
 |redis-xxx                      |1/1|     Running|
+
+The order matters and the chart enforces it - see [Rollout Order](#rollout-order). `cryptoprovider` comes up first, then the `cognaioschemamanager` Job runs and stays behind as `Completed` (it is polled by name, so do not delete it), and only then do `cognaioservice`, `cognaioflexsearchservice`, `cognaioauditscleanup` and `pageidentityservice` leave `Init:0/1`. A pod stuck in `Init` means the migration has not finished - `kubectl logs <pod> -c wait-for-schema-manager` says why.
 
 ## Usage & First Steps
 From the values.yaml take the base url:
