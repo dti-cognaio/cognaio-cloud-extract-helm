@@ -78,7 +78,7 @@ nginx:
   securityContext: {}
   image:
     name: nginx/nginx
-    tag: 1.31.4-alpine-slim
+    tag: 1.31.6-alpine-slim
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -165,7 +165,7 @@ usermanual:
   securityContext: {}
   image:
     name: dti/idp/cce-user-manual
-    tag: "develop"
+    tag: "3.1.0"
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -251,7 +251,7 @@ redis:
   securityContext: {}
   image:
     name: redis/redis
-    tag: 8.10.1-alpine
+    tag: 8.10.2-alpine
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -338,7 +338,7 @@ cognaioinsightagentic:
   securityContext: {}
   image:
     name: dti/idp/cognaioinsight-agentic
-    tag: "develop"
+    tag: "3.1.0"
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -427,7 +427,7 @@ cognaioservice:
   # provider and BEFORE every database service.
   image:
     name: dti/idp/cognaioservice
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for CognaioService (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -721,7 +721,7 @@ emailservice:
   securityContext: {}
   image:
     name: dti/idp/emailservice
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the EmailService (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -810,7 +810,7 @@ cognaioflexsearchservice:
   securityContext: {}
   image:
     name: dti/idp/cognaioflexsearchservice
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for FlexSearch (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -917,7 +917,7 @@ imageprovider:
   securityContext: {}
   image:
     name: dti/idp/image
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the ImageProvider (OTLP/gRPC); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -1001,7 +1001,7 @@ cognaioauditscleanup:
   securityContext: {}
   image:
     name: dti/idp/cognaioauditscleanup
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for AuditsCleanup (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -1105,7 +1105,7 @@ objectdetectionprovider:
   securityContext: {}
   image:
     name: dti/idp/objectdetectionprovider
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the ObjectDetectionProvider (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -1189,7 +1189,7 @@ pageidentityservice:
   securityContext: {}
   image:
     name: dti/idp/cognaiopageidentity
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the PageIdentityService (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -1323,7 +1323,7 @@ cryptoprovider:
   securityContext: {}
   image:
     name: dti/idp/cryptoprovider
-    tag: "develop"
+    tag: "3.1.0"
   # No otel block on purpose - the crypto provider ships no OpenTelemetry SDK.
   nodeSelector: {}
   tolerations: []
@@ -1514,7 +1514,7 @@ cognaioschemamanager:
   name: cognaioschemamanager
   image:
     name: dti/idp/cognaioschemamanager
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint) for the SchemaManager (OTLP/gRPC); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -1577,7 +1577,7 @@ cognaioschemamanager:
     # Any image with a busybox wget. Defaults to the nginx image the chart already pulls.
     image:
       name: nginx/nginx
-      tag: 1.31.3-alpine-slim
+      tag: 1.31.6-alpine-slim
     pollSeconds: 5
     resources:
       limits:
