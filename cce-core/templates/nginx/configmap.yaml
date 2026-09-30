@@ -89,7 +89,6 @@ data:
     }
 
     {{- if not .Values.cognaioservice.env.feature.objectDetectionProviderDisabled }}
-
     upstream serviceproviderobjectdetection {
         server {{ .Values.objectdetectionprovider.service.name }};
         keepalive 32;
@@ -99,6 +98,12 @@ data:
     upstream serviceproviderauditcleanup {
         server {{ .Values.cognaioauditscleanup.service.name }};
         keepalive 32;
+    }
+
+    upstream serviceproviderpageidentity {
+        least_conn;
+        server {{ .Values.pageidentityservice.service.name }};
+        keepalive 64;
     }
    
     map "$remote_addr-$request_uri" $block_this_request {
@@ -163,7 +168,6 @@ data:
         }
 
         {{- if not .Values.cognaioservice.env.feature.objectDetectionProviderDisabled }}
-
         # Proxying the connections
         location /objectdetectionprovider/ {
             if ($block_this_request) { return 403; }
@@ -181,6 +185,15 @@ data:
             client_body_buffer_size 5M; 
             proxy_buffering off;
             proxy_pass http://serviceproviderauditcleanup/;
+        }
+
+        # Proxying the connections
+        location /pageidentityservice/ {
+            if ($block_this_request) { return 403; }
+            client_max_body_size 150M;
+            client_body_buffer_size 150M;
+            proxy_buffering off;
+            proxy_pass http://serviceproviderpageidentity/;
         }
 
         # Redirect root to /cognaioinsight/

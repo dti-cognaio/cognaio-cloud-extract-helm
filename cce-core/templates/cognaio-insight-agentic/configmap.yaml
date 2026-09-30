@@ -27,6 +27,9 @@ data:
     }
 
     http {
+        # make ALL redirects relative everywhere in this nginx
+        absolute_redirect off;
+
         server {
             port_in_redirect off;
             listen {{ .Values.cognaioinsightagentic.env.port }};
@@ -43,6 +46,47 @@ data:
 
             # Add Content-Security-Policy for frame-ancestors
             add_header Content-Security-Policy "frame-ancestors 'self';";
+
+            # Translation files keep a STABLE (unhashed) filename across releases,
+            # so browsers heuristically cache them and show raw i18n keys for new
+            # strings after a deploy. Force revalidation: ETag/Last-Modified make
+            # this a cheap 304 when unchanged, and a fresh 200 right after a deploy —
+            # no "clear site data" needed. (JS/CSS bundles are content-hashed, so
+            # they bust automatically and can stay cached.)
+            # NOTE on add_header: a location that sets its own add_header drops every
+            # add_header inherited from the server level — so each of these locations
+            # repeats the Content-Security-Policy line on purpose.
+            location ~* /assets/lang/.*\.json$ {
+                add_header Content-Security-Policy "frame-ancestors 'self';";
+                add_header Cache-Control "no-cache";
+            }
+
+            # The build stamp (written by the Dockerfile, read by the information page) has
+            # the same stable name and changes with every build: cached heuristically, the
+            # page kept naming the previous build's branch and commit after a rebuild.
+            location ~* /assets/build\.json$ {
+                add_header Content-Security-Policy "frame-ancestors 'self';";
+                add_header Cache-Control "no-cache";
+            }
+
+            # index.html is the ONE unhashed entry point: it names the hashed bundles of
+            # a release. Served without Cache-Control the browser may cache it
+            # heuristically and, after a deploy, render the previous release entirely
+            # from cache — no request reaches the server, "my change is not there".
+            # no-cache = always revalidate (a cheap 304 via ETag/Last-Modified while
+            # unchanged, a fresh 200 right after a deploy). Applies to the SPA fallback
+            # too: try_files' internal redirect to /index.html lands here.
+            location = /index.html {
+                add_header Content-Security-Policy "frame-ancestors 'self';";
+                add_header Cache-Control "no-cache";
+            }
+
+            # Content-hashed bundles (main-ABC12345.js, styles-XYZ.css, chunk-…) never
+            # change under the same name — let browsers keep them for good.
+            location ~* "^/[^/]+-[A-Z0-9]{8}\.(js|css)$" {
+                add_header Content-Security-Policy "frame-ancestors 'self';";
+                add_header Cache-Control "public, max-age=31536000, immutable";
+            }
 
             location / {
                 try_files $uri $uri/ /index.html;

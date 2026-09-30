@@ -259,8 +259,6 @@ The values must then be entered into the environment variables, whereby the priv
 
 **A fresh deployment.** There is no legacy data, so nothing has to match - but these values do not stay passphrases. The SchemaManager stores them as the keys that sign tokens and encrypt data, so whatever you type in *is* the key from then on. Generate them the way you would generate a key: one distinct value per variable, `openssl rand -base64 32` each. Nothing in the pipeline checks their strength, and editing the values file later will not fix a weak one - the first run stores the value and every later run deliberately keeps what is stored.
 
-The one value that is still ordinary configuration is `emailservice.env.passPhraseCryptoSymetricAppKey`: the email service is not part of the encryption redesign and reads it directly. It must be identical to `cognaioservice.env.tokens.passPhraseCryptoSymetricAppKey`, which is now the value the SchemaManager seeds.
-
 | Name                                                                                     | Description                     | Default                                                                     |
 |:-----------------------------------------------------------------------------------------|:--------------------------------|:----------------------------------------------------------------------------|
 | `cognaioservice.env.tokens.passPhraseAuditArtifacts`                                     | Pass phrase token               | `""`                                                                        |
@@ -278,11 +276,10 @@ The one value that is still ordinary configuration is `emailservice.env.passPhra
 | `cognaioservice.env.tokens.passPhraseRegisterTokenJwtKey`                                | Pass phrase token               | `""`                                                                        |
 | `cognaioservice.env.tokens.passPhraseOtpTokenJwtKey`                                     | Pass phrase token               | `""`                                                                        |
 | `cognaioservice.env.tokens.passPhraseAppKeyJwtKey`                                       | Pass phrase token               | `""`                                                                        |
-| `cognaioservice.env.tokens.passPhraseCryptoSymetricAppKey`                               | Pass phrase token               | `""` (Same as `emailservice.env.passPhraseCryptoSymetricAppKey`)            |
+| `cognaioservice.env.tokens.passPhraseCryptoSymetricAppKey`                               | Pass phrase token               | `""`                                                                        |
 | `cognaioservice.env.tokens.passPhraseAnalyzeFromContentJwtKey`                           | Pass phrase token               | `""`                                                                        |
 | `cognaioservice.env.tokens.passPhraseAnalyzeResponseDownloadJwtKey`                      | Pass phrase token               | `""`                                                                        |
 | `cognaioflexsearchservice.env.passPhrase_Repositories`                                   | Pass phrase token (read by the SchemaManager Job, not by flexsearch) | `""`                                    |
-| `emailservice.env.passPhraseCryptoSymetricAppKey`                                        | Pass phrase token               | `""` (Same as `cognaioservice.env.tokens.passPhraseCryptoSymetricAppKey`)   |
 
 ### Mail Account
 In order for the application to send email notifications for licensing, project management and generation of one-time passwords, an email inbox is required. The notification provider can be configured to use either SMTP or Microsoft Graph API.
@@ -715,8 +712,6 @@ The following table lists additional configurable parameters of the COGNAiO clou
 | `cognaioservice.resources`                                                               | Provide limit and request resource information                     | `limits: 1Gi / requests: 512Mi, 200m`               |
 | `emailservice.env.port`                                                                  | Port                                                               | `7171`                                               |
 | `emailservice.env.logSeverity`                                                           | Log severity                                                       | `info`                                               |
-| `emailservice.env.secret.name`                                                           | Secret name, details in `emailservice-env-secrets.yaml`            | `emailservice-env-secrets`                           |
-| `emailservice.env.secret.init`                                                           | Whether or not to create a secret                                  | `true`                                               |
 | `emailservice.resources`                                                                 | Provide limit and request resource information                     | `limits: 512Mi / requests: 128Mi, 100m`             |
 | `cognaioflexsearchservice.env.port`                                                      | Port                                                               | `8688`                                               |
 | `cognaioflexsearchservice.env.extra_ca_certs`                                            | Add extra ca certs into image                                      | none                                                 |

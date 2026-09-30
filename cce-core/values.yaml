@@ -532,6 +532,7 @@ cognaioservice:
           ciphers: "SSLv3"
           rejectUnauthorized: false
       notificationProvider: "smtp" # any other provider than 'graph' would lead to standard SMTP usage
+      notificationSendsEmergencyDisabled: false
     organization:
       users:
         - "email_1@example.com"
@@ -753,10 +754,6 @@ emailservice:
   env:
     port: 7171
     logSeverity: "info"
-    secret:
-      name: emailservice-env-secrets
-      init: true
-    passPhraseCryptoSymetricAppKey: ""
   livenessProbe:
     tcpSocket:
       port: 7171

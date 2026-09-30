@@ -150,6 +150,8 @@ spec:
   # Notification
           - name: Notification_Provider
             value: {{ .Values.cognaioservice.env.mailAccount.notificationProvider | quote }}
+          - name: Notification_Sends_Emergency_Disabled
+            value: {{ .Values.cognaioservice.env.mailAccount.notificationSendsEmergencyDisabled | quote }}
   # No PassPhrase_* here any more. Every former value was seeded once into the key table by the
   # SchemaManager and is fetched from there at runtime through the crypto provider - this pod
   # holds no key material at all. Careful when cleaning up values: Token_*_ExpiresInMinutes are
