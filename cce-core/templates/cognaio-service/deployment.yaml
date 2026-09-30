@@ -250,6 +250,8 @@ spec:
             value: {{ .Values.cognaioservice.env.feature.custodyHyokDisabled | quote }}
           - name: Cognaio_Feature_Reporting_Empty_Pages_Disabled
             value: {{ .Values.cognaioservice.env.feature.reportingEmptyPagesDisabled | quote }}
+          - name: Cognaio_Feature_ObjectDetectionProvider_Disabled
+            value: {{ .Values.cognaioservice.env.feature.objectDetectionProviderDisabled | quote }}
   # Login-screen toggles
           - name: Cognaio_UI_Login_Analysis_Show_Available_Platform_Defaults
             value: {{ .Values.cognaioservice.env.ui.loginAnalysisShowAvailablePlatformDefaults | quote }}

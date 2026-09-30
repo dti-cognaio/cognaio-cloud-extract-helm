@@ -629,6 +629,7 @@ Convention throughout: `true` means the capability is **not offered** on this de
 | `cognaioservice.env.feature.custodyByokDisabled` | BYOK - the customer generates the key and imports it; we hold and use it from then on | `true` |
 | `cognaioservice.env.feature.custodyHyokDisabled` | HYOK - the key stays in the customer own Azure KV / AWS KMS / GCP KMS and they can revoke access unilaterally | `true` |
 | `cognaioservice.env.feature.reportingEmptyPagesDisabled` | Gates ONLY the display of the empty-page columns (Pages empty / Pages distinct empty) in the audit-report UI and the CSV/MD exports. Detection and all reporting math still run | `true` |
+| `cognaioservice.env.feature.objectDetectionProviderDisabled` | The Object Detection Provider. `true` also removes the whole `objectdetectionprovider` workload (Deployment, Service, HPA, ServiceAccount) and its nginx upstream / `/objectdetectionprovider/` route from the release | `true` |
 | `cognaioservice.env.ui.loginAnalysisShowAvailablePlatformDefaults` | Show the available platform defaults on the Analysis sign-in view | `true` |
 | `cognaioservice.env.ui.loginMyCognaioShowAvailablePlatformDefaults` | Show the available platform defaults on the myCognaio sign-in view | `true` |
 | `cognaioservice.env.ui.loginAnalysisShowAppKey` | Offer app-key sign-in on the Analysis view | `true` |

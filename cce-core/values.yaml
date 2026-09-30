@@ -645,6 +645,10 @@ cognaioservice:
       # the audit-report UI and the CSV/MD exports. Detection and all reporting math still run;
       # this just hides the columns.
       reportingEmptyPagesDisabled: true
+      # The Object Detection Provider. `true` also removes the whole objectdetectionprovider
+      # workload from the release (Deployment, Service, HPA, ServiceAccount) together with its
+      # nginx upstream and /objectdetectionprovider/ route.
+      objectDetectionProviderDisabled: true
     # Login-screen toggles. Not capabilities, just what the sign-in views offer.
     ui:
       loginAnalysisShowAvailablePlatformDefaults: true

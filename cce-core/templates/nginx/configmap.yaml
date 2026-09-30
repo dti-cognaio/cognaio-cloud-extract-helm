@@ -88,10 +88,13 @@ data:
         keepalive 64;
     }
 
+    {{- if not .Values.cognaioservice.env.feature.objectDetectionProviderDisabled }}
+
     upstream serviceproviderobjectdetection {
         server {{ .Values.objectdetectionprovider.service.name }};
         keepalive 32;
     }
+    {{- end }}
 
     upstream serviceproviderauditcleanup {
         server {{ .Values.cognaioauditscleanup.service.name }};
@@ -159,6 +162,8 @@ data:
             proxy_pass http://cognaioinsight-agentics/;
         }
 
+        {{- if not .Values.cognaioservice.env.feature.objectDetectionProviderDisabled }}
+
         # Proxying the connections
         location /objectdetectionprovider/ {
             if ($block_this_request) { return 403; }
@@ -167,6 +172,7 @@ data:
             proxy_buffering off;
             proxy_pass http://serviceproviderobjectdetection/;
         }
+        {{- end }}
 
         # Proxying the connections
         location /auditscleanup/ {
