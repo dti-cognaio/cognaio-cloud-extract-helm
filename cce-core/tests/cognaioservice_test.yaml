@@ -1,10 +1,13 @@
 suite: Test cognaio service deployment
 templates:
-  - "cognaio-service/deployment.yaml" # Scannt alle Deployment-Files in allen Unterordnern
+  - "cognaio-service/deployment.yaml"
+  - "cognaio-schema-manager/job.yaml"
 tests:
-  - it: initcontainer and normal container should have security context
+  # initContainers[0] of the cognaioservice pod is the SchemaManager gate now - the migrator
+  # itself is a Job. Both have to take a security context.
+  - it: gate init container and normal container should have security context
     set:
-      cognaioservice.init.securityContext:
+      securityContext:
         runAsUser: 1000
         fsGroup: 2000
       cognaioservice.securityContext:
@@ -13,8 +16,24 @@ tests:
     asserts:
       - exists:
           path: spec.template.spec.initContainers[0].securityContext
+        template: "cognaio-service/deployment.yaml"
       - exists:
           path: spec.template.spec.containers[0].securityContext
+        template: "cognaio-service/deployment.yaml"
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            runAsUser: 1000
+            fsGroup: 2000
+        template: "cognaio-service/deployment.yaml"
+
+  - it: schema manager job should take its own security context
+    template: "cognaio-schema-manager/job.yaml"
+    set:
+      cognaioschemamanager.securityContext:
+        runAsUser: 1000
+        fsGroup: 2000
+    asserts:
       - equal:
           path: spec.template.spec.containers[0].securityContext
           value:

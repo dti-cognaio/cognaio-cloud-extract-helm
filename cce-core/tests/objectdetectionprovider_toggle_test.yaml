@@ -1,0 +1,89 @@
+suite: Object Detection Provider on/off toggle
+templates:
+  - "cognaio-object-detection-provider/deployment.yaml"
+  - "cognaio-object-detection-provider/service.yaml"
+  - "cognaio-object-detection-provider/hpa.yaml"
+  - "cognaio-object-detection-provider/serviceaccount.yaml"
+  - "cognaio-service/deployment.yaml"
+  - "nginx/configmap.yaml"
+tests:
+  # Default: the provider is not offered, so none of its resources are part of the release.
+  - it: should not render any object detection resource by default
+    set:
+      objectdetectionprovider.autoscaling.enabled: true
+      objectdetectionprovider.serviceAccount.create: true
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: "cognaio-object-detection-provider/deployment.yaml"
+      - hasDocuments:
+          count: 0
+        template: "cognaio-object-detection-provider/service.yaml"
+      - hasDocuments:
+          count: 0
+        template: "cognaio-object-detection-provider/hpa.yaml"
+      - hasDocuments:
+          count: 0
+        template: "cognaio-object-detection-provider/serviceaccount.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_ObjectDetectionProvider_Disabled, value: "true"}
+        template: "cognaio-service/deployment.yaml"
+      # nginx refuses to start on an upstream whose host does not resolve.
+      - notMatchRegex:
+          path: data["confd-nginx.conf"]
+          pattern: "serviceproviderobjectdetection"
+        template: "nginx/configmap.yaml"
+      - notMatchRegex:
+          path: data["confd-nginx.conf"]
+          pattern: "location /objectdetectionprovider/"
+        template: "nginx/configmap.yaml"
+
+  - it: should render the object detection resources when enabled
+    set:
+      cognaioservice.env.feature.objectDetectionProviderDisabled: false
+      objectdetectionprovider.autoscaling.enabled: true
+      objectdetectionprovider.serviceAccount.create: true
+      objectdetectionprovider.service.name: my-objectdetection
+    asserts:
+      - isKind:
+          of: Deployment
+        template: "cognaio-object-detection-provider/deployment.yaml"
+      - isKind:
+          of: Service
+        template: "cognaio-object-detection-provider/service.yaml"
+      - isKind:
+          of: HorizontalPodAutoscaler
+        template: "cognaio-object-detection-provider/hpa.yaml"
+      - isKind:
+          of: ServiceAccount
+        template: "cognaio-object-detection-provider/serviceaccount.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_ObjectDetectionProvider_Disabled, value: "false"}
+        template: "cognaio-service/deployment.yaml"
+      - matchRegex:
+          path: data["confd-nginx.conf"]
+          pattern: "server my-objectdetection;"
+        template: "nginx/configmap.yaml"
+      - matchRegex:
+          path: data["confd-nginx.conf"]
+          pattern: "location /objectdetectionprovider/"
+        template: "nginx/configmap.yaml"
+
+  # autoscaling / serviceAccount keep their own switches underneath the toggle.
+  - it: should still honour autoscaling and serviceAccount switches when enabled
+    set:
+      cognaioservice.env.feature.objectDetectionProviderDisabled: false
+      objectdetectionprovider.autoscaling.enabled: false
+      objectdetectionprovider.serviceAccount.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: "cognaio-object-detection-provider/hpa.yaml"
+      - hasDocuments:
+          count: 0
+        template: "cognaio-object-detection-provider/serviceaccount.yaml"
+      - hasDocuments:
+          count: 1
+        template: "cognaio-object-detection-provider/deployment.yaml"

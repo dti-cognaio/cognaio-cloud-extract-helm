@@ -1,0 +1,42 @@
+{{- if .Values.cognaioschemamanager.gate.enabled -}}
+{{/*
+The gate init container reads the SchemaManager Job through the Kubernetes API with the service
+account token of its own pod, so that account needs `get` on batch/jobs - nothing else, and only
+in this namespace.
+
+The subjects are the service accounts the gated deployments already run under, deduplicated. No
+new identity is minted: keeping each pod on its own account leaves Workload Identity annotations
+and anything else hanging off it untouched.
+*/}}
+{{- $accounts := list .Values.cognaioservice.serviceAccount.name
+                      .Values.cognaioflexsearchservice.serviceAccount.name
+                      .Values.cognaioauditscleanup.serviceAccount.name
+                      .Values.pageidentityservice.serviceAccount.name | compact | uniq }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.cognaioschemamanager.name }}-gate
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.cognaioschemamanager.name }}-gate
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Values.cognaioschemamanager.name }}-gate
+subjects:
+  {{- range $accounts }}
+  - kind: ServiceAccount
+    name: {{ . }}
+    namespace: {{ $.Release.Namespace }}
+  {{- end }}
+{{- end }}

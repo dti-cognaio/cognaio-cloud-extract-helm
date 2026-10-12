@@ -1,0 +1,88 @@
+# =============================================================================
+# COGNAiO Cloud Extract - Crypto Provider on Azure Key Vault
+# =============================================================================
+# The intended setup for a new environment: the platform main key lives in Azure
+# Key Vault, the crypto provider reaches it through its own Workload Identity,
+# and no vault credential sits in a secret anywhere.
+#
+# Merge with the base values:
+#   helm upgrade cognaio-idp ./cce-core/ --install -n cce \
+#     -f individual-values.yaml -f examples/values-crypto-azurekv.yaml
+#
+# Before the first rollout, in this order:
+#   1. Create the vault key and grant WRAP/UNWRAP on it to the managed identity
+#      referenced below.
+#   2. Generate the voucher key and BACK IT UP. Not later - see the warning.
+#   3. Roll out and wait until /readyz reports green. Only then does the
+#      SchemaManager Job run, and only after that do the other services start.
+# =============================================================================
+
+cryptoprovider:
+  # Its own cloud identity, and only its own. No other pod gets access to the key.
+  serviceAccount:
+    create: true
+    name: cryptoprovider
+    annotations:
+      azure.workload.identity/client-id: "<managed-identity-client-id>"
+    automount: true
+  podLabels:
+    azure.workload.identity/use: "true"
+    app.kubernetes.io/component: cryptoprovider
+    app.kubernetes.io/part-of: cce-core
+
+  env:
+    # Shared with cognaioservice, cognaioflexsearchservice and the SchemaManager Job -
+    # all three read it from this one secret, so it cannot drift apart. Min 16 chars:
+    #   openssl rand -base64 32
+    cryptoServiceToken: "<openssl rand -base64 32>"
+
+    # !! TIER-0. BACK THIS UP BEFORE THE FIRST ROLLOUT AND TRY THE RESTORE ONCE. !!
+    # It seals every organization's key setting. If it is lost, the data of every
+    # organization with its own key is permanently unreadable - no recovery path, no
+    # back door, no support case. Leave it empty to run entirely on platform-managed
+    # keys with per-organization custody switched off.
+    #   openssl rand -base64 32
+    cryptoVoucherKeyB64: "<openssl rand -base64 32>"
+
+    kek:
+      provider: "azurekv"
+      azureKeyvaultKeyUri: "https://<vault>.vault.azure.net/keys/<key-name>"
+      # No key name to set here - it comes from the vault. Rotating the key inside the
+      # vault needs no restart and no change to this file: the service re-reads the
+      # current version within five minutes, new wraps go there, and the old versions
+      # keep opening what they sealed.
+      #
+      # One rule: OLD KEY VERSIONS STAY ENABLED. A version may only be disabled once
+      # the maintenance log reports zero remaining rows on it. Tidying up here makes
+      # data unreadable.
+
+  # Only cognaioservice, cognaioflexsearchservice and the SchemaManager Job may open a
+  # socket to the crypto port. mTLS on the hop itself is expected from the service mesh.
+  networkPolicy:
+    enabled: true
+    # Uncomment if your CNI filters kubelet health probes through NetworkPolicies, or if
+    # the mesh needs its own telemetry path into the pod.
+    # extraIngress:
+    #   - from:
+    #       - namespaceSelector:
+    #           matchLabels:
+    #             kubernetes.io/metadata.name: istio-system
+
+# The custody catalogue. Every entry is `true` by default, meaning the capability is not
+# offered on this deployment; platform-managed keys are always available and cannot be
+# switched off. Set an entry to false to offer it.
+cognaioservice:
+  env:
+    feature:
+      # The customer generates their own key and hands it over; we keep it from then on.
+      custodyByokDisabled: true
+      # The customer's key stays in the customer's own vault and they can revoke our
+      # access unilaterally. This is what tenders mean by a customer-managed key.
+      custodyHyokDisabled: true
+      # Pulling data already stored under the old key onto a new one. A key rotation
+      # rotates the key, not the data - catching the data up is the billable add-on.
+      dataReencryptionDisabled: true
+      # Organization admins choosing the key for their own organization. The flag alone
+      # opens nothing: it has to meet a permission granted per organization, which makes
+      # it safe to switch on ahead of the first customer who asks.
+      orgCustodySelfServiceDisabled: true

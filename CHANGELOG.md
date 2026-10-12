@@ -1,4 +1,40 @@
 # Change Log
+
+## Version 3.1.0
+### Changes
+- New service `cryptoprovider` — the only holder of the platform main key. `cognaioservice`, `cognaioflexsearchservice` and the SchemaManager send it a locked data key and get the usable one back; it sees no documents, no customer data and no database. Cluster-internal only (no ingress, no nginx upstream), with a `NetworkPolicy` that admits exactly those three callers
+- Main key custody is configurable via `cryptoprovider.env.kek.provider`: `azurekv` (default) | `awskms` | `gcpkms` | `keyfile` | `env`. With a vault, access runs through the service's own Workload Identity / IRSA, so no vault credential has to sit in a secret. Set `kek.requireRealPepper: true` in every real deployment
+- **Breaking:** `cognaioservice` and `cognaioflexsearchservice` no longer hold key material. All `PassPhrase_*` variables plus `Token_EncryptionToken_JwtKey`, `OpenID_PassPhrase_UserInfo` and `OpenID_PassPhrase_OidcSecrets` are gone from their pods; both get `Crypto_Service_Url` and `Crypto_Service_Token` instead. The values and secret keys stay — the SchemaManager seeds them into the key table and validates them on every rollout
+- **Breaking:** the SchemaManager left the `cognaioservice` pod and runs as its own Job. `cognaioservice.init.*` is replaced by a top-level `cognaioschemamanager` block — update your values file accordingly
+- The rollout order is now enforced: `cryptoprovider` ready → SchemaManager Job exits 0 → the four database services start. Each database service gets a gate init container that polls the Job through the Kubernetes API, backed by a new `Role` / `RoleBinding` on the service accounts they already use. `cognaioschemamanager.gate.enabled: false` is the RBAC-free fallback
+- **Breaking:** this release pairs the chart with 3.1.0 images. The crypto provider is mandatory — a 3.0.x image would no longer receive the passphrases it still reads
+- Optional per-organization custody via `cryptoprovider.env.cryptoVoucherKeyB64`. **Back this key up before the first rollout** — if it is lost, the data of every organization with its own key is permanently unreadable, with no recovery path. Leave it empty to run entirely on platform-managed keys. It can also come from an externally managed secret (`env.secret.init: false`, key `cryptoVoucherKeyB64`)
+- New service `pageidentityservice` (port 18080, schema `cognaio_page_identity`), wired into `cognaioservice` via `BaseCognaioPageIdentityServiceUrl` and an admin token read from the `pageidentityservice` secret
+- The complete feature catalogue is now configurable under `cognaioservice.env.feature`, with the defaults the image ships with. New: `vodafoneAiBoosterDisabled`, `reportingPageIdentityDisabled`, `reportingEmptyPagesDisabled`, the four custody flags (`custodyByokDisabled`, `custodyHyokDisabled`, `dataReencryptionDisabled`, `orgCustodySelfServiceDisabled`) and the login-screen toggles under `cognaioservice.env.ui`
+- **Breaking:** the Object Detection Provider is now off by default. `cognaioservice.env.feature.objectDetectionProviderDisabled` (default `true`) is passed to `cognaioservice` as `Cognaio_Feature_ObjectDetectionProvider_Disabled` and also removes the whole `objectdetectionprovider` workload (Deployment, Service, HPA, ServiceAccount) plus its nginx upstream and `/objectdetectionprovider/` route from the release. Deployments that use it must set the flag to `false`
+- New global `otel` block: OpenTelemetry traces, metrics and logs via OTLP for all instrumented services from one place (`otel.enabled: true` plus `otel.endpoint` for the Node / Python services and `otel.endpointGrpc` for the .NET containers). Off by default — with `otel.enabled: false` the rendered manifests are identical to the previous version
+- New example overlays `examples/values-crypto-azurekv.yaml`, `examples/values-otel.yaml` and `examples/values-argocd.yaml`, plus `Crypto Provider (KEK Custody)`, `Rollout Order` and `OpenTelemetry (Observability)` sections in the ReadMe
+- New per-component `<service>.topologySpreadConstraints`
+- The default `logSeverity` of `emailservice`, `cognaioflexsearchservice` and `cognaioauditscleanup` changed from `error` to `info`, so all services now share the same default. Expect more log volume than on 3.0.x — set it back to `error` per service if that matters
+
+### Versions
+|Repository|Version|
+|---|---|
+|dtideregistry.azurecr.io/dti/idp/cognaioinsight-agentic     |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioservice             |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/image                      |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/emailservice               |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioflexsearchservice   |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioauditscleanup       |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/objectdetectionprovider    |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cognaioschemamanager       |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cce-user-manual            |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cognaiopageidentity         |3.1.0|
+|dtideregistry.azurecr.io/dti/idp/cryptoprovider             |3.1.0|
+|dtideregistry.azurecr.io/nginx/nginx                        |1.31.6-alpine-slim|
+|dtideregistry.azurecr.io/redis/redis                        |8.10.2-alpine|
+---
+
 ## Version 3.0.1
 ### Changes
 - Updates to third-party dependencies for all of the services

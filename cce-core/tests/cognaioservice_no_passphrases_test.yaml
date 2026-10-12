@@ -1,0 +1,204 @@
+suite: No key material in the data services
+templates:
+  - "cognaio-service/deployment.yaml"
+  - "cognaio-flexsearch/deployment.yaml"
+tests:
+  # This is the assertion the whole 3.1.0 crypto split comes down to. The keys sit encrypted in
+  # the database and are fetched at runtime through the crypto provider, so a pod that reads
+  # data must hold no key material at all. Stolen configuration is then no longer enough: an
+  # attacker has to keep working inside the cluster, where every request goes through one
+  # service that can be watched and switched off.
+  #
+  # Every name below moved into the SchemaManager's migration env (see schemamanager_job_test).
+  # Careful when extending: Token_*_ExpiresInMinutes look similar but are lifetimes, not keys.
+  - it: should not set a single passphrase on cognaioservice
+    template: "cognaio-service/deployment.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_AuditArtifacts
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_Definitions
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_Templates
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_Crypto_Asymetric
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_Crypto_Symetric
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_Crypto_Symetric_AppKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Token_EncryptionToken_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_AccessToken_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_RefreshToken_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_UnsubscribeToken_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_ExportToken_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_MailboxesToken_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_EnvelopesToken_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_RegisterToken_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_OtpToken_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_AppKey_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_AnalyzeFromContent_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_AnalyzeResponse_Download_JwtKey
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OpenID_PassPhrase_UserInfo
+          any: true
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OpenID_PassPhrase_OidcSecrets
+          any: true
+        not: true
+      # The lifetimes stay - they were never keys
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Token_EncryptionToken_ExpiresInMinutes
+          any: true
+        not: true
+
+  - it: should not set the repositories passphrase on flexsearch
+    template: "cognaio-flexsearch/deployment.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PassPhrase_Repositories
+          any: true
+        not: true
+
+  # What replaces them: an address and a token, no key material. Same pair on both callers.
+  - it: should give both callers the crypto provider instead
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Service_Url
+            value: http://cryptoprovider
+        template: "cognaio-service/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Service_Token
+            valueFrom:
+              secretKeyRef:
+                name: cryptoprovider-env-secrets
+                key: cryptoServiceToken
+        template: "cognaio-service/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Service_Url
+            value: http://cryptoprovider
+        template: "cognaio-flexsearch/deployment.yaml"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Service_Token
+            valueFrom:
+              secretKeyRef:
+                name: cryptoprovider-env-secrets
+                key: cryptoServiceToken
+        template: "cognaio-flexsearch/deployment.yaml"
+
+  # The custody catalogue: nothing is offered unless the deployment says so.
+  - it: should keep every custody capability switched off by default
+    template: "cognaio-service/deployment.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Custody_BYOK_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Custody_HYOK_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Data_Reencryption_Disabled, value: "true"}
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content: {name: Cognaio_Feature_Org_Custody_SelfService_Disabled, value: "true"}

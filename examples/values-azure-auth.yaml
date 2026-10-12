@@ -1,12 +1,16 @@
 # =============================================================================
 # COGNAiO Cloud Extract - Azure Entra ID Authentication
 # =============================================================================
-# Enables Microsoft Entra (Azure AD) authentication for PostgreSQL and
-# Microsoft Graph for email notifications.
+# Enables Microsoft Entra (Azure AD) authentication for PostgreSQL, Microsoft
+# Graph for email notifications, and the managed identity the crypto provider
+# uses to reach its Key Vault key.
 #
 # Two identity approaches are shown:
 #   1. Service Principal (active by default)  - uses client secret
 #   2. Workload Identity  (commented out)     - uses federated credentials
+#
+# Workload Identity is the better answer for the crypto provider in particular:
+# with it, no vault credential has to exist as a secret anywhere.
 #
 # Merge with the base values:
 #   helm upgrade cognaio-idp ./cce-core/ --install -n cce \
@@ -14,7 +18,7 @@
 # =============================================================================
 
 # ---------------------------------------------------------------------------
-# cognaioservice  (core API + schema manager init container)
+# cognaioservice  (core API)
 # ---------------------------------------------------------------------------
 cognaioservice:
   env:
@@ -32,15 +36,6 @@ cognaioservice:
     - name: AZURE_CLIENT_SECRET
       value: "<your-client-secret>"
 
-  init:
-    extraEnv:
-      - name: AZURE_TENANT_ID
-        value: "<your-tenant-id>"
-      - name: AZURE_CLIENT_ID
-        value: "<your-client-id>"
-      - name: AZURE_CLIENT_SECRET
-        value: "<your-client-secret>"
-
   # --- Option 2: Workload Identity (uncomment below, remove extraEnv above) ---
   # serviceAccount:
   #   create: true
@@ -50,6 +45,25 @@ cognaioservice:
   # podLabels:
   #   azure.workload.identity/use: "true"
   #   app.kubernetes.io/part-of: cce-core
+
+# ---------------------------------------------------------------------------
+# cognaioschemamanager  (the migrator - its own Job since 3.1.0, was cognaioservice.init)
+# ---------------------------------------------------------------------------
+cognaioschemamanager:
+  extraEnv:
+    - name: AZURE_TENANT_ID
+      value: "<your-tenant-id>"
+    - name: AZURE_CLIENT_ID
+      value: "<your-client-id>"
+    - name: AZURE_CLIENT_SECRET
+      value: "<your-client-secret>"
+
+  # --- Option 2: Workload Identity (uncomment below, remove extraEnv above) ---
+  # serviceAccount:
+  #   create: true
+  #   annotations:
+  #     azure.workload.identity/client-id: "<your-client-id>"
+  #   automount: true
 
 # ---------------------------------------------------------------------------
 # cognaioflexsearchservice
@@ -105,4 +119,70 @@ cognaioauditscleanup:
   # podLabels:
   #   azure.workload.identity/use: "true"
   #   app.kubernetes.io/component: cognaioauditscleanup
+  #   app.kubernetes.io/part-of: cce-core
+
+# ---------------------------------------------------------------------------
+# pageidentityservice
+# ---------------------------------------------------------------------------
+pageidentityservice:
+  env:
+    db:
+      postgreSqlAuthMode: "entra"
+
+  # --- Option 1: Service Principal ---
+  extraEnv:
+    - name: AZURE_TENANT_ID
+      value: "<your-tenant-id>"
+    - name: AZURE_CLIENT_ID
+      value: "<your-client-id>"
+    - name: AZURE_CLIENT_SECRET
+      value: "<your-client-secret>"
+
+  # --- Option 2: Workload Identity ---
+  # serviceAccount:
+  #   create: true
+  #   annotations:
+  #     azure.workload.identity/client-id: "<your-client-id>"
+  #   automount: true
+  # podLabels:
+  #   azure.workload.identity/use: "true"
+  #   app.kubernetes.io/component: pageidentityservice
+  #   app.kubernetes.io/part-of: cce-core
+
+# ---------------------------------------------------------------------------
+# cryptoprovider  (Azure Key Vault, not PostgreSQL)
+# ---------------------------------------------------------------------------
+# A different resource than the blocks above: this identity needs WRAP/UNWRAP on
+# the platform main key in Key Vault, nothing else and no database. Give it its
+# OWN identity - the point of the service is that no other pod can reach that key.
+#
+# The key URI itself lives in examples/values-crypto-azurekv.yaml together with
+# the bearer token and the voucher key; this block only covers the identity.
+cryptoprovider:
+  env:
+    kek:
+      provider: "azurekv"
+      # azureKeyvaultKeyUri: "https://<vault>.vault.azure.net/keys/<key-name>"
+
+  # --- Option 1: Service Principal ---
+  # Only outside Azure. Inside, prefer Option 2 - a client secret in a pod that
+  # holds the main key is exactly the credential this design tries to remove.
+  extraEnv:
+    - name: AZURE_TENANT_ID
+      value: "<your-tenant-id>"
+    - name: AZURE_CLIENT_ID
+      value: "<your-client-id>"
+    - name: AZURE_CLIENT_SECRET
+      value: "<your-client-secret>"
+
+  # --- Option 2: Workload Identity (recommended - remove extraEnv above) ---
+  # serviceAccount:
+  #   create: true
+  #   name: cryptoprovider
+  #   annotations:
+  #     azure.workload.identity/client-id: "<your-client-id>"
+  #   automount: true
+  # podLabels:
+  #   azure.workload.identity/use: "true"
+  #   app.kubernetes.io/component: cryptoprovider
   #   app.kubernetes.io/part-of: cce-core

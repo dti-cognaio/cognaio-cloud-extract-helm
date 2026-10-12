@@ -1,4 +1,4 @@
-{{- if .Values.objectdetectionprovider.autoscaling.enabled }}
+{{- if and (not .Values.cognaioservice.env.feature.objectDetectionProviderDisabled) .Values.objectdetectionprovider.autoscaling.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

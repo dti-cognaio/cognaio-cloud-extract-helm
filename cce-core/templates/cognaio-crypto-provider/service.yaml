@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.cryptoprovider.service.name }}
+  {{- with .Values.cryptoprovider.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "cognaio.labels" . | nindent 4 }}
+    app: cognaio-idp
+    name: {{ .Values.cryptoprovider.service.name }}
+spec:
+  ports:
+  - name: http
+    port: {{ .Values.cryptoprovider.service.port }}
+    protocol: TCP
+    targetPort: {{ .Values.cryptoprovider.env.port }}
+  selector:
+      {{- include "cognaio.selectorLabels" . | nindent 6 }}
+      {{- with .Values.cryptoprovider.podSelectorLabels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
+  type: {{ .Values.cryptoprovider.service.type }}

@@ -124,3 +124,33 @@ tests:
               target:
                 type: Utilization
                 averageUtilization: 90
+
+  - it: should render pageidentityservice HPA when autoscaling is enabled
+    template: templates/cognaio-page-identity/hpa.yaml
+    set:
+      pageidentityservice:
+        name: pageidentityservice
+        autoscaling:
+          enabled: true
+          minReplicas: 2
+          maxReplicas: 8
+          targetCPUUtilizationPercentage: 80
+          targetMemoryUtilizationPercentage: 80
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: pageidentityservice
+      - equal:
+          path: spec.scaleTargetRef.name
+          value: pageidentityservice
+      - equal:
+          path: spec.scaleTargetRef.kind
+          value: Deployment
+      - equal:
+          path: spec.minReplicas
+          value: 2
+      - equal:
+          path: spec.maxReplicas
+          value: 8

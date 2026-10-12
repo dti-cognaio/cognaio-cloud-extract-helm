@@ -1,4 +1,7 @@
 suite: Lifecycle hooks for all Deployments
+# The Object Detection Provider is off by default; enable it so its templates are covered too.
+set:
+  cognaioservice.env.feature.objectDetectionProviderDisabled: false
 templates:
   - "**/deployment.yaml"
 tests:
@@ -55,6 +58,16 @@ tests:
             exec:
               command: ["/bin/sh", "-c", "sleep 10"]
       objectdetectionprovider:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      pageidentityservice:
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
+      cryptoprovider:
         lifecycle:
           preStop:
             exec:
