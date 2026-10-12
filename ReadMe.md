@@ -240,6 +240,8 @@ The values must then be entered into the environment variables, whereby the priv
 | `cognaioservice.env.essentials.endpointsPrivateKey`                                      | Private key                     | `""`                                                                        |
 | `cognaioservice.env.essentials.endpointsPublicKey`                                       | Public key                      | `""`                                                                        |
 
+> ⚠️ **Since 3.1.0** both values are optional. Leave `endpointsPrivateKey` and `endpointsPublicKey` empty and COGNAiO falls back to its own key pair, generated automatically on first use and stored in the database. If both are set, the env pair wins.
+
 ### PassPhrases and Tokens
 > ⚠️ **Changed in 3.1.0.** These values are no longer configuration of `cognaioservice` and `cognaioflexsearchservice`. Both services hold no key material at all any more - not a single `PassPhrase_*` variable reaches their pods. The keys sit encrypted in the database and are fetched at runtime through the [crypto provider](#crypto-provider-kek-custody).
 >
