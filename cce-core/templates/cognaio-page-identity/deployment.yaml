@@ -39,6 +39,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       restartPolicy: {{ default .Values.image.restartPolicy .Values.pageidentityservice.restartPolicy | default "Always" }}
+# Wait for the SchemaManager Job (crypto provider -> Job -> this service), so this container
+# never reaches a half-migrated database. See _helpers.tpl.
+      {{- include "cognaio.schemaManagerGate" $ | nindent 6 }}
       containers:
         - name: {{ .Values.pageidentityservice.name }}
           image: {{ .Values.image.containerRegistry }}/{{ .Values.pageidentityservice.image.name }}:{{ .Values.pageidentityservice.image.tag }}
@@ -136,5 +139,9 @@ spec:
       {{- end }}
       {{- with .Values.pageidentityservice.tolerations }}
       tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.pageidentityservice.topologySpreadConstraints }}
+      topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -1,0 +1,57 @@
+# =============================================================================
+# COGNAiO Cloud Extract - ArgoCD delivery
+# =============================================================================
+# Hands the recreation of the SchemaManager Job and the crypto -> migrator -> rest
+# ordering to ArgoCD, instead of letting the chart carry it in the Job name.
+#
+# Merge with the base values:
+#   helm upgrade cognaio-idp ./cce-core/ --install -n cce \
+#     -f individual-values.yaml -f examples/values-argocd.yaml
+#
+# Why this exists at all: a finished Job is immutable. Something has to delete and
+# recreate it, or the migration silently does not run on the next rollout - and the
+# gate would read `succeeded` from the PREVIOUS release and wave the services
+# through. The chart's default solves that on its own by putting the release
+# revision in the Job name. That is correct everywhere, but it changes the gate spec
+# on every upgrade, so the four gated services roll along each time.
+#
+# ArgoCD can do better: a Sync hook with BeforeHookCreation deletes the old Job
+# before creating the new one, so the name can stay stable and nothing else rolls.
+# Same pattern as azure-akv-secrets-syncer in the deployment repository.
+# =============================================================================
+
+cognaioschemamanager:
+  # Safe ONLY because of the hook below. Without a tool that deletes before it
+  # creates, leave this at true.
+  jobNamePerRevision: false
+
+  annotations:
+    # A Sync hook runs inside the sync phase and is ordered by sync-wave, so it can
+    # sit between the crypto provider and everything else. PreSync would run before
+    # any normal resource exists, which on a fresh install means before the crypto
+    # provider - and the migrator cannot run without it.
+    argocd.argoproj.io/hook: Sync
+    # This is what makes the stable name safe: the previous Job is removed before
+    # this one is created. It also means the object survives until the next sync,
+    # so `kubectl logs job/cognaioschemamanager` keeps working in the meantime.
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    # After the crypto provider (wave -2), before every deployment (wave 0).
+    argocd.argoproj.io/sync-wave: "-1"
+
+cryptoprovider:
+  # The whole crypto provider - Deployment, Service, Secret, NetworkPolicy,
+  # ServiceAccount, HPA - moves into the earliest wave. ArgoCD waits for it to be
+  # healthy, and healthy means the readiness probe is green, which for this service
+  # means /readyz did a real wrap/unwrap against the configured main key. So a wrong
+  # vault key stops the sync here, before the migrator has touched anything.
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+
+# The wait-for-schema-manager init container stays switched on. Under ArgoCD it is
+# belt and braces for the ordering, but it still earns its keep: it is what holds a
+# pod that starts OUTSIDE a sync - a node drain, an eviction, a scale-up - until the
+# migration of the current release is through.
+#
+# cognaioschemamanager:
+#   gate:
+#     enabled: true

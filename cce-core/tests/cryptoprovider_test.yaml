@@ -1,0 +1,250 @@
+suite: Test the crypto provider (KEK custody)
+templates:
+  - "cognaio-crypto-provider/deployment.yaml"
+  - "cognaio-crypto-provider/networkpolicy.yaml"
+  - "cognaio-crypto-provider/secrets.yaml"
+tests:
+  # /readyz runs a real wrap/unwrap against the configured main key. A tcpSocket probe would
+  # report a pod with an unreachable vault key as ready, and the SchemaManager gate hangs on
+  # that answer - which is the whole reason a wrong key surfaces at deploy time.
+  - it: should use the real readiness endpoint, not just an open socket
+    template: "cognaio-crypto-provider/deployment.yaml"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /readyz
+      - exists:
+          path: spec.template.spec.containers[0].livenessProbe.tcpSocket.port
+
+  # Not all replicas at once: if it goes down, decryption stops once the caches drain.
+  - it: should never replace all replicas at once
+    template: "cognaio-crypto-provider/deployment.yaml"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: cryptoprovider
+      # The guarantee is the rollout, not the count: with maxUnavailable 0 and maxSurge 1 the
+      # replacement pod is ready before the old one goes, whatever replicaCount an operator picks.
+      - equal:
+          path: spec.strategy.rollingUpdate.maxUnavailable
+          value: 0
+      - equal:
+          path: spec.strategy.rollingUpdate.maxSurge
+          value: 1
+
+  - it: should take the bearer token from its own secret
+    template: "cognaio-crypto-provider/deployment.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Service_Token
+            valueFrom:
+              secretKeyRef:
+                name: cryptoprovider-env-secrets
+                key: cryptoServiceToken
+
+  # The crypto provider ships no OTel SDK, so switching telemetry on globally must leave it
+  # untouched rather than set variables nothing reads.
+  - it: should render no OTEL env vars even when telemetry is on
+    template: "cognaio-crypto-provider/deployment.yaml"
+    set:
+      otel.enabled: true
+      otel.endpoint: http://collector.observability.svc.cluster.local:4318
+      otel.endpointGrpc: http://collector.observability.svc.cluster.local:4317
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: OTEL_SDK_DISABLED
+            value: "false"
+        not: true
+
+  - it: should render the azure key vault custody by default
+    template: "cognaio-crypto-provider/deployment.yaml"
+    set:
+      cryptoprovider.env.kek.azureKeyvaultKeyUri: https://vault.vault.azure.net/keys/cce
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KEK_PROVIDER
+            value: "azurekv"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AZURE_KEYVAULT_KEY_URI
+            value: "https://vault.vault.azure.net/keys/cce"
+      # No key material anywhere near the pod when a vault holds it
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KEK_MATERIAL_B64
+            valueFrom:
+              secretKeyRef:
+                name: cryptoprovider-env-secrets
+                key: kekMaterialB64
+        not: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Insecure_Custody_Ack
+            value: "true"
+        not: true
+
+  # env custody is the weakest one and the service refuses to boot with it under
+  # NODE_ENV=production unless the acknowledgement is set too.
+  - it: should render the env custody fallback with its acknowledgement
+    template: "cognaio-crypto-provider/deployment.yaml"
+    set:
+      cryptoprovider.env.kek.provider: env
+      cryptoprovider.env.kek.materialB64: dGVzdA==
+      cryptoprovider.env.kek.kid: env:v1
+      cryptoprovider.env.kek.insecureCustodyAck: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KEK_PROVIDER
+            value: "env"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KEK_KID
+            value: "env:v1"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KEK_MATERIAL_B64
+            valueFrom:
+              secretKeyRef:
+                name: cryptoprovider-env-secrets
+                key: kekMaterialB64
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Insecure_Custody_Ack
+            value: "true"
+
+  # A custody switch deliberately keeps the outgoing provider configured, so both blocks have to
+  # render side by side. Emptying the old lines too early is what blocks a deploy.
+  - it: should keep both custodies configured during a switch
+    template: "cognaio-crypto-provider/deployment.yaml"
+    set:
+      cryptoprovider.env.kek.provider: awskms
+      cryptoprovider.env.kek.awsKmsKeyArn: arn:aws:kms:eu-central-1:1:key/abc
+      cryptoprovider.env.kek.azureKeyvaultKeyUri: https://vault.vault.azure.net/keys/cce
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: KEK_PROVIDER
+            value: "awskms"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AWS_KMS_KEY_ARN
+            value: "arn:aws:kms:eu-central-1:1:key/abc"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: AZURE_KEYVAULT_KEY_URI
+            value: "https://vault.vault.azure.net/keys/cce"
+
+  # Per-organization custody is off unless the voucher key is set.
+  - it: should only wire the voucher key when one is configured
+    template: "cognaio-crypto-provider/deployment.yaml"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Voucher_Key_B64
+            valueFrom:
+              secretKeyRef:
+                name: cryptoprovider-env-secrets
+                key: cryptoVoucherKeyB64
+                optional: true
+        not: true
+
+  - it: should wire the voucher key when it is configured
+    template: "cognaio-crypto-provider/deployment.yaml"
+    set:
+      cryptoprovider.env.cryptoVoucherKeyB64: dGVzdA==
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Voucher_Key_B64
+            valueFrom:
+              secretKeyRef:
+                name: cryptoprovider-env-secrets
+                key: cryptoVoucherKeyB64
+                optional: true
+
+  # An externally managed secret carries the key without it ever passing through values, so the
+  # reference has to be there regardless - optional, so a secret without the key does not block
+  # the pod.
+  - it: should wire the voucher key from an externally managed secret
+    template: "cognaio-crypto-provider/deployment.yaml"
+    set:
+      cryptoprovider.env.secret.init: false
+      cryptoprovider.env.secret.name: byo-crypto-secrets
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Voucher_Key_B64
+            valueFrom:
+              secretKeyRef:
+                name: byo-crypto-secrets
+                key: cryptoVoucherKeyB64
+                optional: true
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: Crypto_Voucher_Key_Previous_B64
+            valueFrom:
+              secretKeyRef:
+                name: byo-crypto-secrets
+                key: cryptoVoucherKeyPreviousB64
+                optional: true
+
+  # Defence layer two: only the three callers may open a socket to the crypto port.
+  - it: should allow exactly the three callers into the crypto port
+    template: "cognaio-crypto-provider/networkpolicy.yaml"
+    asserts:
+      - equal:
+          path: spec.podSelector.matchLabels["app.kubernetes.io/component"]
+          value: cryptoprovider
+      - equal:
+          path: spec.ingress[0].ports[0].port
+          value: 3000
+      - lengthEqual:
+          path: spec.ingress[0].from
+          count: 3
+      - contains:
+          path: spec.ingress[0].from
+          content:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/component: cognaioservice
+      - contains:
+          path: spec.ingress[0].from
+          content:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/component: cognaioflexsearchservice
+      - contains:
+          path: spec.ingress[0].from
+          content:
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/component: cognaioschemamanager
+
+  - it: should not render a network policy when it is switched off
+    template: "cognaio-crypto-provider/networkpolicy.yaml"
+    set:
+      cryptoprovider.networkPolicy.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

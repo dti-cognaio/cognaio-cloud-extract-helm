@@ -25,11 +25,11 @@ spec:
       {{- end }}
       labels:
         {{- include "cognaio.labels" . | nindent 8 }}
-        {{- with (merge (.Values.cognaioservice.podLabels | default dict) (.Values.podLabels | default dict)) }}
+        {{- /* podSelectorLabels first and into a fresh dict: the pod MUST carry the labels the
+             selector above matches on, and merging (rather than emitting a second block) keeps
+             a key that appears in both from being written twice. */ -}}
+        {{- with (merge (dict) (.Values.cognaioservice.podSelectorLabels | default dict) (.Values.cognaioservice.podLabels | default dict) (.Values.podLabels | default dict)) }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.cognaioservice.podSelectorLabels }}
-          {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
@@ -42,198 +42,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       restartPolicy: {{ default .Values.image.restartPolicy .Values.cognaioservice.restartPolicy | default "Always" }}
-# Database Schema Manager Init container
-      initContainers:
-        - name: init-cognaio-schema-manager
-          image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioservice.init.image.name }}:{{ .Values.cognaioservice.init.image.tag }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- with (default .Values.securityContext .Values.cognaioservice.init.securityContext ) }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          env:
-          - name: COGNAIOENVIRONMENTVARIABLES__ENVIRONMENTNAMESPACE
-            value: {{ .Values.cognaio.namespace | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__ORGANIZATIONUSERS
-            value: {{ include "cognaio.organizationUsers" . }}
-          - name: COGNAIOENVIRONMENTVARIABLES__DBNAME
-            value: {{ .Values.cognaioservice.env.db.postgreSqlDbName | quote }} 
-          - name: COGNAIOENVIRONMENTVARIABLES__DBPASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name}}
-                key: postgreSqlPwd
-          - name: COGNAIOENVIRONMENTVARIABLES__DBUSER
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: postgreSqlUser
-          - name: COGNAIOENVIRONMENTVARIABLES__DBSERVER
-            value: {{ .Values.cognaioservice.env.db.postgreSqlDbServer | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__DBPORT
-            value: {{ .Values.cognaioservice.env.db.postgreSqlDbPort | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__DBSSLREQUIRED
-            value: {{ .Values.cognaioservice.env.db.postgreSqlSslRequired | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__POSTGRESQLAUTHMODE
-            value: {{ .Values.cognaioservice.env.db.postgreSqlAuthMode | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__DBCHECKEXISTENCE
-            value: {{ .Values.cognaioservice.env.db.dbCheckExistence | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASETEMPLATES
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseTemplates
-          - name: COGNAIOENVIRONMENTVARIABLES__PASSPHRASEDEFINITIONS
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseDefinitions
-          - name: COGNAIOENVIRONMENTVARIABLES__APIKEYAZUREOPENAI
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: apikeyAzureOpenAi
-          - name: COGNAIOENVIRONMENTVARIABLES__APIKEYNATIVEOPENAI
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: apikeyNativeOpenAi
-          - name: COGNAIOENVIRONMENTVARIABLES__APIKEYAIFOUNDRY
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: apikeyAiFoundry
-          - name: COGNAIOENVIRONMENTVARIABLES__APIKEYAZUREAIDOCUMENTINTELLIGENCE
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: apikeyAzureAiDocumentIntelligence
-          - name: COGNAIOENVIRONMENTVARIABLES__APIKEYAZURECOGNITIVESERVICESCOMPUTERVISION
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: apikeyAzureCognitiveServicesComputervision
-          - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAZUREOPENAI
-            value: {{ .Values.cognaioservice.env.ai.endpointAzureOpenAi | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTNATIVEOPENAI
-            value: {{ .Values.cognaioservice.env.ai.endpointNativeOpenAi | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAIFOUNDRY
-            value: {{ .Values.cognaioservice.env.ai.endpointAiFoundry | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAZUREAIDOCUMENTINTELLIGENCE
-            value: {{ .Values.cognaioservice.env.ai.endpointAzureAiDocumentIntelligence | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTAZURECOGNITIVESERVICESCOMPUTERVISION
-            value: {{ .Values.cognaioservice.env.ai.endpointAzureCognitiveServicesComputerVision | quote }}
-  # Other LLMS
-          - name: COGNAIOENVIRONMENTVARIABLES__APIKEYNATIVEGEMINI
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: apikeyNativeGemini
-          - name: COGNAIOENVIRONMENTVARIABLES__APIKEYNATIVEANTHROPIC
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: apikeyNativeAnthropic
-          - name: COGNAIOENVIRONMENTVARIABLES__APIKEYNATIVECEREBRAL
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: apikeyNativeCerebral
-          - name: COGNAIOENVIRONMENTVARIABLES__ENDPOINTNATIVECEREBRAL
-            value: {{ .Values.cognaioservice.env.ai.endpointNativeCerebral | quote }}
-  # OpenID Passphrase
-          - name: COGNAIOENVIRONMENTVARIABLES__PWDOIDC
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: openIDPassPhraseOidcSecrets
-  # OpenID Microsoft
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCMICROSOFTDISABLED
-            value: {{ .Values.cognaioservice.env.openID.microsoftDisabled | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCMICROSOFTCLIENTID
-            value: {{ .Values.cognaioservice.env.openID.microsoftClientId | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCMICROSOFTCLIENTSECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: openIDMicrosoftClientSecret
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCMICROSOFTTENANT
-            value: {{ .Values.cognaioservice.env.openID.microsoftTenant | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCMICROSOFTTENANTSEXPECTED
-            value: {{ .Values.cognaioservice.env.openID.microsoftTenantsExpected | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCMICROSOFTLAYOUTORDER
-            value: {{ .Values.cognaioservice.env.openID.microsoftLayoutOrder | quote }}
-  # OpenID Google
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCGOOGLEDISABLED
-            value: {{ .Values.cognaioservice.env.openID.googleDisabled | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCGOOGLECLIENTID
-            value: {{ .Values.cognaioservice.env.openID.googleClientId | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCGOOGLECLIENTSECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: openIDGoogleClientSecret
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCGOOGLETENANTSEXPECTED
-            value: {{ .Values.cognaioservice.env.openID.googleTenantsExpected | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCGOOGLELAYOUTORDER
-            value: {{ .Values.cognaioservice.env.openID.googleLayoutOrder | quote }}
-  # OpenID Github
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCGITHUBDISABLED
-            value: {{ .Values.cognaioservice.env.openID.githubDisabled | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCGITHUBCLIENTID
-            value: {{ .Values.cognaioservice.env.openID.githubClientId | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCGITHUBCLIENTSECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: openIDGithubClientSecret
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCGITHUBTENANTSEXPECTED
-            value: {{ .Values.cognaioservice.env.openID.githubTenantsExpected | quote }}
-          - name: COGNAIOENVIRONMENTVARIABLES__OIDCGITHUBLAYOUTORDER
-            value: {{ .Values.cognaioservice.env.openID.githubLayoutOrder | quote }}
-  # AWS Settings
-      # AWS Textract
-          - name: COGNAIOENVIRONMENTVARIABLES__ACCESSKEYIDAWSTEXTRACT
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: accesskeyIdAwsTextract
-          - name: COGNAIOENVIRONMENTVARIABLES__SECRETACCESSKEYAWSTEXTRACT
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: secretAccessKeyAwsTextract
-          - name: COGNAIOENVIRONMENTVARIABLES__REGIONAWSTEXTRACT
-            value: {{ .Values.cognaioservice.env.aws.regionAwsTextract | quote }}
-      # AWS Bedrock
-          - name: COGNAIOENVIRONMENTVARIABLES__ACCESSKEYIDAWSBEDROCK
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: accesskeyIdAwsBedrock
-          - name: COGNAIOENVIRONMENTVARIABLES__SECRETACCESSKEYAWSBEDROCK
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: secretAccessKeyAwsBedrock
-          - name: COGNAIOENVIRONMENTVARIABLES__REGIONAWSBEDROCK
-            value: {{ .Values.cognaioservice.env.aws.regionAwsBedrock | quote }}
-          {{- with (include "cognaio.otelEnv" (dict "root" $ "svc" .Values.cognaioservice.init "serviceName" "cognaioschemamanager" "protocol" "grpc" "noCapture" true "noPropagate" true)) }}
-  # OpenTelemetry (the SchemaManager exports via OTLP/gRPC; it is a worker
-  # without HTTP server -> no header attribution, no propagators)
-          {{- . | nindent 10 }}
-          {{- end }}
-          {{- with .Values.cognaioservice.init.extraEnv }}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
-          {{- with .Values.cognaioservice.init.resources }}
-          resources: 
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          volumeMounts:
-          {{- with .Values.cognaioservice.init.additionalVolumeMounts }}
-            {{- toYaml . | nindent 12 }}
-          {{- end}}
+# The SchemaManager runs as its own Job now (crypto provider -> Job -> this service). Wait for
+# it, so this container never reaches a half-migrated database. See _helpers.tpl.
+      {{- include "cognaio.schemaManagerGate" $ | nindent 6 }}
 # Main Container
       containers:
         - name: {{ .Values.cognaioservice.name }}
@@ -280,11 +91,40 @@ spec:
             value: http://{{ .Values.cognaioauditscleanup.service.name }}
           - name: BaseUrl_UserManual
             value: http://{{ .Values.usermanual.service.name }}
+  # Page Identity. The image falls back to an nginx route that this chart does not render, so
+  # the address has to be set explicitly: the service is reachable in-cluster only. The admin
+  # token comes from the pageidentityservice secret rather than a second copy here - it
+  # authorizes the /admin/tenants/* calls cognaioservice makes at startup, and while it is
+  # empty every one of them fails closed with 503.
+          - name: BaseCognaioPageIdentityServiceUrl
+            value: http://{{ .Values.pageidentityservice.service.name }}
+          - name: Cognaio_PageIdentity_Admin_Token
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.pageidentityservice.env.secret.name }}
+                key: pageIdentityAdminToken
+          {{- with .Values.cognaioservice.env.pageIdentity.initialRetentionMonths }}
+          - name: Cognaio_PageIdentity_Initial_Retention_Months
+            value: {{ . | quote }}
+          {{- end }}
+          - name: Cognaio_PageIdentity_Deployment_Mode
+            value: {{ .Values.cognaioservice.env.pageIdentity.deploymentMode | quote }}
           - name: RedisProviderUrl
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.redis.secret.name }}
                 key: providerUrl
+  # Remote KEK custody - the crypto provider (mandatory since 3.1.0). This process holds NO key
+  # material and no vault credentials: it sends 32-byte data keys to be wrapped and wrapped blobs
+  # to be unwrapped, and payloads never cross. An unreachable service is a hard boot failure.
+  # The URL stays http:// - mTLS on this hop comes from the service mesh.
+          - name: Crypto_Service_Url
+            value: http://{{ .Values.cryptoprovider.service.name }}
+          - name: Crypto_Service_Token
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.cryptoprovider.env.secret.name }}
+                key: cryptoServiceToken
   # DB
           - name: PostgreSql_User
             valueFrom:
@@ -310,101 +150,12 @@ spec:
   # Notification
           - name: Notification_Provider
             value: {{ .Values.cognaioservice.env.mailAccount.notificationProvider | quote }}
-  # Tokens
-          - name: PassPhrase_AuditArtifacts
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseAuditArtifacts
-          - name: PassPhrase_Definitions
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseDefinitions
-          - name: PassPhrase_Templates
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseTemplates
-  #
-          - name: PassPhrase_Crypto_Asymetric
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseCryptoAsymetric
-          - name: PassPhrase_Crypto_Symetric
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseCryptoSymetric
-          - name: Token_EncryptionToken_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: tokenEncryptionTokenJwtKey
-          - name: PassPhrase_AccessToken_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseAccessTokenJwtKey
-          - name: PassPhrase_RefreshToken_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseRefreshTokenJwtKey
-          - name: PassPhrase_UnsubscribeToken_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseUnsubscribeTokenJwtKey
-          - name: PassPhrase_ExportToken_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseExportTokenJwtKey
-          - name: PassPhrase_MailboxesToken_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseMailboxesTokenJwtKey
-          - name: PassPhrase_EnvelopesToken_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseEnvelopesTokenJwtKey
-  #
-          - name: PassPhrase_RegisterToken_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseRegisterTokenJwtKey
-          - name: PassPhrase_OtpToken_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseOtpTokenJwtKey
-  #
-          - name: PassPhrase_AppKey_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseAppKeyJwtKey
-          - name: PassPhrase_Crypto_Symetric_AppKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseCryptoSymetricAppKey
-  #
-          - name: PassPhrase_AnalyzeFromContent_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseAnalyzeFromContentJwtKey
-          - name: PassPhrase_AnalyzeResponse_Download_JwtKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: passPhraseAnalyzeResponseDownloadJwtKey
+          - name: Notification_Sends_Emergency_Disabled
+            value: {{ .Values.cognaioservice.env.mailAccount.notificationSendsEmergencyDisabled | quote }}
+  # No PassPhrase_* here any more. Every former value was seeded once into the key table by the
+  # SchemaManager and is fetched from there at runtime through the crypto provider - this pod
+  # holds no key material at all. Careful when cleaning up values: Token_*_ExpiresInMinutes are
+  # lifetimes, not keys, and they stay.
   # Mailbox Account
           - name: MailAccount_Host
             value: {{ .Values.cognaioservice.env.mailAccount.host | quote }} 
@@ -460,17 +211,6 @@ spec:
             value: {{ .Values.cognaioservice.env.essentials.featureExceedsLimitsNotificationTimeoutInDays | quote }}
           - name: Cognaio_Otp_Disabled
             value: {{ .Values.cognaioservice.env.otpDisabled | quote }}
-  # OpenID
-          - name: OpenID_PassPhrase_UserInfo
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: openIDPassPhraseUserInfo
-          - name: OpenID_PassPhrase_OidcSecrets
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.cognaioservice.env.secret.name }}
-                key: openIDPassPhraseOidcSecrets
   # Other
           - name: LogSeverity
             value: {{ .Values.cognaioservice.env.logSeverity }}
@@ -483,11 +223,13 @@ spec:
                 key: endpointsPrivateKey
           - name: Endpoints_PublicKey
             value: {{ .Values.cognaioservice.env.essentials.endpointsPublicKey | quote }}
-  # Additional Features
+  # Additional Features. true = the capability is not offered on this deployment.
           - name: Cognaio_Feature_Cerebral_Edge_Disabled
             value: {{ .Values.cognaioservice.env.feature.cerebralEdgeDisabled | quote }}
           - name: Cognaio_Feature_Aws_Services_Disabled
             value: {{ .Values.cognaioservice.env.feature.awsServicesDisabled | quote }}
+          - name: Cognaio_Feature_Vodafone_Ai_Booster_Disabled
+            value: {{ .Values.cognaioservice.env.feature.vodafoneAiBoosterDisabled | quote }}
           - name: Cognaio_Feature_AppKeyUsage_Disabled
             value: {{ .Values.cognaioservice.env.feature.appKeyUsageDisabled | quote }}
           - name: Cognaio_Feature_Page_Retention_Disabled
@@ -498,6 +240,27 @@ spec:
             value: {{ .Values.cognaioservice.env.feature.endpointsManageDisabled | quote }}
           - name: Cognaio_Feature_View_Platform_Audits_Disabled
             value: {{ .Values.cognaioservice.env.feature.viewPlatformAuditsDisabled | quote }}
+          - name: Cognaio_Feature_Reporting_PageIdentity_Disabled
+            value: {{ .Values.cognaioservice.env.feature.reportingPageIdentityDisabled | quote }}
+          - name: Cognaio_Feature_Data_Reencryption_Disabled
+            value: {{ .Values.cognaioservice.env.feature.dataReencryptionDisabled | quote }}
+          - name: Cognaio_Feature_Org_Custody_SelfService_Disabled
+            value: {{ .Values.cognaioservice.env.feature.orgCustodySelfServiceDisabled | quote }}
+          - name: Cognaio_Feature_Custody_BYOK_Disabled
+            value: {{ .Values.cognaioservice.env.feature.custodyByokDisabled | quote }}
+          - name: Cognaio_Feature_Custody_HYOK_Disabled
+            value: {{ .Values.cognaioservice.env.feature.custodyHyokDisabled | quote }}
+          - name: Cognaio_Feature_Reporting_Empty_Pages_Disabled
+            value: {{ .Values.cognaioservice.env.feature.reportingEmptyPagesDisabled | quote }}
+          - name: Cognaio_Feature_ObjectDetectionProvider_Disabled
+            value: {{ .Values.cognaioservice.env.feature.objectDetectionProviderDisabled | quote }}
+  # Login-screen toggles
+          - name: Cognaio_UI_Login_Analysis_Show_Available_Platform_Defaults
+            value: {{ .Values.cognaioservice.env.ui.loginAnalysisShowAvailablePlatformDefaults | quote }}
+          - name: Cognaio_UI_Login_My_Cognaio_Show_Available_Platform_Defaults
+            value: {{ .Values.cognaioservice.env.ui.loginMyCognaioShowAvailablePlatformDefaults | quote }}
+          - name: Cognaio_UI_Login_Analysis_Show_AppKey
+            value: {{ .Values.cognaioservice.env.ui.loginAnalysisShowAppKey | quote }}
           - name: Oidc_ProviderTypes_Disabled
             value: {{ .Values.cognaioservice.env.openID.oidcProviderTypesDisabled | quote }}
           - name: ServiceAccount_Permissions_To_Exclude
@@ -530,9 +293,6 @@ spec:
       {{- with .Values.cognaioservice.additionalVolumes }}
         {{- toYaml . | nindent 8 }}
       {{- end}}
-      {{- with .Values.cognaioservice.init.additionalVolumes }}
-        {{- toYaml . | nindent 8 }}
-      {{- end}}
       {{- with .Values.cognaioservice.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -543,5 +303,9 @@ spec:
       {{- end }}
       {{- with .Values.cognaioservice.tolerations }}
       tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cognaioservice.topologySpreadConstraints }}
+      topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}

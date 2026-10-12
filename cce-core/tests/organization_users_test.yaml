@@ -1,6 +1,6 @@
 suite: Test organization users rendering
 templates:
-  - "cognaio-service/deployment.yaml"
+  - "cognaio-schema-manager/job.yaml"
 tests:
   - it: should generate correct organization users string
     set:
@@ -10,7 +10,7 @@ tests:
         - "email_3@example.com"
     asserts:
       - contains:
-          path: spec.template.spec.initContainers[0].env
+          path: spec.template.spec.containers[0].env
           content:
             name: COGNAIOENVIRONMENTVARIABLES__ORGANIZATIONUSERS
             value: "'email_1@example.com','email_2@example.com','email_3@example.com'"

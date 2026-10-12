@@ -64,11 +64,6 @@ spec:
             value: {{ .Values.emailservice.env.port | quote }}  
           - name: LogSeverity
             value: {{ .Values.emailservice.env.logSeverity }}
-          - name: PassPhrase_Crypto_Symetric_AppKey
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.emailservice.env.secret.name }}
-                key: passPhraseCryptoSymetricAppKey
           {{- with (include "cognaio.otelEnv" (dict "root" $ "svc" .Values.emailservice "serviceName" "emailservice")) }}
   # OpenTelemetry (global: .Values.otel, overrides: emailservice.otel)
           {{- . | nindent 10 }}
@@ -105,5 +100,9 @@ spec:
       {{- end }}
       {{- with .Values.emailservice.tolerations }}
       tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.emailservice.topologySpreadConstraints }}
+      topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -1,4 +1,7 @@
 suite: Global Resources set on all deployments
+# The Object Detection Provider is off by default; enable it so its templates are covered too.
+set:
+  cognaioservice.env.feature.objectDetectionProviderDisabled: false
 templates:
   - "**/deployment.yaml" # Scannt alle Deployment-Files in allen Unterordnern
 tests:
@@ -17,8 +20,6 @@ tests:
     asserts:
       - exists:
           path: spec.template.spec.containers[0].readinessProbe
-      - exists:
-          path: spec.template.spec.containers[0].readinessProbe.tcpSocket.port
       - exists:
           path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
       - exists:

@@ -14,6 +14,9 @@ spec:
   selector:
     matchLabels:
       {{- include "cognaio.selectorLabels" . | nindent 6 }}
+      {{- with .Values.cognaioauditscleanup.podSelectorLabels }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}
   template:
     metadata:
       {{- with (merge (.Values.cognaioauditscleanup.podAnnotations | default dict) (.Values.podAnnotations | default dict)) }}
@@ -36,6 +39,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       restartPolicy: {{ default .Values.image.restartPolicy .Values.cognaioauditscleanup.restartPolicy | default "Always" }}
+# Wait for the SchemaManager Job (crypto provider -> Job -> this service), so this container
+# never reaches a half-migrated database. See _helpers.tpl.
+      {{- include "cognaio.schemaManagerGate" $ | nindent 6 }}
       containers:
         - name: {{ .Values.cognaioauditscleanup.name }}
           image: {{ .Values.image.containerRegistry }}/{{ .Values.cognaioauditscleanup.image.name }}:{{ .Values.cognaioauditscleanup.image.tag }}
@@ -121,5 +127,9 @@ spec:
       {{- end }}
       {{- with .Values.cognaioauditscleanup.tolerations }}
       tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cognaioauditscleanup.topologySpreadConstraints }}
+      topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}

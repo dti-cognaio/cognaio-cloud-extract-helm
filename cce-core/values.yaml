@@ -78,10 +78,21 @@ nginx:
   securityContext: {}
   image:
     name: nginx/nginx
-    tag: 1.31.3-alpine-slim
+    tag: 1.31.6-alpine-slim
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: nginx
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: nginx
     port: 80
@@ -154,10 +165,21 @@ usermanual:
   securityContext: {}
   image:
     name: dti/idp/cce-user-manual
-    tag: "develop"
+    tag: "3.1.0"
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cce-user-manual
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: cce-user-manual
     port: 80
@@ -229,10 +251,21 @@ redis:
   securityContext: {}
   image:
     name: redis/redis
-    tag: 8.8.0-alpine
+    tag: 8.10.2-alpine
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: redis
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: redis
     port: 6379
@@ -305,10 +338,21 @@ cognaioinsightagentic:
   securityContext: {}
   image:
     name: dti/idp/cognaioinsight-agentic
-    tag: "develop"
+    tag: "3.1.0"
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cognaioinsight-agentic
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: cognaioinsight-agentic
     port: 80
@@ -378,40 +422,12 @@ cognaioservice:
     automount: false
   podSecurityContext: {}
   securityContext: {}
-  init:
-    image:
-      name: dti/idp/cognaioschemamanager
-      tag: "develop"
-    # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the SchemaManager init container (OTLP/gRPC); empty = global .Values.otel.
-    otel: {}
-      # enabled: true
-      # serviceName: "cognaioschemamanager"
-      # endpoint: ""
-      # captureHeaders: ""
-    securityContext: {}
-    resources:
-      limits:
-        memory: "512Mi"
-      requests:
-        memory: "256Mi"
-        cpu: "100m"
-    additionalVolumeMounts: []
-    #   - mountPath: /app/tmp
-    #     name: cache-volume
-    additionalVolumes: []
-    #   - name: cache-volume
-    #     emptyDir: {}
-    extraEnv: []
-    # - name: MY_EXTRA_VAR
-    #   value: "my-value"
-    # - name: MY_SECRET_VAR
-    #   valueFrom:
-    #     secretKeyRef:
-    #       name: my-secret
-    #       key: my-key
+  # NOTE: the SchemaManager used to run here as `cognaioservice.init`. Since 3.1.0 it is a
+  # standalone Job (see the `cognaioschemamanager` block) that must run AFTER the crypto
+  # provider and BEFORE every database service.
   image:
     name: dti/idp/cognaioservice
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for CognaioService (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -421,6 +437,17 @@ cognaioservice:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cognaioservice
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: cognaioservice
     port: 80
@@ -505,6 +532,7 @@ cognaioservice:
           ciphers: "SSLv3"
           rejectUnauthorized: false
       notificationProvider: "smtp" # any other provider than 'graph' would lead to standard SMTP usage
+      notificationSendsEmergencyDisabled: false
     organization:
       users:
         - "email_1@example.com"
@@ -543,19 +571,90 @@ cognaioservice:
       githubTenantsExpected: ""
       githubLayoutOrder: 3
       oidcProviderTypesDisabled: ""
+    # The Page Identity service. cognaioservice pushes the page fingerprints there and asks it
+    # for the distinct-page reports, so it needs the address and the admin token. The token is
+    # read straight from the pageidentityservice secret - one value, so the two sides cannot
+    # drift apart - and the URL is the in-cluster service name: there is no nginx route for
+    # this service, so the fallback baked into the image does not work here.
+    pageIdentity:
+      # Months of retention handed to a tenant when cognaioservice registers it. Empty = the
+      # default of the image.
+      initialRetentionMonths: ""
+      # internal = the Page Identity service is part of this deployment (what this chart does).
+      deploymentMode: "internal"
     essentials:
       warningNotificationTimeoutInHours: 48
       featureExceedsLimitsNotificationTimeoutInDays: 2
       endpointsPrivateKey: ""
       endpointsPublicKey: ""
+    # Feature catalogue. Every entry maps 1:1 to a Cognaio_Feature_*_Disabled variable.
+    #
+    # Convention throughout: `true` means the capability is NOT offered on this deployment.
+    # The flag decides whether a capability exists here at all; where a per-organization
+    # entitlement also applies, that stays admin-set in the UI and the flag only opens the door.
+    #
+    # The defaults follow the image config, with four deliberate exceptions that this chart has
+    # always offered and keeps offering: cerebralEdgeDisabled, llmTemplatesSyncDisabled,
+    # endpointsManageDisabled and viewPlatformAuditsDisabled. Changing them would take
+    # capabilities away from every existing deployment that relies on the chart default.
     feature:
+      # Cerebral Edge. Offered here; `true` in the image config.
       cerebralEdgeDisabled: false
+      # AWS services (Textract / Bedrock).
       awsServicesDisabled: true
+      # The Vodafone AI Booster service account.
+      vodafoneAiBoosterDisabled: true
+      # Application key (app key) usage.
       appKeyUsageDisabled: false
+      # Page retention.
       pageRetentionDisabled: false
+      # Automatic synchronization of the LLM template store. Offered here; `true` in the image.
       llmTemplatesSyncDisabled: false
+      # Endpoints management permissions. Offered here; `true` in the image config. Note that
+      # service accounts and non-administration members are additionally excluded through
+      # serviceAccountPermissionsToExclude below - this flag alone does not give them the
+      # endpoint API.
       endpointsManageDisabled: false
+      # The platform audit log admin feature (browse / export audit artifacts). Offered here;
+      # `true` in the image config.
       viewPlatformAuditsDisabled: false
+      # Distinct-page reporting on top of the Page Identity service. Deploying that service does
+      # not switch the reporting on - this does.
+      reportingPageIdentityDisabled: true
+      # Billable data re-encryption on key rotation. The standard offering rotates the KEY, not
+      # the data already stored under the old one; catching that data up is the add-on this
+      # unlocks (entitlement per organization stays admin-set).
+      dataReencryptionDisabled: true
+      # Organization admins configuring the key for their OWN organization instead of every
+      # change going through a platform operator. The flag alone opens nothing: it has to meet a
+      # permission granted per organization, which makes it safe to switch on ahead of the first
+      # customer who asks.
+      orgCustodySelfServiceDisabled: true
+      # Which custody tiers this deployment OFFERS. `local` (platform-managed) always works and
+      # cannot be switched off.
+      #   BYOK - the customer generates the key and imports it; we hold and use it from then on.
+      #   HYOK - the key stays in the customer's own Azure KV / AWS KMS / GCP KMS; we call out
+      #          per unwrap, and they can revoke our access unilaterally.
+      # Two switches, so "BYOK yes, HYOK no" is expressible: bring your own key, but this
+      # deployment keeps NO outgoing connection to customer vaults and no availability coupling
+      # to them (the "no outbound traffic from the SaaS" compliance posture).
+      # Both apply to NEW custody only - an organization already on a vault keeps working, since
+      # narrowing the catalogue must never take running data offline.
+      custodyByokDisabled: true
+      custodyHyokDisabled: true
+      # Gates ONLY the DISPLAY of the empty-page columns (Pages empty / Pages distinct empty) in
+      # the audit-report UI and the CSV/MD exports. Detection and all reporting math still run;
+      # this just hides the columns.
+      reportingEmptyPagesDisabled: true
+      # The Object Detection Provider. `true` also removes the whole objectdetectionprovider
+      # workload from the release (Deployment, Service, HPA, ServiceAccount) together with its
+      # nginx upstream and /objectdetectionprovider/ route.
+      objectDetectionProviderDisabled: true
+    # Login-screen toggles. Not capabilities, just what the sign-in views offer.
+    ui:
+      loginAnalysisShowAvailablePlatformDefaults: true
+      loginMyCognaioShowAvailablePlatformDefaults: true
+      loginAnalysisShowAppKey: true
     environmentNameForNotifications: "COGNAiO IDP"
     otpDisabled: false
     serviceAccountPermissionsToExclude: '{"teamMembers": ["all"], "appkey": ["all"], "audits": ["can_download_artifacts_sensitive_info"], "endpoints": ["all"], "adminRuntime": ["all"], "designer": ["can_manage_llm_templates", "can_sync_llm_templates"], "oidc": ["all"]}'
@@ -627,7 +726,7 @@ emailservice:
   securityContext: {}
   image:
     name: dti/idp/emailservice
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the EmailService (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -637,17 +736,24 @@ emailservice:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: emailservice
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: emailservice
     port: 80
     type: ClusterIP
   env:
     port: 7171
-    logSeverity: "error"
-    secret:
-      name: emailservice-env-secrets
-      init: true
-    passPhraseCryptoSymetricAppKey: ""
+    logSeverity: "info"
   livenessProbe:
     tcpSocket:
       port: 7171
@@ -705,7 +811,7 @@ cognaioflexsearchservice:
   securityContext: {}
   image:
     name: dti/idp/cognaioflexsearchservice
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for FlexSearch (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -715,6 +821,17 @@ cognaioflexsearchservice:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cognaioflexsearchservice
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: cognaioflexsearchservice
     port: 80
@@ -735,7 +852,7 @@ cognaioflexsearchservice:
     secret:
       name: cognaioflexsearchservice-env-secrets
       init: true
-    logSeverity: "error"
+    logSeverity: "info"
     passPhrase_Repositories: ""
     maxContentPreviewLimit: 100
     contentPreviewDisabled: false
@@ -801,7 +918,7 @@ imageprovider:
   securityContext: {}
   image:
     name: dti/idp/image
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the ImageProvider (OTLP/gRPC); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -811,6 +928,17 @@ imageprovider:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: imageprovider
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: imageprovider
     port: 80
@@ -874,7 +1002,7 @@ cognaioauditscleanup:
   securityContext: {}
   image:
     name: dti/idp/cognaioauditscleanup
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for AuditsCleanup (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -884,6 +1012,17 @@ cognaioauditscleanup:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cognaioauditscleanup
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: cognaioauditscleanup
     port: 80
@@ -904,7 +1043,7 @@ cognaioauditscleanup:
     secret:
       name: cognaioauditscleanup-env-secrets
       init: true
-    logSeverity: "error"
+    logSeverity: "info"
     # extra_ca_certs: /app/ca-certificates.crt
   livenessProbe:
     tcpSocket:
@@ -967,7 +1106,7 @@ objectdetectionprovider:
   securityContext: {}
   image:
     name: dti/idp/objectdetectionprovider
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the ObjectDetectionProvider (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -977,6 +1116,17 @@ objectdetectionprovider:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: objectdetectionprovider
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: objectdetectionprovider
     port: 80
@@ -1040,7 +1190,7 @@ pageidentityservice:
   securityContext: {}
   image:
     name: dti/idp/cognaiopageidentity
-    tag: "develop"
+    tag: "3.1.0"
   # OTel overrides (enabled / serviceName / endpoint / captureHeaders) for the PageIdentityService (OTLP/HTTP); empty = global .Values.otel.
   otel: {}
     # enabled: true
@@ -1050,6 +1200,17 @@ pageidentityservice:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: pageidentityservice
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
   service:
     name: pageidentityservice
     port: 80
@@ -1073,6 +1234,9 @@ pageidentityservice:
       schemas:
         - cognaio_page_identity
     logSeverity: "info"
+    # Shared with cognaioservice, which reads it from THIS secret - so there is no second value
+    # to keep in sync. While it is empty every admin request fails closed with 503, which is
+    # what makes the service look broken on a fresh deployment.
     pageIdentityAdminToken: ""
   livenessProbe:
     tcpSocket:
@@ -1111,3 +1275,332 @@ pageidentityservice:
   extraContainers: []
   # - name: my-sidecar
   #   image: my-registry/my-sidecar:1.0.0
+
+# ---------------------------------------------------------------------------------------------
+# cognaio-crypto - the KEK custody service (encryption 3.1.0)
+#
+# Holds the main key (KEK) and does nothing else: it wraps and unwraps the data keys that
+# cognaioservice, cognaioflexsearchservice and the SchemaManager send it. It sees no documents,
+# no customer data, no database - only short key values and the request to lock or unlock them.
+#
+# The point is that nobody holds both halves: whoever reaches the database finds only encrypted
+# data keys, worthless without the main key, and whoever holds the main key has no database
+# access. That separation is the entire security gain, and it is not created in the code - it is
+# created in the deployment. It only holds as long as the two really run apart.
+#
+# Never behind nginx or an ingress, and no published port: the callers reach it over the
+# in-cluster service name. mTLS on this hop comes from the service mesh (Istio), which is why
+# the URL the callers get stays http:// - the sidecar makes it mutual.
+# ---------------------------------------------------------------------------------------------
+cryptoprovider:
+  name: cryptoprovider
+  replicaCount: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  podLabels:
+    app.kubernetes.io/component: cryptoprovider
+    app.kubernetes.io/part-of: cce-core
+  podSelectorLabels:
+    app.kubernetes.io/component: cryptoprovider
+  # Its own cloud identity, and only its own: vault access should hang off THIS service account
+  # (Workload Identity on Azure, IRSA on AWS). Then no vault credential has to sit in a file or
+  # a secret at all, and no other pod gets that permission.
+  serviceAccount:
+    create: false
+    annotations: {}
+      # azure.workload.identity/client-id: "00000000-0000-0000-0000-000000000000"
+    name: "default"
+    automount: false
+  podSecurityContext: {}
+  securityContext: {}
+  image:
+    name: dti/idp/cryptoprovider
+    tag: "3.1.0"
+  # No otel block on purpose - the crypto provider ships no OpenTelemetry SDK.
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # Spread the replicas of THIS component. The labelSelector has to name the component,
+  # a chart-wide default would pull in every other pod of the release.
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: ScheduleAnyway
+  #   labelSelector:
+  #     matchLabels:
+  #       app.kubernetes.io/component: cryptoprovider
+  #   matchLabelKeys:
+  #     - pod-template-hash
+  topologySpreadConstraints: []
+  service:
+    name: cryptoprovider
+    port: 80
+    type: ClusterIP
+  # Annotations on every crypto resource (Deployment, Service, Secret, NetworkPolicy,
+  # ServiceAccount, HPA). Under ArgoCD this is where the sync wave goes that has to bring the
+  # crypto provider up before the SchemaManager Job - see examples/values-argocd.yaml.
+  annotations: {}
+    # argocd.argoproj.io/sync-wave: "-2"
+  # Only the three callers may open a socket to the crypto port. The NetworkPolicy answers who
+  # may reach the service, the mesh answers who the service is talking to - complementary, so
+  # keep both rather than one instead of the other.
+  networkPolicy:
+    enabled: true
+    # Some CNIs filter kubelet health probes through NetworkPolicies, and a service mesh wants
+    # its own telemetry path. Put those exceptions here.
+    extraIngress: []
+    # - from:
+    #     - namespaceSelector:
+    #         matchLabels:
+    #           kubernetes.io/metadata.name: istio-system
+  env:
+    port: 3000
+    nodeEnv: "production"
+    # extra_ca_certs: /app/ca-certificates.crt
+    secret:
+      name: cryptoprovider-env-secrets
+      init: true
+    # Shared bearer secret with the three callers, min 16 characters. The floor, not the
+    # ceiling: one static string that four workloads carry, so keep the NetworkPolicy and the
+    # mesh around it.
+    cryptoServiceToken: ""
+    # Rotation ring - comma-separated tokens that STILL authenticate but are never handed out.
+    # Rotating takes three rollouts: new value above and the old one here, roll the crypto
+    # provider; roll the callers with the new value; roll the crypto provider again with this
+    # emptied. In between both values are accepted, and the service says so on every start
+    # (token rotation window OPEN), so a forgotten entry shows up in the log.
+    cryptoServiceTokenPrevious: ""
+    # TIER-0. Seals every organization key setting - the custody vouchers stored in the callers
+    # database. Absent = per-organization custody is off.
+    #
+    # !! A LOST VOUCHER KEY CANNOT BE RECOVERED !!
+    # The data of every organization with its own key is then permanently unreadable: no
+    # recovery path, no back door, no support case. Back it up like the main key, and try the
+    # restore once - a sentence in a runbook is not a backup. You can REPLACE it whenever you
+    # like (two rollouts, see below), but replacing needs the old key to still be there; it
+    # changes a key, it never recovers one.
+    #
+    # It belongs to THIS service and to nothing else. It must never appear in a secret that a
+    # database-reading workload mounts.
+    cryptoVoucherKeyB64: ""
+    # Old voucher key(s), comma-separated, while the reseal sweep of the callers runs. Roll out
+    # the new key carrying the old one here, wait for the rollout to finish, let the sweep run,
+    # and only then empty this in a second rollout - during a rolling update old pods cannot
+    # open anything the new key has sealed.
+    cryptoVoucherKeyPreviousB64: ""
+    # Where the main key comes from. Rotating it inside a vault needs no restart and no
+    # configuration change at all; only the env fallback does.
+    kek:
+      # azurekv | awskms | gcpkms | keyfile | env
+      provider: "azurekv"
+      # azurekv - the intended choice for a new environment. Grant the key to the service
+      # account above through Workload Identity; outside Azure pass AZURE_TENANT_ID /
+      # AZURE_CLIENT_ID / AZURE_CLIENT_SECRET via extraEnv.
+      # Old key versions stay ENABLED: on Azure a version may only be disabled once the log
+      # reports zero remaining rows. Tidying up here makes data unreadable.
+      azureKeyvaultKeyUri: ""
+      # awskms - turn automatic rotation on and leave it alone; the name of the key never changes.
+      awsKmsKeyArn: ""
+      awsRegion: ""
+      # gcpkms - rotation is automatic and old versions stay enabled forever.
+      gcpKmsKeyName: ""
+      # keyfile - a mounted secret file; wire the mount through additionalVolumes/-Mounts.
+      keyfilePath: ""
+      keyfilePrevious: ""
+      # env - the WEAKEST custody: anyone who can read the container environment (kubectl
+      # describe, /proc, a crash dump) has the main key. Because the chart runs
+      # NODE_ENV=production the service REFUSES TO BOOT with it unless insecureCustodyAck is
+      # also true. Only for a demo or drill stack that deliberately holds nothing worth
+      # protecting.
+      #
+      # And here, when you change the key, change its NAME too: every encrypted row records the
+      # kid that sealed it, so a new key under the old kid makes everything sealed with the old
+      # one unreadable. The SchemaManager notices at the next start and stops the deploy - put
+      # the old key back, then rotate properly with a new kid.
+      materialB64: ""
+      kid: ""
+      # JSON list of outgoing keys, e.g. [{"kid":"env:v1","b64":"..."}]
+      materialPrevious: ""
+      insecureCustodyAck: false
+      # App-binding pepper. The delivered key is not used raw: the effective key is
+      # HKDF(rawKey, pepper). Unset means the service falls back to the DEV_PEPPER, a constant
+      # that is public in the source - fine for a dev stack, worthless as hardening anywhere else.
+      #
+      # ⚠️ Setting this on an environment that ALREADY holds data breaks it. The kid records the
+      # pepper VERSION (+p1), not its content, so a new pepper changes the effective key while the
+      # kid stays the same - every existing row then fails to unwrap, with nothing in the kid to
+      # explain why. Treat it like a key rotation: new `kid`, old material in `materialPrevious`.
+      pepperB64: ""
+      # Set to true in any real deployment: a missing pepperB64 then becomes a hard boot failure
+      # instead of silently binding to the public dev constant.
+      requireRealPepper: false
+      # During a custody switch (azurekv -> awskms, say) LEAVE the lines of the old provider in
+      # place: they are auto-detected as read side, so existing rows keep unwrapping while the
+      # sweep re-wraps them under the new one. Delete them only once the log reports zero rows
+      # on the old kid.
+      #
+      # The remaining knobs of the image are not templated - they have working defaults and
+      # nobody tunes them from a chart. Reach them through extraEnv if you ever have to:
+      # KEK_READ_PROVIDERS (explicit read-side override), Crypto_Vault_Key_Refresh_Ms.
+  livenessProbe:
+    tcpSocket:
+      port: 3000
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  # /healthz says "the process is alive", /readyz runs a real wrap/unwrap against the configured
+  # main key and therefore says "can actually do its job". The SchemaManager gate hangs on that
+  # answer - it is how a wrong vault key or a missing permission surfaces at deploy time instead
+  # of at three in the morning. Switch to tcpSocket only if the probe ever has to cross a mesh
+  # policy that refuses the kubelet.
+  readinessProbe:
+    httpGet:
+      path: /readyz
+      port: 3000
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  lifecycle: {}
+    # preStop:
+    #   exec:
+    #     command: ["/bin/sh", "-c", "sleep 10"]
+  resources:
+    limits:
+      memory: "1Gi"
+    requests:
+      memory: "512Mi"
+      cpu: "200m"
+  additionalVolumeMounts: []
+  #   - mountPath: /kek
+  #     name: kek-keyfile
+  additionalVolumes: []
+  #   - name: kek-keyfile
+  #     secret:
+  #       secretName: crypto-kek-keyfile
+  extraEnv: []
+  # - name: AZURE_CLIENT_SECRET
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: my-key
+  extraContainers: []
+  # - name: my-sidecar
+  #   image: my-registry/my-sidecar:1.0.0
+
+# ---------------------------------------------------------------------------------------------
+# cognaioschemamanager - schemas, migrations and key maintenance (encryption 3.1.0)
+#
+# Up to 3.0.x this ran as cognaioservice.init. It is its own Job now, because the order it needs
+# cannot be expressed from inside another pod:
+#
+#     cryptoprovider ready (/readyz green)  ->  this Job exits 0  ->  all remaining services
+#
+# It runs on EVERY rollout, not only when there are database changes: on each start it also
+# walks every key row, checks whether it still opens under the currently configured main key,
+# and moves the stale ones over. All of it in a single transaction - if one step fails the whole
+# run is rolled back and the Job exits non-zero, so nothing else starts. There is no
+# half-finished state, and a wrong main key or a missing vault permission surfaces at deploy
+# time rather than when someone opens a record.
+#
+# Everything except the image, scheduling and the crypto wiring is read from
+# cognaioservice.env.* and the cognaioservice secret - deliberately not duplicated here.
+# ---------------------------------------------------------------------------------------------
+cognaioschemamanager:
+  name: cognaioschemamanager
+  image:
+    name: dti/idp/cognaioschemamanager
+    tag: "3.1.0"
+  # OTel overrides (enabled / serviceName / endpoint) for the SchemaManager (OTLP/gRPC); empty = global .Values.otel.
+  otel: {}
+    # enabled: true
+    # serviceName: "cognaioschemamanager"
+    # endpoint: ""
+  podSecurityContext: {}
+  securityContext: {}
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: "default"
+    automount: false
+  # Annotations on the Job resource. This is where a GitOps tool takes over the recreation -
+  # see jobNamePerRevision below and examples/values-argocd.yaml.
+  annotations: {}
+    # argocd.argoproj.io/hook: Sync
+    # argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    # argocd.argoproj.io/sync-wave: "-1"
+  # A finished Job is immutable, so something has to recreate it or the migration silently does
+  # not run on the next rollout. With true (the default) the Job name carries the release
+  # revision, which makes plain `helm upgrade` correct on its own: a new name is a new Job, and
+  # Helm removes the one of the previous revision. The price is that the gate spec changes every
+  # upgrade, so the four gated services roll along.
+  #
+  # Set to false ONLY when your delivery tool guarantees delete-before-create - an ArgoCD Sync
+  # hook with `hook-delete-policy: BeforeHookCreation`, for example. Then the name is stable
+  # (`kubectl logs job/cognaioschemamanager` without looking up a revision) and the gated
+  # services stop rolling on every sync.
+  #
+  # ⚠️ With false and a plain `helm upgrade` the finished Job just stays: the gate reads
+  # `succeeded` from the PREVIOUS release, waves the services through, and the migration never
+  # ran. Nothing fails, nothing is logged - that is why true is the default.
+  jobNamePerRevision: true
+  # While the crypto provider is still coming up the SchemaManager fails loud and the Job
+  # retries - that retry IS the crypto -> SchemaManager edge, so give it room. A genuinely
+  # broken migration exhausts the limit and leaves the Job failed, which keeps the gate below
+  # closed and stops the rollout instead of waving it through.
+  backoffLimit: 30
+  # Empty on purpose. The gate polls this Job by name, so the object has to outlive the rollout:
+  # any pod that restarts later (node drain, OOM, eviction, a scale-up) polls it again, and a
+  # TTL-collected Job answers 404 - the pod would then wait in Init forever instead of coming
+  # back. Cleanup is not needed either way: Helm drops the Job of the previous revision on
+  # upgrade, and an ArgoCD hook with BeforeHookCreation does the same.
+  ttlSecondsAfterFinished: ""
+  # Two waits, both built from the settings below.
+  #
+  # 1. The Job waits for the crypto provider (http://<cryptoprovider>/readyz) before the migrator
+  #    starts. This one is ALWAYS rendered, independent of `enabled`. It has to be: the migrator
+  #    pings the crypto provider at startup and throws when it is absent, but that exception
+  #    escapes ExecuteAsync and the generic host ends the process with exit code 0 - the Job then
+  #    counts as succeeded, never retries, and the migration silently never runs.
+  #
+  # 2. The database services wait for this Job, through an init container that polls the
+  #    Kubernetes API with the service account token of its own pod. The chart renders the
+  #    matching Role and RoleBinding (get on batch/jobs). `enabled: false` drops this one and its
+  #    RBAC - the services then fail loud and CrashLoopBackOff until the migration is through,
+  #    which Kubernetes heals on its own.
+  gate:
+    enabled: true
+    # Any image with a busybox wget. Defaults to the nginx image the chart already pulls.
+    image:
+      name: nginx/nginx
+      tag: 1.31.6-alpine-slim
+    pollSeconds: 5
+    resources:
+      limits:
+        memory: "64Mi"
+      requests:
+        memory: "32Mi"
+        cpu: "10m"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  resources:
+    limits:
+      memory: "512Mi"
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+  additionalVolumeMounts: []
+  #   - mountPath: /app/tmp
+  #     name: cache-volume
+  additionalVolumes: []
+  #   - name: cache-volume
+  #     emptyDir: {}
+  extraEnv: []
+  # - name: MY_EXTRA_VAR
+  #   value: "my-value"

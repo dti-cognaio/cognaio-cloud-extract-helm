@@ -1,4 +1,7 @@
 suite: Global Security Context Check for all Deployments
+# The Object Detection Provider is off by default; enable it so its templates are covered too.
+set:
+  cognaioservice.env.feature.objectDetectionProviderDisabled: false
 templates:
   - "**/deployment.yaml" # Scannt alle Deployment-Files in allen Unterordnern
 tests:

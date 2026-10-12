@@ -72,16 +72,20 @@ cognaioinsightagentic:
       emptyDir: {}
 
 # ---------------------------------------------------------------------------
-# cognaioservice  (core API + init container)
+# cognaioschemamanager  (the migrator - its own Job since 3.1.0)
+# ---------------------------------------------------------------------------
+cognaioschemamanager:
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+  additionalVolumeMounts:
+    - mountPath: /app/tmp
+      name: cache-volume
+
+# ---------------------------------------------------------------------------
+# cognaioservice  (core API)
 # ---------------------------------------------------------------------------
 cognaioservice:
-  init:
-    additionalVolumes:
-      - name: cache-volume
-        emptyDir: {}
-    additionalVolumeMounts:
-      - mountPath: /app/tmp
-        name: cache-volume
   additionalVolumes:
     - name: cache-volume
       emptyDir: {}
@@ -143,6 +147,34 @@ objectdetectionprovider:
   additionalVolumeMounts:
     - mountPath: /tmp
       name: cache-volume
+
+# ---------------------------------------------------------------------------
+# pageidentityservice
+# ---------------------------------------------------------------------------
+pageidentityservice:
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+  additionalVolumeMounts:
+    - mountPath: /tmp
+      name: cache-volume
+
+# ---------------------------------------------------------------------------
+# cryptoprovider  (KEK custody)
+# ---------------------------------------------------------------------------
+cryptoprovider:
+  additionalVolumes:
+    - name: cache-volume
+      emptyDir: {}
+  additionalVolumeMounts:
+    - mountPath: /tmp
+      name: cache-volume
+  # Only the three callers may reach the crypto port. On a cluster whose CNI filters
+  # kubelet health probes through NetworkPolicies, add the exception here rather than
+  # switching the policy off.
+  networkPolicy:
+    enabled: true
+    extraIngress: []
 
 # ---------------------------------------------------------------------------
 # redis
