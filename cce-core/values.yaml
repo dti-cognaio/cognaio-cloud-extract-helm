@@ -1460,12 +1460,16 @@ cryptoprovider:
   # answer - it is how a wrong vault key or a missing permission surfaces at deploy time instead
   # of at three in the morning. Switch to tcpSocket only if the probe ever has to cross a mesh
   # policy that refuses the kubelet.
+  # timeoutSeconds: /readyz is two vault round trips (wrapKey + unwrapKey); a token refresh or an
+  # SDK retry on a vault 429 easily exceeds the 1s default and flips the pod to 0/1 silently.
   readinessProbe:
     httpGet:
       path: /readyz
       port: 3000
     initialDelaySeconds: 10
     periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
   lifecycle: {}
     # preStop:
     #   exec:
